@@ -17,23 +17,27 @@ namespace server.Application.Handlers.RegisterUser
             _passwordHasher = hasher;
         }
 
-        public async Task Handle(RegisterUserCommand command)
+        public async Task<Guid> Handle(
+        RegisterUserCommand request,
+        CancellationToken cancellationToken)
         {
-            var existing = await _userRepository.GetByEmailAsync(command.Email);
+            var existing = await _userRepository.GetByEmailAsync(request.Email);
             if (existing != null)
                 throw new Exception("User already exists");
 
-            var (hash, salt) = _passwordHasher.Hash(command.Password);
+            var (hash, salt) = _passwordHasher.Hash(request.Password);
 
             var user = new User(
-                command.Username,
-                command.Email,
+                request.Username,
+                request.Email,
                 hash,
                 salt,
                 UserRole.User
             );
 
             await _userRepository.AddAsync(user);
+
+            return user.Id;
         }
     }
 }
