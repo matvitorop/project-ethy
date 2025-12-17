@@ -4,6 +4,6 @@ namespace server.Application.Services
 {
     public interface ITokenService
     {
-        string GenerateToken(User user);
+        string GenerateAccessToken(User user);
     }
 }
