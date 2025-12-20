@@ -14,6 +14,7 @@ using server.Infrastructure;
 using server.Infrastructure.Authentication;
 using server.Infrastructure.Repositories;
 using server.Presentation.GraphQL;
+using server.Presentation.GraphQL.Helpers;
 using server.Presentation.GraphQL.Mutations;
 using server.Presentation.GraphQL.Schemas;
 using server.Presentation.Schemas;
