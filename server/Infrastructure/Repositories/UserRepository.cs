@@ -37,7 +37,7 @@ namespace server.Infrastructure.Repositories
             )
             """;
 
-            var newUser = await _connection.QuerySingleAsync(sql, user);
+            var newUser = await _connection.QuerySingleAsync<User>(sql, user);
             
             return newUser;
         }

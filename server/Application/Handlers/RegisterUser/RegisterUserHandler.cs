@@ -1,23 +1,27 @@
-﻿using server.Application.IRepositories;
+﻿using MediatR;
+using server.Application.IRepositories;
 using server.Application.Services;
 using server.Domain;
 
 namespace server.Application.Handlers.RegisterUser
 {
-    public class RegisterUserHandler
+    public class RegisterUserHandler : IRequestHandler<RegisterUserCommand, string>
     {
         private readonly IUserRepository _userRepository;
         private readonly IPasswordHasher _passwordHasher;
+        private readonly ITokenService _tokenService;
 
         public RegisterUserHandler(
         IUserRepository users,
-        IPasswordHasher hasher)
+        IPasswordHasher hasher, 
+        ITokenService tokenService)
         {
             _userRepository = users;
             _passwordHasher = hasher;
+            _tokenService = tokenService;
         }
 
-        public async Task<Guid> Handle(
+        public async Task<string> Handle(
         RegisterUserCommand request,
         CancellationToken cancellationToken)
         {
@@ -37,7 +41,7 @@ namespace server.Application.Handlers.RegisterUser
 
             await _userRepository.AddAsync(user);
 
-            return user.Id;
+            return _tokenService.GenerateAccessToken(user);
         }
     }
 }
