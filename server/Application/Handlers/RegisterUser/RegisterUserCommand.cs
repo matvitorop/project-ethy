@@ -2,5 +2,5 @@
 
 namespace server.Application.Handlers.RegisterUser
 {
-    public record RegisterUserCommand(string Username, string Email, string Password) : IRequest<Guid>;
+    public record RegisterUserCommand(string Username, string Email, string Password) : IRequest<string>;
 }

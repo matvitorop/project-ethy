@@ -1,15 +1,137 @@
+using GraphQL;
+using GraphQL.Authorization;
+using GraphQL.Server.Ui.Playground;
+using GraphQL.Types;
+using GraphQL.Validation;
+using MediatR;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Data.SqlClient;
+using Microsoft.IdentityModel.Tokens;
+using server.Application.Handlers.RegisterUser;
+using server.Application.IRepositories;
+using server.Application.Services;
+using server.Infrastructure;
+using server.Infrastructure.Authentication;
+using server.Infrastructure.Repositories;
+using server.Presentation;
+using server.Presentation.GraphQL;
+using server.Presentation.Schemas;
+using System.Data;
+using System.Text;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddRazorPages();
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.SetIsOriginAllowed(_ => true)
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials();
+    });
+});
+
+// Configure Dapper
+
+Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
+
+
+
+// =====================
+// JWT CONFIG
+// =====================
+var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+builder.Services.Configure<JwtSettings>(jwtSettings);
+
+builder.Services.AddScoped<IDbConnection>(_ =>
+    new SqlConnection(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IPasswordHasher, Pbkdf2PasswordHasher>();
+builder.Services.AddScoped<ITokenService, JwtTokenService>();
+builder.Services.AddTransient<AuthMutation>();
+
+
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+
+            ValidIssuer = jwtSettings["Issuer"],
+            ValidAudience = jwtSettings["Audience"],
+
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(jwtSettings["Key"]!)
+            )
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                if (context.Request.Cookies.TryGetValue("jwt", out var token))
+                    context.Token = token;
+
+                return Task.CompletedTask;
+            }
+        };
+    });
+
+builder.Services.AddAuthorization();
+
+// =====================
+// GRAPHQL AUTHORIZATION
+// =====================
+builder.Services
+    .AddSingleton<IAuthorizationEvaluator, AuthorizationEvaluator>()
+    .AddSingleton(_ =>
+    {
+        var settings = new AuthorizationSettings();
+        settings.AddPolicy("Authenticated", p => p.RequireAuthenticatedUser());
+        return settings;
+    })
+    .AddTransient<IValidationRule, AuthorizationValidationRule>();
+
+// =====================
+// GRAPHQL
+// =====================
+builder.Services.AddScoped<ISchema, AppSchema>();
+builder.Services.AddGraphQL(b => b
+    .AddSystemTextJson()
+    .AddGraphTypes()
+    .AddSchema<AppSchema>()
+    .AddAuthorizationRule()
+    .AddUserContextBuilder(httpContext => new GraphQLUserContext
+    {
+        HttpContext = httpContext,
+        User = httpContext.User
+    })
+    .ConfigureExecutionOptions(options =>
+    {
+        options.EnableMetrics = true;
+        options.ThrowOnUnhandledException = true;
+    }));
+
+builder.Services.AddMediatR(cfg =>
+    cfg.RegisterServicesFromAssemblyContaining<RegisterUserHandler>());
+
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// =====================
+// MIDDLEWARE ORDER
+// =====================
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
@@ -17,10 +139,15 @@ app.UseHttpsRedirection();
 
 app.UseRouting();
 
+app.UseCors();    
+app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapStaticAssets();
-app.MapRazorPages()
-   .WithStaticAssets();
+// =====================
+// GRAPHQL ENDPOINTS
+// =====================
+app.UseGraphQL<ISchema>("/graphql");
+app.UseGraphQLPlayground("/graphql/playground");
 
+// =====================
 app.Run();
