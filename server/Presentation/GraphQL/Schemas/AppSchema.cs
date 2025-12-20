@@ -1,4 +1,6 @@
 ﻿using GraphQL.Types;
+using server.Presentation.GraphQL.Mutations;
+using server.Presentation.GraphQL.Schemas;
 
 namespace server.Presentation.Schemas
 {
@@ -6,7 +8,7 @@ namespace server.Presentation.Schemas
     {
         public AppSchema(IServiceProvider provider) : base(provider)
         {
-            Mutation = provider.GetRequiredService<AuthMutation>();
+            Mutation = provider.GetRequiredService<AppMutation>();
             Query = provider.GetRequiredService<AppQuery>();
         }
     }

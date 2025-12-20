@@ -5,7 +5,7 @@ using server.Domain;
 
 namespace server.Application.Handlers.RegisterUser
 {
-    public class RegisterUserHandler : IRequestHandler<RegisterUserCommand, string>
+    public class RegisterUserHandler : IRequestHandler<RegisterUserCommand, RegisterUserResult>
     {
         private readonly IUserRepository _userRepository;
         private readonly IPasswordHasher _passwordHasher;
@@ -21,13 +21,21 @@ namespace server.Application.Handlers.RegisterUser
             _tokenService = tokenService;
         }
 
-        public async Task<string> Handle(
+        public async Task<RegisterUserResult> Handle(
         RegisterUserCommand request,
         CancellationToken cancellationToken)
         {
             var existing = await _userRepository.GetByEmailAsync(request.Email);
+
             if (existing != null)
-                throw new Exception("User already exists");
+            {
+                return new RegisterUserResult(
+                    Success: false,
+                    Token: null,
+                    ErrorCode: "USER_EXISTS",
+                    ErrorMessage: "User with this email already exists"
+                );
+            }
 
             var (hash, salt) = _passwordHasher.Hash(request.Password);
 
@@ -41,7 +49,14 @@ namespace server.Application.Handlers.RegisterUser
 
             await _userRepository.AddAsync(user);
 
-            return _tokenService.GenerateAccessToken(user);
+            var token = _tokenService.GenerateAccessToken(user);
+
+            return new RegisterUserResult(
+                Success: true,
+                Token: token,
+                ErrorCode: null,
+                ErrorMessage: null
+            );
         }
     }
 }

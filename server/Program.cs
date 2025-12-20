@@ -13,13 +13,18 @@ using server.Application.Services;
 using server.Infrastructure;
 using server.Infrastructure.Authentication;
 using server.Infrastructure.Repositories;
-using server.Presentation;
 using server.Presentation.GraphQL;
+using server.Presentation.GraphQL.Mutations;
+using server.Presentation.GraphQL.Schemas;
 using server.Presentation.Schemas;
 using System.Data;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// DEPENDENCY INJECTION
+builder.Services.AddTransient<AuthMutation>();
+builder.Services.AddTransient<AppMutation>();
 
 builder.Services.AddCors(options =>
 {

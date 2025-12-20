@@ -1,11 +1,11 @@
 ﻿using GraphQL;
 using GraphQL.Types;
 
-namespace server.Presentation
+namespace server.Presentation.GraphQL.Queries
 {
-    public class AppQuery : ObjectGraphType
+    public class TestQuery : ObjectGraphType
     {
-        public AppQuery()
+        public TestQuery()
         {
             Field<StringGraphType>("privateHello")
             .Resolve(context => "Hello world (private)")
