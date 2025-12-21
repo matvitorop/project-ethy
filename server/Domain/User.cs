@@ -4,7 +4,7 @@
     {
         Admin = 0,
         User = 1,
-        Volounteer = 2
+        Volunteer = 2
     }
     public class User
     {

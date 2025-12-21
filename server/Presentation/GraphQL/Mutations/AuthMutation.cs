@@ -88,6 +88,30 @@ namespace server.Presentation.GraphQL.Mutations
 
                     return result;
                 });
+
+            Field<NonNullGraphType<LogoutPayloadType>>("logout")
+                .Authorize()
+                .Resolve(context =>
+                {
+                    if (context.UserContext is GraphQLUserContext userContext &&
+                        userContext.HttpContext != null)
+                    {
+                        userContext.HttpContext.Response.Cookies.Delete("jwt");
+
+                        return new
+                        {
+                            success = true,
+                            message = "Logout successful"
+                        };
+                    }
+
+                    return new
+                    {
+                        success = false,
+                        message = "Logout failed"
+                    };
+                });
+
         }
     }
 }

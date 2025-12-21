@@ -13,6 +13,16 @@ namespace server.Presentation.GraphQL.Queries
 
             Field<StringGraphType>("publicHello")
             .Resolve(context => "Hello world (public)");
+
+            Field<StringGraphType>("adminHello")
+            .Resolve(context => "Hello world (admin)")
+            .Authorize()
+            .AuthorizeWithRoles("Admin");
+
+            Field<StringGraphType>("volHello")
+            .Resolve(context => "Hello world (valunteer)")
+            .Authorize()
+            .AuthorizeWithRoles("Volunteer");
         }
     }
 }
