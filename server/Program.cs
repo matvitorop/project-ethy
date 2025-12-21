@@ -10,6 +10,7 @@ using Microsoft.IdentityModel.Tokens;
 using server.Application.Handlers.RegisterUser;
 using server.Application.IRepositories;
 using server.Application.Services;
+using server.Domain;
 using server.Infrastructure;
 using server.Infrastructure.Authentication;
 using server.Infrastructure.Repositories;
@@ -19,6 +20,7 @@ using server.Presentation.GraphQL.Mutations;
 using server.Presentation.GraphQL.Schemas;
 using server.Presentation.Schemas;
 using System.Data;
+using System.Security.Claims;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -102,6 +104,10 @@ builder.Services
     {
         var settings = new AuthorizationSettings();
         settings.AddPolicy("Authenticated", p => p.RequireAuthenticatedUser());
+
+        //settings.AddPolicy("Admin", p =>
+        //    p.RequireClaim(ClaimTypes.Role, UserRole.Admin.ToString()));
+
         return settings;
     })
     .AddTransient<IValidationRule, AuthorizationValidationRule>();
