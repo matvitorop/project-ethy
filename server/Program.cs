@@ -24,8 +24,31 @@ using System.Data;
 using System.Security.Claims;
 using System.Text;
 using server.Presentation.Controllers;
+using DbUp;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Migrations
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+var upgrader =
+    DeployChanges.To
+        .SqlDatabase(connectionString)
+        .WithScriptsFromFileSystem("Database/Migrations")
+        .LogToConsole()
+        .Build();
+
+var result = upgrader.PerformUpgrade();
+
+if (!result.Successful)
+{
+    Console.ForegroundColor = ConsoleColor.Red;
+    Console.WriteLine(result.Error);
+    Console.ResetColor();
+    throw new Exception("Database migration failed");
+}
+
+
 
 // DEPENDENCY INJECTION
 builder.Services.AddTransient<AuthMutation>();

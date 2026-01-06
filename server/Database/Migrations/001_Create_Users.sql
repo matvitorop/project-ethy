@@ -1,0 +1,18 @@
+﻿CREATE TABLE Users (
+    Id UNIQUEIDENTIFIER NOT NULL
+        CONSTRAINT PK_Users PRIMARY KEY,
+
+    Username NVARCHAR(100) NOT NULL
+        CONSTRAINT UQ_Users_Username UNIQUE,
+
+    Email NVARCHAR(256) NOT NULL
+        CONSTRAINT UQ_Users_Email UNIQUE,
+
+    PasswordHash NVARCHAR(512) NOT NULL,
+    PasswordSalt NVARCHAR(512) NOT NULL,
+
+    Role INT NOT NULL,
+
+    CreatedAt DATETIME2 NOT NULL
+        CONSTRAINT DF_Users_CreatedAt DEFAULT SYSUTCDATETIME()
+);
