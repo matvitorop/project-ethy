@@ -32,19 +32,22 @@ namespace server.Infrastructure.Repositories
                 """;
 
             await _connection.ExecuteAsync(
-                insertRequest,
-                new
-                {
-                    request.Id,
-                    request.CreatorId,
-                    request.Title,
-                    request.Description,
-                    Status = (int)request.Status,
-                    Latitude = request.Location?.Latitude,
-                    Longitude = request.Location?.Longitude,
-                    request.CreatedAtUtc
-                },
-                tx
+                new CommandDefinition(
+                    insertRequest,
+                    new
+                    {
+                        request.Id,
+                        request.CreatorId,
+                        request.Title,
+                        request.Description,
+                        Status = (int)request.Status,
+                        Latitude = request.Location?.Latitude,
+                        Longitude = request.Location?.Longitude,
+                        request.CreatedAtUtc
+                    },
+                    transaction: tx,
+                    cancellationToken: ct
+                )
             );
 
             const string insertImage = """
@@ -60,16 +63,21 @@ namespace server.Infrastructure.Repositories
 
             foreach (var image in request.Images)
             {
+                ct.ThrowIfCancellationRequested();
+
                 await _connection.ExecuteAsync(
-                    insertImage,
-                    new
-                    {
-                        Id = Guid.NewGuid(),
-                        HelpRequestId = request.Id,
-                        image.Order,
-                        image.ImageUrl
-                    },
-                    tx
+                    new CommandDefinition(
+                        insertImage,
+                        new
+                        {
+                            Id = Guid.NewGuid(),
+                            HelpRequestId = request.Id,
+                            image.Order,
+                            image.ImageUrl
+                        },
+                        transaction: tx,
+                        cancellationToken: ct
+                    )
                 );
             }
 
