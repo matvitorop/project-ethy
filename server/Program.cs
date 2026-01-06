@@ -9,6 +9,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.IdentityModel.Tokens;
 using server.Application.Handlers.RegisterUser;
 using server.Application.IRepositories;
+using server.Application.IServices;
 using server.Application.Services;
 using server.Domain;
 using server.Infrastructure;
@@ -22,6 +23,7 @@ using server.Presentation.Schemas;
 using System.Data;
 using System.Security.Claims;
 using System.Text;
+using server.Presentation.Controllers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -60,8 +62,11 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IPasswordHasher, Pbkdf2PasswordHasher>();
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
 builder.Services.AddTransient<AuthMutation>();
+builder.Services.AddScoped<IImageStorageService, LocalImageStorageService>();
 
-
+// CONTROLLERS REGISTRATION
+builder.Services.AddControllers()
+    .AddApplicationPart(typeof(HelpRequestFilesController).Assembly);
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -154,6 +159,9 @@ app.UseRouting();
 app.UseCors();    
 app.UseAuthentication();
 app.UseAuthorization();
+
+// ROUTING TO CONTROLLERS
+app.MapControllers();
 
 // =====================
 // GRAPHQL ENDPOINTS
