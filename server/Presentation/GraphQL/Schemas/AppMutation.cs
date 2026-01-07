@@ -15,6 +15,14 @@ namespace server.Presentation.GraphQL.Schemas
                 ResolvedType = provider.GetRequiredService<AuthMutation>(),
                 Resolver = new FuncFieldResolver<object>(_ => new object())
             });
+
+            AddField(new FieldType
+            {
+                Name = "helpRequest",
+                Description = "Help request related mutations",
+                ResolvedType = provider.GetRequiredService<HelpRequestMutation>(),
+                Resolver = new FuncFieldResolver<object>(_ => new object())
+            });
         }
     }
 }

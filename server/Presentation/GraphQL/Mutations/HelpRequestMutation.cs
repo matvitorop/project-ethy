@@ -1,0 +1,42 @@
+﻿using GraphQL;
+using GraphQL.Types;
+using MediatR;
+using server.Application.Handlers.AddHelpRequest;
+using server.Presentation.GraphQL.Extensions;
+using server.Presentation.GraphQL.Types;
+
+namespace server.Presentation.GraphQL.Mutations
+{
+    public class HelpRequestMutation : ObjectGraphType
+    {
+        public HelpRequestMutation(IMediator mediator)
+        {
+            Field<AddHelpRequestPayloadType>("createHelpRequest")
+            .Authorize()
+            .Arguments(
+                new QueryArguments(
+                    new QueryArgument<NonNullGraphType<StringGraphType>> { Name = "title" },
+                    new QueryArgument<NonNullGraphType<StringGraphType>> { Name = "description" },
+                    new QueryArgument<FloatGraphType> { Name = "latitude" },
+                    new QueryArgument<FloatGraphType> { Name = "longitude" },
+                    new QueryArgument<ListGraphType<StringGraphType>> { Name = "imageUrls" }
+                )
+            )
+            .ResolveAsync(async context =>
+            {
+                var userId = context.GetUserId();
+
+                var command = new AddHelpRequestCommand(
+                    CreatorId: userId,
+                    Title: context.GetArgument<string>("title"),
+                    Description: context.GetArgument<string>("description"),
+                    Latitude: context.GetArgument<double?>("latitude"),
+                    Longitude: context.GetArgument<double?>("longitude"),
+                    ImageUrls: context.GetArgument<List<string>>("imageUrls") ?? []
+                );
+
+                return await mediator.Send(command);
+            });
+        }
+    }
+}
