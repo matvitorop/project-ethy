@@ -77,11 +77,19 @@ Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 builder.Services.Configure<JwtSettings>(jwtSettings);
 
-builder.Services.AddScoped<IDbConnection>(_ =>
-    new SqlConnection(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddScoped<IDbConnection>(sp =>
+{
+    var conn = new SqlConnection(
+        sp.GetRequiredService<IConfiguration>()
+          .GetConnectionString("DefaultConnection"));
+
+    conn.Open();
+    return conn;
+});
 
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IHelpRequestRepository, HelpRequestRepository>();
 builder.Services.AddScoped<IPasswordHasher, Pbkdf2PasswordHasher>();
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
 builder.Services.AddTransient<AuthMutation>();
