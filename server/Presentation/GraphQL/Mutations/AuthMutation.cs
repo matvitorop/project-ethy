@@ -30,13 +30,13 @@ namespace server.Presentation.GraphQL.Mutations
                     )
                     );
 
-                    if (result.Success &&
+                    if (result.IsSuccess &&
                         context.UserContext is GraphQLUserContext userContext &&
                         userContext.HttpContext != null)
                     {
                         userContext.HttpContext.Response.Cookies.Append(
                             "jwt",
-                            result.Token!,
+                            result.Value!,
                             new CookieOptions
                             {
                                 HttpOnly = true,
@@ -48,7 +48,15 @@ namespace server.Presentation.GraphQL.Mutations
                     }
 
                     await LoginDelayHelper.EnsureMinDelay(start, 1500);
-                    return result;
+                    
+                    if (result.IsSuccess)
+                    {
+                        return new RegisterPayload(result.IsSuccess, result.Value, null, null);
+                    }
+                    else
+                    {
+                        return new RegisterPayload(false, null, result.Error.Code, result.Error.Message);
+                    }
                 });
 
             Field<NonNullGraphType<LoginPayloadType>>("login")
@@ -67,13 +75,13 @@ namespace server.Presentation.GraphQL.Mutations
                         )
                     );
 
-                    if (result.Success &&
+                    if (result.IsSuccess &&
                         context.UserContext is GraphQLUserContext userContext &&
                         userContext.HttpContext != null)
                     {
                         userContext.HttpContext.Response.Cookies.Append(
                             "jwt",
-                            result.Token!,
+                            result.Value!,
                             new CookieOptions
                             {
                                 HttpOnly = true,
@@ -86,7 +94,15 @@ namespace server.Presentation.GraphQL.Mutations
 
                     await LoginDelayHelper.EnsureMinDelay(start, 1500);
 
-                    return result;
+                    if (result.IsSuccess)
+                    {
+                        return new LoginPayload(result.IsSuccess, result.Value, null, null);
+                    }
+                    else
+                    {
+                        return new LoginPayload(false, null, result.Error.Code, result.Error.Message);
+                    }
+
                 });
 
             Field<NonNullGraphType<LogoutPayloadType>>("logout")

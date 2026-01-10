@@ -1,10 +1,11 @@
 ﻿using MediatR;
 using server.Application.IRepositories;
 using server.Application.Services;
+using server.Domain.Primitives;
 
 namespace server.Application.Handlers.LoginUser
 {
-    public class LoginUserHandler : IRequestHandler<LoginUserCommand, LoginUserResult>
+    public class LoginUserHandler : IRequestHandler<LoginUserCommand, Result<string>>
     {
         private readonly IUserRepository _userRepository;
         private readonly IPasswordHasher _passwordHasher;
@@ -20,7 +21,7 @@ namespace server.Application.Handlers.LoginUser
             _tokenService = tokenService;
         }
 
-        public async Task<LoginUserResult> Handle(
+        public async Task<Result<string>> Handle(
             LoginUserCommand request,
             CancellationToken cancellationToken)
         {
@@ -28,7 +29,9 @@ namespace server.Application.Handlers.LoginUser
 
             if (user is null)
             {
-                return Fail();
+                return Result<string>.Failure(new Error(
+                    "Invalid email or password",
+                    "INVALID_CREDENTIALS"));
             }
 
             var valid = _passwordHasher.Verify(
@@ -39,25 +42,14 @@ namespace server.Application.Handlers.LoginUser
 
             if (!valid)
             {
-                return Fail();
+                return Result<string>.Failure(new Error(
+                    "Invalid email or password",
+                    "INVALID_CREDENTIALS"));
             }
 
             var token = _tokenService.GenerateAccessToken(user);
 
-            return new LoginUserResult(
-                Success: true,
-                Token: token,
-                ErrorCode: null,
-                ErrorMessage: null
-            );
+            return Result<string>.Success(token);
         }
-
-        private static LoginUserResult Fail() =>
-            new(
-                Success: false,
-                Token: null,
-                ErrorCode: "INVALID_CREDENTIALS",
-                ErrorMessage: "Invalid email or password"
-            );
     }
 }

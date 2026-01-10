@@ -1,0 +1,2 @@
+﻿ALTER TABLE Users
+DROP CONSTRAINT UQ_Users_Username;
