@@ -2,14 +2,14 @@
 
 namespace server.Presentation.GraphQL.Types
 {
-    public class LoginPayloadType : ObjectGraphType
+    public class LoginPayloadType : ObjectGraphType<LoginPayload>
     {
         public LoginPayloadType()
         {
-            Field<NonNullGraphType<BooleanGraphType>>("success");
-            Field<StringGraphType>("token");
-            Field<StringGraphType>("errorCode");
-            Field<StringGraphType>("errorMessage");
+            Field(x => x.Success);
+            Field(x => x.Token, nullable: true);
+            Field(x => x.ErrorCode, nullable: true);
+            Field(x => x.ErrorMessage, nullable: true);
         }
     }
 }
