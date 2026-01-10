@@ -77,6 +77,7 @@ Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 builder.Services.Configure<JwtSettings>(jwtSettings);
 
+// remake to connection factory that opens connection
 builder.Services.AddScoped<IDbConnection>(sp =>
 {
     var conn = new SqlConnection(

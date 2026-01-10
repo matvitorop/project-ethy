@@ -1,10 +1,11 @@
 ﻿using MediatR;
 using server.Application.IRepositories;
 using server.Domain.HelpRequest;
+using server.Domain.Primitives;
 
 namespace server.Application.Handlers.AddHelpRequest
 {
-    public class AddHelpRequestHandler : IRequestHandler<AddHelpRequestCommand, AddHelpRequestResult>
+    public class AddHelpRequestHandler : IRequestHandler<AddHelpRequestCommand, Result<Guid>>
     {
         private readonly IHelpRequestRepository _repository;
 
@@ -13,7 +14,7 @@ namespace server.Application.Handlers.AddHelpRequest
             _repository = repository;
         }
 
-        public async Task<AddHelpRequestResult> Handle(
+        public async Task<Result<Guid>> Handle(
             AddHelpRequestCommand request,
             CancellationToken ct)
         {
@@ -43,14 +44,21 @@ namespace server.Application.Handlers.AddHelpRequest
 
                 await _repository.AddAsync(helpRequest, ct);
 
-                return AddHelpRequestResult.Ok(helpRequest.Id);
+                return Result<Guid>.Success(helpRequest.Id);
             }
             catch (ArgumentException ex)
             {
-                return AddHelpRequestResult.Fail(
-                    "VALIDATION_ERROR",
+                return Result.Failure<Guid>(new Error(
+                    "HelpRequest.Validation",
                     ex.Message
-                );
+                ));
+            }
+            catch (Exception ex)
+            {
+                return Result.Failure<Guid>(new Error(
+                   "HelpRequest.GeneralError",
+                   "An unexpected error occurred."
+                ));
             }
         }
     }
