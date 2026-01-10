@@ -1,5 +1,7 @@
 ﻿using Dapper;
+using Microsoft.Data.SqlClient;
 using server.Application.IRepositories;
+using server.Application.IServices;
 using server.Domain.HelpRequest;
 using System.Data;
 
@@ -7,18 +9,21 @@ namespace server.Infrastructure.Repositories
 {
     public class HelpRequestRepository : IHelpRequestRepository
     {
-        private readonly IDbConnection _connection;
+        private readonly ISqlConnectionFactory _connectionFactory;
 
-        public HelpRequestRepository(IDbConnection connection)
+        public HelpRequestRepository(ISqlConnectionFactory connectionFactory)
         {
-            _connection = connection;
+            _connectionFactory = connectionFactory;
         }
 
         public async Task AddAsync(HelpRequest request, CancellationToken ct)
         {
-            using var tx = _connection.BeginTransaction();
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
 
-            const string insertRequest = """
+            using var tx = connection.BeginTransaction();
+
+            try{
+                const string insertRequest = """
                 INSERT INTO HelpRequests
                 (
                     Id, CreatorId, Title, Description, Status,
@@ -31,54 +36,60 @@ namespace server.Infrastructure.Repositories
                 );
                 """;
 
-            await _connection.ExecuteAsync(
-                new CommandDefinition(
-                    insertRequest,
-                    new
-                    {
-                        request.Id,
-                        request.CreatorId,
-                        request.Title,
-                        request.Description,
-                        Status = (int)request.Status,
-                        Latitude = request.Location?.Latitude,
-                        Longitude = request.Location?.Longitude,
-                        request.CreatedAtUtc
-                    },
-                    transaction: tx,
-                    cancellationToken: ct
-                )
-            );
-
-            const string insertImage = """
-                INSERT INTO HelpRequestImages
-                (
-                    Id, HelpRequestId, [Order], ImageUrl
-                )
-                VALUES
-                (
-                    @Id, @HelpRequestId, @Order, @ImageUrl
+                await connection.ExecuteAsync(
+                    new CommandDefinition(
+                        insertRequest,
+                        new
+                        {
+                            request.Id,
+                            request.CreatorId,
+                            request.Title,
+                            request.Description,
+                            Status = (int)request.Status,
+                            Latitude = request.Location?.Latitude,
+                            Longitude = request.Location?.Longitude,
+                            request.CreatedAtUtc
+                        },
+                        transaction: tx,
+                        cancellationToken: ct
+                    )
                 );
-                """;
 
-            var imageParams = request.Images.Select(img => new
+                const string insertImage = """
+                    INSERT INTO HelpRequestImages
+                    (
+                        Id, HelpRequestId, [Order], ImageUrl
+                    )
+                    VALUES
+                    (
+                        @Id, @HelpRequestId, @Order, @ImageUrl
+                    );
+                    """;
+
+                var imageParams = request.Images.Select(img => new
+                {
+                    Id = Guid.NewGuid(),
+                    HelpRequestId = request.Id,
+                    Order = img.Order,
+                    ImageUrl = img.ImageUrl
+                }).ToList();
+
+                await connection.ExecuteAsync(
+                    new CommandDefinition(
+                        insertImage,
+                        imageParams,
+                        transaction: tx,
+                        cancellationToken: ct
+                    )
+                );
+
+                tx.Commit();
+            }
+            catch
             {
-                Id = Guid.NewGuid(),
-                HelpRequestId = request.Id,
-                Order = img.Order,
-                ImageUrl = img.ImageUrl
-            }).ToList();
-
-            await _connection.ExecuteAsync(
-                new CommandDefinition(
-                    insertImage,
-                    imageParams,
-                    transaction: tx,
-                    cancellationToken: ct
-                )
-            );
-
-            tx.Commit();
+                tx.Rollback();
+                throw;
+            }
         }
     }
 }

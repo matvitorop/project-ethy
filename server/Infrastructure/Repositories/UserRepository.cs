@@ -1,22 +1,25 @@
-﻿using server.Application.IRepositories;
+﻿using Dapper;
+using Microsoft.Data.SqlClient;
+using server.Application.IRepositories;
+using server.Application.IServices;
 using server.Domain;
 using System.Data;
-using Dapper;
 
 namespace server.Infrastructure.Repositories
 {
     public class UserRepository : IUserRepository
     {
+        private readonly ISqlConnectionFactory _connectionFactory;
 
-        private readonly IDbConnection _connection;
-
-        public UserRepository(IDbConnection connection)
+        public UserRepository(ISqlConnectionFactory connectionFactory)
         {
-            _connection = connection;
+            _connectionFactory = connectionFactory;
         }
 
         public async Task<User?> AddAsync(User user)
         {
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync();
+
             const string sql = """
             INSERT INTO Users (
                 Id,
@@ -37,13 +40,15 @@ namespace server.Infrastructure.Repositories
             )
             """;
 
-            var newUser = await _connection.QuerySingleAsync<User>(sql, user);
+            var newUser = await connection.QuerySingleAsync<User>(sql, user);
             
             return newUser;
         }
 
         public async Task<User?> GetByEmailAsync(string email)
         {
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync();
+
             const string sql = """
             SELECT
                 Id,
@@ -56,7 +61,7 @@ namespace server.Infrastructure.Repositories
             WHERE Email = @Email
         """;
 
-            return await _connection.QuerySingleOrDefaultAsync<User>(
+            return await connection.QuerySingleOrDefaultAsync<User>(
                 sql,
                 new { Email = email });
         }
