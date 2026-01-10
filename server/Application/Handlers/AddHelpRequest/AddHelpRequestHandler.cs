@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using server.Application.IRepositories;
+using server.Application.IServices;
 using server.Domain.HelpRequest;
 using server.Domain.Primitives;
 
@@ -8,10 +9,12 @@ namespace server.Application.Handlers.AddHelpRequest
     public class AddHelpRequestHandler : IRequestHandler<AddHelpRequestCommand, Result<Guid>>
     {
         private readonly IHelpRequestRepository _repository;
+        private readonly IImageStorageService _imageStorage;
 
-        public AddHelpRequestHandler(IHelpRequestRepository repository)
+        public AddHelpRequestHandler(IHelpRequestRepository repository, IImageStorageService imageStorage)
         {
             _repository = repository;
+            _imageStorage = imageStorage;
         }
 
         public async Task<Result<Guid>> Handle(
@@ -20,6 +23,8 @@ namespace server.Application.Handlers.AddHelpRequest
         {
             try
             {
+                var permanentImageUrls = await _imageStorage.CommitHelpRequestImagesAsync(request.ImageUrls);
+
                 HelpRequestGeoPoint? location = null;
 
                 if (request.Latitude.HasValue && request.Longitude.HasValue)
@@ -37,14 +42,21 @@ namespace server.Application.Handlers.AddHelpRequest
                     location
                 );
 
-                foreach (var imageUrl in request.ImageUrls)
+                foreach (var url in permanentImageUrls)
                 {
-                    helpRequest.AddImage(imageUrl);
+                    helpRequest.AddImage(url);
                 }
 
                 await _repository.AddAsync(helpRequest, ct);
 
                 return Result<Guid>.Success(helpRequest.Id);
+            }
+            catch (FileNotFoundException)
+            {
+                return Result.Failure<Guid>(new Error(
+                    "Attachments.Expired",
+                    "Images session expired or files not found. Please upload images again."
+                ));
             }
             catch (ArgumentException ex)
             {
