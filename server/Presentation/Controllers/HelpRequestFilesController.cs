@@ -1,4 +1,4 @@
-﻿using GraphQL;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using server.Application.IServices;
 

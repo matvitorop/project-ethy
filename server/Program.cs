@@ -1,3 +1,4 @@
+using DbUp;
 using GraphQL;
 using GraphQL.Authorization;
 using GraphQL.Server.Ui.Playground;
@@ -14,7 +15,9 @@ using server.Application.Services;
 using server.Domain;
 using server.Infrastructure;
 using server.Infrastructure.Authentication;
+using server.Infrastructure.ImageStoring;
 using server.Infrastructure.Repositories;
+using server.Presentation.Controllers;
 using server.Presentation.GraphQL;
 using server.Presentation.GraphQL.Helpers;
 using server.Presentation.GraphQL.Mutations;
@@ -23,8 +26,6 @@ using server.Presentation.Schemas;
 using System.Data;
 using System.Security.Claims;
 using System.Text;
-using server.Presentation.Controllers;
-using DbUp;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -88,6 +89,7 @@ builder.Services.AddScoped<IDbConnection>(sp =>
     return conn;
 });
 
+builder.Services.AddHostedService<TemporaryFileCleanupService>();
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IHelpRequestRepository, HelpRequestRepository>();
