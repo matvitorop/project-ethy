@@ -61,25 +61,22 @@ namespace server.Infrastructure.Repositories
                 );
                 """;
 
-            foreach (var image in request.Images)
+            var imageParams = request.Images.Select(img => new
             {
-                ct.ThrowIfCancellationRequested();
+                Id = Guid.NewGuid(),
+                HelpRequestId = request.Id,
+                Order = img.Order,
+                ImageUrl = img.ImageUrl
+            }).ToList();
 
-                await _connection.ExecuteAsync(
-                    new CommandDefinition(
-                        insertImage,
-                        new
-                        {
-                            Id = Guid.NewGuid(),
-                            HelpRequestId = request.Id,
-                            image.Order,
-                            image.ImageUrl
-                        },
-                        transaction: tx,
-                        cancellationToken: ct
-                    )
-                );
-            }
+            await _connection.ExecuteAsync(
+                new CommandDefinition(
+                    insertImage,
+                    imageParams,
+                    transaction: tx,
+                    cancellationToken: ct
+                )
+            );
 
             tx.Commit();
         }
