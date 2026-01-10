@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using server.Domain.Primitives;
 
 namespace server.Application.Handlers.AddHelpRequest
 {
@@ -8,5 +9,5 @@ namespace server.Application.Handlers.AddHelpRequest
         string Description,
         double? Latitude,
         double? Longitude,
-        IReadOnlyList<string> ImageUrls) : IRequest<AddHelpRequestResult>;
+        IReadOnlyList<string> ImageUrls) : IRequest<Result<Guid>>;
 }

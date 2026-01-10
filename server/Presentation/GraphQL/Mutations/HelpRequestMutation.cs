@@ -35,7 +35,16 @@ namespace server.Presentation.GraphQL.Mutations
                     ImageUrls: context.GetArgument<List<string>>("imageUrls") ?? []
                 );
 
-                return await mediator.Send(command);
+                var result = await mediator.Send(command);
+
+                if (result.IsSuccess)
+                {
+                    return new AddHelpRequestPayload(true, result.Value, null, null);
+                }
+                else
+                {
+                    return new AddHelpRequestPayload(false, null, result.Error.Code, result.Error.Message);
+                }
             });
         }
     }
