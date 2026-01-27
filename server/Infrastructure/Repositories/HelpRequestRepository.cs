@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using Microsoft.Data.SqlClient;
+using server.Application.Handlers.GetActiveRequests;
 using server.Application.IRepositories;
 using server.Application.IServices;
 using server.Domain.HelpRequest;
@@ -90,6 +91,39 @@ namespace server.Infrastructure.Repositories
                 tx.Rollback();
                 throw;
             }
+        }
+
+        public async Task<IReadOnlyList<HelpRequestListItemDto>> GetPageAsync(int page, int pageSize, CancellationToken ct)
+        {
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
+
+            var offset = (page - 1) * pageSize;
+
+            var sql = """
+           SELECT
+               hr.Id,
+               hr.Title,
+               hr.Category,
+               hr.Status,
+               img.Url AS PreviewImageUrl,
+               hr.CreatedAt
+           FROM HelpRequests hr
+           OUTER APPLY (
+               SELECT TOP 1 Url
+               FROM HelpRequestImages
+               WHERE HelpRequestId = hr.Id
+               ORDER BY SortOrder
+           ) img
+           ORDER BY hr.CreatedAt DESC
+           OFFSET @Offset ROWS
+           FETCH NEXT @PageSize ROWS ONLY;
+           """;
+
+            var result = await connection.QueryAsync<HelpRequestListItemDto>(
+                sql,
+                new { Offset = offset, PageSize = pageSize });
+
+            return result.AsList();
         }
     }
 }
