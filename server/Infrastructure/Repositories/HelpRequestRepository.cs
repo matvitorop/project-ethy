@@ -100,24 +100,23 @@ namespace server.Infrastructure.Repositories
             var offset = (page - 1) * pageSize;
 
             var sql = """
-           SELECT
-               hr.Id,
-               hr.Title,
-               hr.Category,
-               hr.Status,
-               img.Url AS PreviewImageUrl,
-               hr.CreatedAt
-           FROM HelpRequests hr
-           OUTER APPLY (
-               SELECT TOP 1 Url
-               FROM HelpRequestImages
-               WHERE HelpRequestId = hr.Id
-               ORDER BY SortOrder
-           ) img
-           ORDER BY hr.CreatedAt DESC
-           OFFSET @Offset ROWS
-           FETCH NEXT @PageSize ROWS ONLY;
-           """;
+                SELECT 
+                    hr.Id,
+                    hr.Title,
+                    hr.Status,
+                    img.ImageUrl AS PreviewImageUrl, -- Виправлено: img.ImageUrl замість img.Url
+                    hr.CreatedAtUtc AS CreatedAt     -- Виправлено: CreatedAtUtc та аліас для Dapper
+                FROM HelpRequests hr
+                OUTER APPLY (
+                    SELECT TOP 1 ImageUrl
+                    FROM HelpRequestImages
+                    WHERE HelpRequestId = hr.Id
+                    ORDER BY [Order] ASC -- Виправлено: Order взято в дужки, бо це ключове слово
+                ) img
+                ORDER BY hr.CreatedAtUtc DESC -- Виправлено: CreatedAtUtc
+                OFFSET @Offset ROWS
+                FETCH NEXT @PageSize ROWS ONLY;
+                """;
 
             var result = await connection.QueryAsync<HelpRequestListItemDto>(
                 sql,

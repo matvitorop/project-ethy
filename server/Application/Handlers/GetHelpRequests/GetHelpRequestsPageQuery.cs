@@ -1,9 +1,10 @@
 ﻿using MediatR;
+using server.Domain.Primitives;
 
 namespace server.Application.Handlers.GetActiveRequests
 {
     public class GetHelpRequestsPageQuery
-    : IRequest<IReadOnlyList<HelpRequestListItemDto>>
+    : IRequest<Result<IReadOnlyList<HelpRequestListItemDto>>>
     {
         public int Page { get; }
         public int PageSize { get; }
