@@ -1,6 +1,7 @@
 ﻿using Dapper;
 using Microsoft.Data.SqlClient;
 using server.Application.Handlers.GetActiveRequests;
+using server.Application.Handlers.GetFullHelpRequest;
 using server.Application.IRepositories;
 using server.Application.IServices;
 using server.Domain.HelpRequest;
@@ -123,6 +124,48 @@ namespace server.Infrastructure.Repositories
                 new { Offset = offset, PageSize = pageSize });
 
             return result.AsList();
+        }
+
+        public async Task<HelpRequestDetailDto?> GetHelpRequestById(CancellationToken ct, Guid id)
+        {
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
+
+            const string requestSql = """
+                SELECT 
+                    Id,
+                    CreatorId,
+                    Title,
+                    Description,
+                    Status,
+                    Latitude,
+                    Longitude,
+                    CreatedAtUtc
+                FROM HelpRequests
+                WHERE Id = @Id;
+            """;
+
+            var request = await connection
+                .QuerySingleOrDefaultAsync<HelpRequestDetailDto>(
+                    requestSql,
+                    new { Id = id });
+
+            if (request is null)
+                return null;
+
+            const string imagesSql = """
+                SELECT ImageUrl
+                FROM HelpRequestImages
+                WHERE HelpRequestId = @Id
+                ORDER BY [Order];
+             """;
+
+            var images = await connection
+                .QueryAsync<string>(imagesSql, new { Id = id });
+
+            return request with
+            {
+                ImageUrls = images.AsList()
+            };
         }
     }
 }

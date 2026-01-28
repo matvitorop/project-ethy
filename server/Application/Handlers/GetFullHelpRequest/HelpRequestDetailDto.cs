@@ -1,6 +1,6 @@
 ﻿namespace server.Application.Handlers.GetFullHelpRequest
 {
-    public class HelpRequestDetailDto
+    public sealed record HelpRequestDetailDto
     {
         public Guid Id { get; init; }
         public Guid CreatorId { get; init; }
