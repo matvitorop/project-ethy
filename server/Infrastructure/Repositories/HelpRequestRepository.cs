@@ -93,7 +93,7 @@ namespace server.Infrastructure.Repositories
             }
         }
 
-        public async Task<IReadOnlyList<HelpRequestListItemDto>> GetPageAsync(int page, int pageSize, CancellationToken ct)
+        public async Task<IReadOnlyList<HelpRequestListItemDto>> GetPageAsync(CancellationToken ct, int page, int pageSize = 10)
         {
             using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
 
@@ -104,16 +104,16 @@ namespace server.Infrastructure.Repositories
                     hr.Id,
                     hr.Title,
                     hr.Status,
-                    img.ImageUrl AS PreviewImageUrl, -- Виправлено: img.ImageUrl замість img.Url
-                    hr.CreatedAtUtc AS CreatedAt     -- Виправлено: CreatedAtUtc та аліас для Dapper
+                    img.ImageUrl AS PreviewImageUrl,
+                    hr.CreatedAtUtc AS CreatedAt
                 FROM HelpRequests hr
                 OUTER APPLY (
                     SELECT TOP 1 ImageUrl
                     FROM HelpRequestImages
                     WHERE HelpRequestId = hr.Id
-                    ORDER BY [Order] ASC -- Виправлено: Order взято в дужки, бо це ключове слово
+                    ORDER BY [Order] ASC
                 ) img
-                ORDER BY hr.CreatedAtUtc DESC -- Виправлено: CreatedAtUtc
+                ORDER BY hr.CreatedAtUtc DESC
                 OFFSET @Offset ROWS
                 FETCH NEXT @PageSize ROWS ONLY;
                 """;

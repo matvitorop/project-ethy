@@ -15,9 +15,7 @@ namespace server.Application.Handlers.GetHelpRequests
             _repo = repo;
         }
 
-        public async Task<Result<IReadOnlyList<HelpRequestListItemDto>>> Handle(
-        GetHelpRequestsPageQuery request,
-        CancellationToken ct)
+        public async Task<Result<IReadOnlyList<HelpRequestListItemDto>>> Handle(GetHelpRequestsPageQuery request, CancellationToken ct)
         {
             if (request.Page < 1)
             {
@@ -30,9 +28,9 @@ namespace server.Application.Handlers.GetHelpRequests
             }
 
             var items = await _repo.GetPageAsync(
+                ct,
                 request.Page,
-                request.PageSize,
-                ct);
+                request.PageSize);
 
             return Result<IReadOnlyList<HelpRequestListItemDto>>.Success(items);
         }
