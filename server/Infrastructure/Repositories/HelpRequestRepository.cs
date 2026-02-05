@@ -93,6 +93,31 @@ namespace server.Infrastructure.Repositories
                 throw;
             }
         }
+        public async Task<HelpRequest?> GetAggregateByIdAsync(CancellationToken ct,Guid id)
+        {
+            using var connection =
+                await _connectionFactory.CreateOpenConnectionAsync(ct);
+
+            const string sql = """
+                    SELECT 
+                        Id,
+                        CreatorId,
+                        Title,
+                        Description,
+                        Status,
+                        Latitude,
+                        Longitude,
+                        CreatedAtUtc
+                    FROM HelpRequests
+                    WHERE Id = @Id;
+                """;
+
+            return await connection
+                .QuerySingleOrDefaultAsync<HelpRequest>(
+                    sql,
+                    new { Id = id });
+        }
+
 
         public async Task<IReadOnlyList<HelpRequestListItemDto>> GetPageAsync(CancellationToken ct, int page, int pageSize = 10)
         {
@@ -169,6 +194,11 @@ namespace server.Infrastructure.Repositories
             {
                 ImageUrls = images.AsList()
             };
+        }
+
+        public Task UpdateStatusAsync(CancellationToken ct, Guid id, HelpRequestStatus status)
+        {
+            throw new NotImplementedException();
         }
     }
 }
