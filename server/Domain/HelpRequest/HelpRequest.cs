@@ -96,10 +96,14 @@ namespace server.Domain.HelpRequest
 
         public void MarkInProgress()
         {
-            if (Status != HelpRequestStatus.Open)
+            if (Status == HelpRequestStatus.Open || Status == HelpRequestStatus.Resolved)
+            {
+                Status = HelpRequestStatus.InProgress;
+            }
+            else
+            {
                 throw new ArgumentException("INVALID_STATUS_TRANSITION");
-
-            Status = HelpRequestStatus.InProgress;
+            }
         }
 
         public void Complete()

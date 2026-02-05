@@ -2,6 +2,8 @@
 using GraphQL.Types;
 using MediatR;
 using server.Application.Handlers.AddHelpRequest;
+using server.Application.Handlers.ChangeHelpRequestStatus;
+using server.Domain.HelpRequest;
 using server.Presentation.GraphQL.Extensions;
 using server.Presentation.GraphQL.Types;
 
@@ -46,6 +48,50 @@ namespace server.Presentation.GraphQL.Mutations
                     return new AddHelpRequestPayload(false, null, result.Error.Code, result.Error.Message);
                 }
             });
+
+            Field<ChangeHelpRequestStatusPayloadType>("changeHelpRequestStatus")
+            .Authorize()
+            .Arguments(
+                new QueryArgument<NonNullGraphType<IdGraphType>>
+                {
+                    Name = "helpRequestId"
+                },
+                new QueryArgument<NonNullGraphType<HelpRequestStatusEnumType>>
+                {
+                    Name = "status"
+                }
+            )
+            .ResolveAsync(async context =>
+            {
+                var userId = context.GetUserId();
+
+                var helpRequestId =
+                    context.GetArgument<Guid>("helpRequestId");
+
+                var status =
+                    context.GetArgument<HelpRequestStatus>("status");
+
+                var result = await mediator.Send(
+                    new ChangeHelpRequestStatusCommand(
+                        helpRequestId,
+                        status,
+                        userId));
+
+                if (!result.IsSuccess)
+                {
+                    return new ChangeHelpRequestStatusPayload(
+                        false,
+                        result.Error.Code,
+                        result.Error.Message);
+                }
+
+                return new ChangeHelpRequestStatusPayload(
+                    true,
+                    null,
+                    null);
+            });
+
+
         }
     }
 }
