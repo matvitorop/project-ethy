@@ -120,8 +120,11 @@ namespace server.Infrastructure.Repositories
                 """;
 
             var result = await connection.QueryAsync<HelpRequestListItemDto>(
-                sql,
-                new { Offset = offset, PageSize = pageSize });
+                new CommandDefinition(
+                    sql,
+                    new { Offset = offset, PageSize = pageSize },
+                    cancellationToken: ct
+                    ));
 
             return result.AsList();
         }
