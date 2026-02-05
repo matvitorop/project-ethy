@@ -196,9 +196,31 @@ namespace server.Infrastructure.Repositories
             };
         }
 
-        public Task UpdateStatusAsync(CancellationToken ct, Guid id, HelpRequestStatus status)
+        public async Task UpdateStatusAsync(CancellationToken ct, Guid id, HelpRequestStatus status)
         {
-            throw new NotImplementedException();
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
+
+            const string sql = """
+                UPDATE HelpRequests
+                SET Status = @Status
+                WHERE Id = @Id;
+            """;
+
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(
+                    sql,
+                    new
+                    {
+                        Id = id,
+                        Status = status
+                    },
+                    cancellationToken: ct));
+
+            if (affectedRows == 0)
+            {
+                throw new InvalidOperationException(
+                    $"HelpRequest with id '{id}' not found.");
+            }
         }
     }
 }

@@ -22,15 +22,19 @@ namespace server.Application.Handlers.ChangeHelpRequestStatus
             CancellationToken ct)
         {
             var helpRequest = await _repository
-                .GetHelpRequestById(ct, request.HelpRequestId);
+            .GetAggregateByIdAsync(ct, request.HelpRequestId);
 
             if (helpRequest is null)
+            {
                 return Result.Failure(
-                    new Error("Help request not found", "HelpRequest.NotFound"));
+                    new Error("Help request not found", "HelpRequest.NOT_FOUND"));
+            }
 
             if (helpRequest.CreatorId != request.CurrentUserId)
+            {
                 return Result.Failure(
                     new Error("Forbidden", "HelpRequest.FORBIDDEN"));
+            }
 
             try
             {
@@ -41,19 +45,23 @@ namespace server.Application.Handlers.ChangeHelpRequestStatus
                 return Result.Failure(
                     new Error(
                         "Invalid status transition",
-                        "INVALID_STATUS_TRANSITION"));
+                        "HelpRequest.INVALID_STATUS_TRANSITION"));
             }
 
-            await _repository.UpdateAsync(helpRequest, ct);
+            await _repository.UpdateStatusAsync(
+                ct,
+                helpRequest.Id,
+                helpRequest.Status
+                );
 
             return Result.Success();
         }
 
         private static void ApplyStatus(
             HelpRequest helpRequest,
-            HelpRequestStatus status)
+            HelpRequestStatus newStatus)
         {
-            switch (status)
+            switch (newStatus)
             {
                 case HelpRequestStatus.InProgress:
                     helpRequest.MarkInProgress();
