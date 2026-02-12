@@ -27,7 +27,7 @@ namespace server.Application.Handlers.ChangeHelpRequestStatus
             if (helpRequest is null)
             {
                 return Result.Failure(
-                    new Error("Help request not found", "HelpRequest.NOT_FOUND"));
+                    new Error("Help request not found", "HelpRequest.HR_STATUS_NOT_FOUND"));
             }
 
             if (helpRequest.CreatorId != request.CurrentUserId)

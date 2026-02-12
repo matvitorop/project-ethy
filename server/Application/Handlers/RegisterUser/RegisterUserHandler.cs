@@ -31,8 +31,8 @@ namespace server.Application.Handlers.RegisterUser
             if (existing != null)
             {
                 return Result<string>.Failure(new Error(
-                        "USER_EXISTS",
-                        "User with this email already exists"
+                        "Wrong email or password. Please try again.",
+                        "User.USER_ALREADY_EXISTS"
                     )
                 );
             }

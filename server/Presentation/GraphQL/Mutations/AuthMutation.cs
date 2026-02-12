@@ -4,6 +4,7 @@ using MediatR;
 using server.Application.Handlers.LoginUser;
 using server.Application.Handlers.RegisterUser;
 using server.Presentation.GraphQL.Helpers;
+using server.Presentation.GraphQL.Types.ErrorTypes;
 using server.Presentation.GraphQL.Types.LoginTypes;
 using server.Presentation.GraphQL.Types.LogoutTypes;
 using server.Presentation.GraphQL.Types.RegistartionTypes;
@@ -53,11 +54,11 @@ namespace server.Presentation.GraphQL.Mutations
                     
                     if (result.IsSuccess)
                     {
-                        return new RegisterPayload(result.IsSuccess, result.Value, null, null);
+                        return new RegisterPayload(result.Value, null);
                     }
                     else
                     {
-                        return new RegisterPayload(false, null, result.Error.Code, result.Error.Message);
+                        return new RegisterPayload(null, new ErrorPayload(result.Error.Code, result.Error.Message));
                     }
                 });
 
@@ -98,11 +99,11 @@ namespace server.Presentation.GraphQL.Mutations
 
                     if (result.IsSuccess)
                     {
-                        return new LoginPayload(result.IsSuccess, result.Value, null, null);
+                        return new LoginPayload(result.Value, null);
                     }
                     else
                     {
-                        return new LoginPayload(false, null, result.Error.Code, result.Error.Message);
+                        return new LoginPayload(null, new ErrorPayload(result.Error.Code, result.Error.Message));
                     }
 
                 });

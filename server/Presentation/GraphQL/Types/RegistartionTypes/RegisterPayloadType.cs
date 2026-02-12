@@ -1,4 +1,5 @@
 ﻿using GraphQL.Types;
+using server.Presentation.GraphQL.Types.ErrorTypes;
 
 namespace server.Presentation.GraphQL.Types.RegistartionTypes
 {
@@ -6,10 +7,9 @@ namespace server.Presentation.GraphQL.Types.RegistartionTypes
     {
         public RegisterPayloadType()
         {
-            Field(x => x.Success);
             Field(x => x.Token, nullable: true);
-            Field(x => x.ErrorCode, nullable: true);
-            Field(x => x.ErrorMessage, nullable: true);
+            Field<ErrorPayloadType>("error")
+                .Resolve(context => context.Source.Error);
         }
     }
 }

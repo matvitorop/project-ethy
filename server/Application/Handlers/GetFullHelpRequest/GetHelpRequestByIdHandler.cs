@@ -24,7 +24,7 @@ namespace server.Application.Handlers.GetFullHelpRequest
                 return Result<HelpRequestDetailDto>.Failure(
                     new Error(
                         "Help request not found.",
-                        "HelpRequest.NotFound"
+                        "HelpRequest.REQUEST_NOT_FOUND"
                     )
                 );
             }

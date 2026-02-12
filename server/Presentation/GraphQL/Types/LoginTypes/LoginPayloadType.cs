@@ -1,4 +1,5 @@
 ﻿using GraphQL.Types;
+using server.Presentation.GraphQL.Types.ErrorTypes;
 
 namespace server.Presentation.GraphQL.Types.LoginTypes
 {
@@ -6,10 +7,10 @@ namespace server.Presentation.GraphQL.Types.LoginTypes
     {
         public LoginPayloadType()
         {
-            Field(x => x.Success);
             Field(x => x.Token, nullable: true);
-            Field(x => x.ErrorCode, nullable: true);
-            Field(x => x.ErrorMessage, nullable: true);
+            
+            Field<ErrorPayloadType>("error")
+                .Resolve(context => context.Source.Error);
         }
     }
 }

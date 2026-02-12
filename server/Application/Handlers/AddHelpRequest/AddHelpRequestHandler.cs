@@ -54,22 +54,22 @@ namespace server.Application.Handlers.AddHelpRequest
             catch (FileNotFoundException)
             {
                 return Result.Failure<Guid>(new Error(
-                    "Attachments.Expired",
-                    "Images session expired or files not found. Please upload images again."
+                    "Images session expired or files not found. Please upload images again.",
+                    "HelpRequest.IMAGE_WAS_EXPIRED"
                 ));
             }
             catch (ArgumentException ex)
             {
                 return Result.Failure<Guid>(new Error(
-                    "HelpRequest.Validation",
-                    ex.Message
+                    ex.Message,
+                    "HelpRequest.CREATION_VALIDATION"
                 ));
             }
             catch (Exception ex)
             {
                 return Result.Failure<Guid>(new Error(
-                   "HelpRequest.GeneralError",
-                   "An unexpected error occurred."
+                   "An unexpected error occurred.",
+                   "HelpRequest.GENERAL_ERROR"
                 ));
             }
         }

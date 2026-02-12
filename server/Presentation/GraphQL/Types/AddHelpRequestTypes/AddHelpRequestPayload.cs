@@ -1,8 +1,9 @@
-﻿namespace server.Presentation.GraphQL.Types.AddHelpRequestTypes
+﻿using server.Presentation.GraphQL.Types.ErrorTypes;
+
+namespace server.Presentation.GraphQL.Types.AddHelpRequestTypes
 {
     public record AddHelpRequestPayload(
-        bool Success,
         Guid? HelpRequestId,
-        string? ErrorCode,
-        string? ErrorMessage);
+        ErrorPayload? Error
+    );
 }
