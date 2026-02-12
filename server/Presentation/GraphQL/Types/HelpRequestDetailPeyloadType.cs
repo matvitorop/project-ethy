@@ -6,13 +6,11 @@ namespace server.Presentation.GraphQL.Types
     {
         public HelpRequestDetailPeyloadType()
         {
-            Field(x => x.IsSuccess);
-
             Field<HelpRequestDetailType>("item")
                 .Resolve(context => context.Source.Item);
 
-            Field(x => x.ErrorCode, nullable: true);
-            Field(x => x.ErrorMessage, nullable: true);
+            Field<ErrorPayloadType>("error")
+                .Resolve(context => context.Source.Error);
         }
     }
 }
