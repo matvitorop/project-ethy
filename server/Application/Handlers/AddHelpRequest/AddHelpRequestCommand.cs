@@ -9,5 +9,5 @@ namespace server.Application.Handlers.AddHelpRequest
         string Description,
         double? Latitude,
         double? Longitude,
-        IReadOnlyList<string> ImageUrls) : IRequest<Result<Guid>>;
+        IReadOnlyList<string> ImageUrls) : IRequest<Result<AddHelpRequestResult>>;
 }

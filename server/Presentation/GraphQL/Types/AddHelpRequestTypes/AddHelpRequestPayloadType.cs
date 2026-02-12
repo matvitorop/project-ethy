@@ -9,8 +9,9 @@ namespace server.Presentation.GraphQL.Types.AddHelpRequestTypes
     {
         public AddHelpRequestPayloadType()
         {
-            Field(x => x.HelpRequestId, nullable: true).Description("The ID of the created request.");
-            
+            Field<AddHelpRequestType>("data")
+                .Resolve(ctx => ctx.Source.Data);
+
             Field<ErrorPayloadType>("error")
                 .Resolve(ctx => ctx.Source.Error);
         }

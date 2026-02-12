@@ -1,9 +1,10 @@
-﻿using server.Presentation.GraphQL.Types.ErrorTypes;
+﻿using server.Application.Handlers.AddHelpRequest;
+using server.Presentation.GraphQL.Types.ErrorTypes;
 
 namespace server.Presentation.GraphQL.Types.AddHelpRequestTypes
 {
     public record AddHelpRequestPayload(
-        Guid? HelpRequestId,
+        AddHelpRequestResult? Data,
         ErrorPayload? Error
     );
 }

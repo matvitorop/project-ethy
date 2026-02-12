@@ -7,6 +7,9 @@ namespace server.Presentation.GraphQL.Types.ChangeHRStatusTypes
     {
         public ChangeHelpRequestStatusPayloadType()
         {
+            Field<ChangeHelpRequestStatusResultType>("data")
+                .Resolve(ctx => ctx.Source.Data);
+
             Field<ErrorPayloadType>("error")
                 .Resolve(ctx => ctx.Source.Error);
         }

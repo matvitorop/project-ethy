@@ -8,5 +8,5 @@ namespace server.Application.Handlers.ChangeHelpRequestStatus
         Guid HelpRequestId,
         HelpRequestStatus NewStatus,
         Guid CurrentUserId
-    ) : IRequest<Result>;
+    ) : IRequest<Result<ChangeHelpRequestStatusResult>>;
 }
