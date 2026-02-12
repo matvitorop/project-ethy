@@ -59,17 +59,16 @@ namespace server.Presentation.GraphQL.Queries
                 if (!result.IsSuccess)
                 {
                     return new HelpRequestDetailPayload(
-                        false,
                         null,
-                        result.Error.Code,
-                        result.Error.Message
-                    );
+                        new ErrorPayload(
+                            result.Error.Code,
+                            result.Error.Message
+                        )
+                        );
                 }
 
                 return new HelpRequestDetailPayload(
-                    true,
                     result.Value,
-                    null,
                     null
                 );
             });
