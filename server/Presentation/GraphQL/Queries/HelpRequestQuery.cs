@@ -3,6 +3,7 @@ using GraphQL.Types;
 using MediatR;
 using server.Application.Handlers.GetActiveRequests;
 using server.Application.Handlers.GetFullHelpRequest;
+using server.Presentation.GraphQL.Extensions;
 using server.Presentation.GraphQL.Types;
 using server.Presentation.GraphQL.Types.ErrorTypes;
 using server.Presentation.GraphQL.Types.GetHRDetailTypes;
@@ -28,21 +29,8 @@ namespace server.Presentation.GraphQL.Queries
                         context.GetArgument<int>("pageSize")
                     ));
 
-                if (!result.IsSuccess)
-                {
-                    return new HelpRequestsPagePayload(
-                        null,
-                        new ErrorPayload(
-                            result.Error.Code,
-                            result.Error.Message
-                        )
-                    );
-                }
 
-                return new HelpRequestsPagePayload(
-                    result.Value,
-                    null
-                );
+                return result.ToPayload((value, error) => new HelpRequestsPagePayload(value, error));
             });
 
             Field<HelpRequestDetailPeyloadType>("helpRequestById")
@@ -58,21 +46,7 @@ namespace server.Presentation.GraphQL.Queries
                     )
                 );
 
-                if (!result.IsSuccess)
-                {
-                    return new HelpRequestDetailPayload(
-                        null,
-                        new ErrorPayload(
-                            result.Error.Code,
-                            result.Error.Message
-                        )
-                        );
-                }
-
-                return new HelpRequestDetailPayload(
-                    result.Value,
-                    null
-                );
+                return result.ToPayload((value, error) => new HelpRequestDetailPayload(value, error));
             });
         }
     }

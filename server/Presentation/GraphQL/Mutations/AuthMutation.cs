@@ -3,6 +3,7 @@ using GraphQL.Types;
 using MediatR;
 using server.Application.Handlers.LoginUser;
 using server.Application.Handlers.RegisterUser;
+using server.Presentation.GraphQL.Extensions;
 using server.Presentation.GraphQL.Helpers;
 using server.Presentation.GraphQL.Types.ErrorTypes;
 using server.Presentation.GraphQL.Types.LoginTypes;
@@ -21,7 +22,7 @@ namespace server.Presentation.GraphQL.Mutations
                     new QueryArgument<NonNullGraphType<StringGraphType>> { Name = "email" },
                     new QueryArgument<NonNullGraphType<StringGraphType>> { Name = "password" }
                 ))
-                .ResolveAsync (async context =>
+                .ResolveAsync(async context =>
                 {
                     var start = DateTime.UtcNow;
 
@@ -51,15 +52,10 @@ namespace server.Presentation.GraphQL.Mutations
                     }
 
                     await LoginDelayHelper.EnsureMinDelay(start, 1500);
-                    
-                    if (result.IsSuccess)
-                    {
-                        return new RegisterPayload(result.Value, null);
-                    }
-                    else
-                    {
-                        return new RegisterPayload(null, new ErrorPayload(result.Error.Code, result.Error.Message));
-                    }
+
+                    return result.ToPayload(
+                        (value, error) => new RegisterPayload(value, error)
+                    );
                 });
 
             Field<NonNullGraphType<LoginPayloadType>>("login")
@@ -97,15 +93,9 @@ namespace server.Presentation.GraphQL.Mutations
 
                     await LoginDelayHelper.EnsureMinDelay(start, 1500);
 
-                    if (result.IsSuccess)
-                    {
-                        return new LoginPayload(result.Value, null);
-                    }
-                    else
-                    {
-                        return new LoginPayload(null, new ErrorPayload(result.Error.Code, result.Error.Message));
-                    }
-
+                    return result.ToPayload(
+                        (value, error) => new LoginPayload(value, error)
+                    );
                 });
 
             Field<NonNullGraphType<LogoutPayloadType>>("logout")
@@ -117,18 +107,20 @@ namespace server.Presentation.GraphQL.Mutations
                     {
                         userContext.HttpContext.Response.Cookies.Delete("jwt");
 
-                        return new
-                        {
-                            success = true,
-                            message = "Logout successful"
-                        };
+                        return new LogoutPayload(
+                            "Logout successful",
+                            null
+                        );
                     }
 
-                    return new
-                    {
-                        success = false,
-                        message = "Logout failed"
-                    };
+                    return new LogoutPayload(
+                        null,
+                        new ErrorPayload(
+                            "Auth.LOGOUT_FAILED",
+                            "Logout failed"
+                        )
+                    );
+
                 });
 
         }

@@ -41,14 +41,7 @@ namespace server.Presentation.GraphQL.Mutations
 
                 var result = await mediator.Send(command);
 
-                if (result.IsSuccess)
-                {
-                    return new AddHelpRequestPayload(result.Value, null);
-                }
-                else
-                {
-                    return new AddHelpRequestPayload(null, new ErrorPayload(result.Error.Code, result.Error.Message));
-                }
+                return result.ToPayload((value, error) => new AddHelpRequestPayload(value, error));
             });
 
             Field<ChangeHelpRequestStatusPayloadType>("changeHelpRequestStatus")
@@ -79,17 +72,7 @@ namespace server.Presentation.GraphQL.Mutations
                         status,
                         userId));
 
-                if (!result.IsSuccess)
-                {
-                    return new ChangeHelpRequestStatusPayload(
-                        new ErrorPayload(
-                            result.Error.Code,
-                            result.Error.Message
-                        )
-                    );
-                }
-
-                return new ChangeHelpRequestStatusPayload(null);
+                return result.ToPayload(error => new ChangeHelpRequestStatusPayload(error));
             });
 
 

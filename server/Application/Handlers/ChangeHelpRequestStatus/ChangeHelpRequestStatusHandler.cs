@@ -1,6 +1,8 @@
 ﻿using Azure.Core;
+using GraphQL;
 using MediatR;
 using server.Application.IRepositories;
+using server.Domain.Exceptions;
 using server.Domain.HelpRequest;
 using server.Domain.Primitives;
 
@@ -40,12 +42,12 @@ namespace server.Application.Handlers.ChangeHelpRequestStatus
             {
                 ApplyStatus(helpRequest, request.NewStatus);
             }
-            catch (InvalidOperationException)
+            catch (DomainException ex)
             {
                 return Result.Failure(
                     new Error(
-                        "Invalid status transition",
-                        "HelpRequest.INVALID_STATUS_TRANSITION"));
+                        ex.Message,
+                        ex.Code));
             }
 
             await _repository.UpdateStatusAsync(
