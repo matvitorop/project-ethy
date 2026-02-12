@@ -17,6 +17,12 @@ namespace server.Presentation.GraphQL.Types.AddHelpRequestTypes
 
             Field<StringGraphType>("description")
                 .Resolve(ctx => ctx.Source?.Description);
+            
+            Field<GuidGraphType>("creatorId")
+                .Resolve(ctx => ctx.Source?.CreatorId);
+            
+            Field<DateTimeGraphType>("createdAtUtc")
+                .Resolve(ctx => ctx.Source?.CreatedAtUtc);
 
             Field<FloatGraphType>("latitude")
                 .Resolve(ctx => ctx.Source?.Latitude);

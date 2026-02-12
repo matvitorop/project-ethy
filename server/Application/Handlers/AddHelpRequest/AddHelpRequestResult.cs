@@ -6,6 +6,8 @@ namespace server.Application.Handlers.AddHelpRequest
         Guid Id,
         string Title,
         string Description,
+        Guid CreatorId,
+        DateTime CreatedAtUtc,
         HelpRequestStatus Status,
         double? Latitude,
         double? Longitude,

@@ -56,6 +56,8 @@ namespace server.Application.Handlers.AddHelpRequest
                     helpRequest.Id,
                     helpRequest.Title,
                     helpRequest.Description,
+                    helpRequest.CreatorId,
+                    helpRequest.CreatedAtUtc,
                     helpRequest.Status,
                     location?.Latitude,
                     location?.Longitude,
