@@ -4,7 +4,9 @@ using MediatR;
 using server.Application.Handlers.LoginUser;
 using server.Application.Handlers.RegisterUser;
 using server.Presentation.GraphQL.Helpers;
-using server.Presentation.GraphQL.Types;
+using server.Presentation.GraphQL.Types.LoginTypes;
+using server.Presentation.GraphQL.Types.LogoutTypes;
+using server.Presentation.GraphQL.Types.RegistartionTypes;
 
 namespace server.Presentation.GraphQL.Mutations
 {

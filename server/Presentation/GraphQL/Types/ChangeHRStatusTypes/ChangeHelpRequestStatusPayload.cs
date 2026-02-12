@@ -1,4 +1,4 @@
-﻿namespace server.Presentation.GraphQL.Types
+﻿namespace server.Presentation.GraphQL.Types.ChangeHRStatusTypes
 {
     public sealed record ChangeHelpRequestStatusPayload(
         bool IsSuccess,

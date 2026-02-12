@@ -4,6 +4,9 @@ using MediatR;
 using server.Application.Handlers.GetActiveRequests;
 using server.Application.Handlers.GetFullHelpRequest;
 using server.Presentation.GraphQL.Types;
+using server.Presentation.GraphQL.Types.ErrorTypes;
+using server.Presentation.GraphQL.Types.GetHRDetailTypes;
+using server.Presentation.GraphQL.Types.GetHRListTypes;
 
 namespace server.Presentation.GraphQL.Queries
 {

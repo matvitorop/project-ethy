@@ -1,7 +1,7 @@
 ﻿using GraphQL.Types;
 using server.Application.Handlers.GetFullHelpRequest;
 
-namespace server.Presentation.GraphQL.Types
+namespace server.Presentation.GraphQL.Types.GetHRDetailTypes
 {
     public class HelpRequestDetailType : ObjectGraphType<HelpRequestDetailDto>
     {

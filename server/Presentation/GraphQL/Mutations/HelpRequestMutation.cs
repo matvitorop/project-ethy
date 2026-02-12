@@ -5,7 +5,8 @@ using server.Application.Handlers.AddHelpRequest;
 using server.Application.Handlers.ChangeHelpRequestStatus;
 using server.Domain.HelpRequest;
 using server.Presentation.GraphQL.Extensions;
-using server.Presentation.GraphQL.Types;
+using server.Presentation.GraphQL.Types.AddHelpRequestTypes;
+using server.Presentation.GraphQL.Types.ChangeHRStatusTypes;
 
 namespace server.Presentation.GraphQL.Mutations
 {

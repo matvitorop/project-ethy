@@ -1,7 +1,7 @@
 ﻿using GraphQL.Types;
 using server.Application.Handlers.GetActiveRequests;
 
-namespace server.Presentation.GraphQL.Types
+namespace server.Presentation.GraphQL.Types.GetHRListTypes
 {
     public class HelpRequestListItemType
     : ObjectGraphType<HelpRequestListItemDto>
