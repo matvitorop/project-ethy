@@ -1,4 +1,5 @@
 ﻿using GraphQL.Types;
+using server.Presentation.GraphQL.Types.ErrorTypes;
 
 namespace server.Presentation.GraphQL.Types.ChangeHRStatusTypes
 {
@@ -6,9 +7,8 @@ namespace server.Presentation.GraphQL.Types.ChangeHRStatusTypes
     {
         public ChangeHelpRequestStatusPayloadType()
         {
-            Field(x => x.IsSuccess);
-            Field(x => x.ErrorCode, nullable: true);
-            Field(x => x.ErrorMessage, nullable: true);
+            Field<ErrorPayloadType>("error")
+                .Resolve(ctx => ctx.Source.Error);
         }
     }
 }

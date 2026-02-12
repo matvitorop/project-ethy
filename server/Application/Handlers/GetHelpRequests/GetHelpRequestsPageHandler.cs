@@ -22,7 +22,7 @@ namespace server.Application.Handlers.GetHelpRequests
                 return Result<IReadOnlyList<HelpRequestListItemDto>>.Failure(
                     new Error(
                         "Page number must be greater than zero.",
-                        "Pagination.InvalidPage"
+                        "HelpRequest.INVALID_PAGE"
                     )
                 );
             }

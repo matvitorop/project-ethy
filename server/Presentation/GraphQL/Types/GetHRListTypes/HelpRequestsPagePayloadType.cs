@@ -1,4 +1,5 @@
 ﻿using GraphQL.Types;
+using server.Presentation.GraphQL.Types.ErrorTypes;
 
 namespace server.Presentation.GraphQL.Types.GetHRListTypes
 {
@@ -7,13 +8,11 @@ namespace server.Presentation.GraphQL.Types.GetHRListTypes
     {
         public HelpRequestsPagePayloadType()
         {
-            Field(x => x.IsSuccess);
-            Field<ListGraphType<HelpRequestListItemType>>(
-                "items",
-                resolve: ctx => ctx.Source.Items
-            );
-            Field(x => x.ErrorCode, nullable: true);
-            Field(x => x.ErrorMessage, nullable: true);
+            Field<ListGraphType<HelpRequestListItemType>>("items")
+                .Resolve(ctx => ctx.Source.Items);
+
+            Field<ErrorPayloadType>("error")
+                .Resolve(ctx => ctx.Source.Error);
         }
     }
 }

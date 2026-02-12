@@ -1,8 +1,8 @@
-﻿namespace server.Presentation.GraphQL.Types.ChangeHRStatusTypes
+﻿using server.Presentation.GraphQL.Types.ErrorTypes;
+
+namespace server.Presentation.GraphQL.Types.ChangeHRStatusTypes
 {
     public sealed record ChangeHelpRequestStatusPayload(
-        bool IsSuccess,
-        string? ErrorCode,
-        string? ErrorMessage
+        ErrorPayload? Error
     );
 }

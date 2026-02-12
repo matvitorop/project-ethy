@@ -7,6 +7,7 @@ using server.Domain.HelpRequest;
 using server.Presentation.GraphQL.Extensions;
 using server.Presentation.GraphQL.Types.AddHelpRequestTypes;
 using server.Presentation.GraphQL.Types.ChangeHRStatusTypes;
+using server.Presentation.GraphQL.Types.ErrorTypes;
 
 namespace server.Presentation.GraphQL.Mutations
 {
@@ -42,11 +43,11 @@ namespace server.Presentation.GraphQL.Mutations
 
                 if (result.IsSuccess)
                 {
-                    return new AddHelpRequestPayload(true, result.Value, null, null);
+                    return new AddHelpRequestPayload(result.Value, null);
                 }
                 else
                 {
-                    return new AddHelpRequestPayload(false, null, result.Error.Code, result.Error.Message);
+                    return new AddHelpRequestPayload(null, new ErrorPayload(result.Error.Code, result.Error.Message));
                 }
             });
 
@@ -81,15 +82,14 @@ namespace server.Presentation.GraphQL.Mutations
                 if (!result.IsSuccess)
                 {
                     return new ChangeHelpRequestStatusPayload(
-                        false,
-                        result.Error.Code,
-                        result.Error.Message);
+                        new ErrorPayload(
+                            result.Error.Code,
+                            result.Error.Message
+                        )
+                    );
                 }
 
-                return new ChangeHelpRequestStatusPayload(
-                    true,
-                    null,
-                    null);
+                return new ChangeHelpRequestStatusPayload(null);
             });
 
 

@@ -31,7 +31,7 @@ namespace server.Application.Handlers.LoginUser
             {
                 return Result<string>.Failure(new Error(
                     "Invalid email or password",
-                    "INVALID_CREDENTIALS"));
+                    "Login.EMPTY_CREDENTIALS"));
             }
 
             var valid = _passwordHasher.Verify(
@@ -44,7 +44,7 @@ namespace server.Application.Handlers.LoginUser
             {
                 return Result<string>.Failure(new Error(
                     "Invalid email or password",
-                    "INVALID_CREDENTIALS"));
+                    "Login.INVALID_CREDENTIALS"));
             }
 
             var token = _tokenService.GenerateAccessToken(user);
