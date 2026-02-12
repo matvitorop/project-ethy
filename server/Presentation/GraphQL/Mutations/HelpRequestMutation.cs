@@ -72,7 +72,7 @@ namespace server.Presentation.GraphQL.Mutations
                         status,
                         userId));
 
-                return result.ToPayload(error => new ChangeHelpRequestStatusPayload(error));
+                return result.ToPayload((value, error) => new ChangeHelpRequestStatusPayload(value, error));
             });
 
 

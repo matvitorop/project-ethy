@@ -9,7 +9,7 @@ using server.Domain.Primitives;
 namespace server.Application.Handlers.ChangeHelpRequestStatus
 {
     public sealed class ChangeHelpRequestStatusHandler
-    : IRequestHandler<ChangeHelpRequestStatusCommand, Result>
+    : IRequestHandler<ChangeHelpRequestStatusCommand, Result<ChangeHelpRequestStatusResult>>
     {
         private readonly IHelpRequestRepository _repository;
 
@@ -19,7 +19,7 @@ namespace server.Application.Handlers.ChangeHelpRequestStatus
             _repository = repository;
         }
 
-        public async Task<Result> Handle(
+        public async Task<Result<ChangeHelpRequestStatusResult>> Handle(
             ChangeHelpRequestStatusCommand request,
             CancellationToken ct)
         {
@@ -28,13 +28,13 @@ namespace server.Application.Handlers.ChangeHelpRequestStatus
 
             if (helpRequest is null)
             {
-                return Result.Failure(
+                return Result<ChangeHelpRequestStatusResult>.Failure(
                     new Error("Help request not found", "HelpRequest.HR_STATUS_NOT_FOUND"));
             }
 
             if (helpRequest.CreatorId != request.CurrentUserId)
             {
-                return Result.Failure(
+                return Result<ChangeHelpRequestStatusResult>.Failure(
                     new Error("Forbidden", "HelpRequest.FORBIDDEN"));
             }
 
@@ -44,7 +44,7 @@ namespace server.Application.Handlers.ChangeHelpRequestStatus
             }
             catch (DomainException ex)
             {
-                return Result.Failure(
+                return Result<ChangeHelpRequestStatusResult>.Failure(
                     new Error(
                         ex.Message,
                         ex.Code));
@@ -56,7 +56,12 @@ namespace server.Application.Handlers.ChangeHelpRequestStatus
                 helpRequest.Status
                 );
 
-            return Result.Success();
+            return Result<ChangeHelpRequestStatusResult>.Success(
+                new ChangeHelpRequestStatusResult(
+                    helpRequest.Id,
+                    helpRequest.Status
+                )
+            );
         }
 
         private static void ApplyStatus(
