@@ -21,7 +21,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Domain\Exceptions\" />
     <Folder Include="wwwroot\" />
     <Folder Include="wwwroot\uploads\help-requests\" />
   </ItemGroup>

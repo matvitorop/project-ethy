@@ -1,4 +1,5 @@
-﻿using static System.Net.Mime.MediaTypeNames;
+﻿using server.Domain.Exceptions;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace server.Domain.HelpRequest
 {
@@ -52,10 +53,10 @@ namespace server.Domain.HelpRequest
         private void SetTitle(string title)
         {
             if (string.IsNullOrWhiteSpace(title))
-                throw new ArgumentException("TITLE_REQUIRED");
+                throw new DomainException("Title is empty","HelpRequest.TITLE_REQUIRED");
 
             if (title.Length > 200)
-                throw new ArgumentOutOfRangeException("TITLE_TOO_LONG");
+                throw new DomainException("Title is too long", "HelpRequest.TITLE_TOO_LONG");
 
             Title = title;
         }
@@ -63,10 +64,10 @@ namespace server.Domain.HelpRequest
         private void SetDescription(string description)
         {
             if (string.IsNullOrWhiteSpace(description))
-                throw new ArgumentException("DESCRIPTION_REQUIRED");
+                throw new DomainException("Description is empty", "HelpRequest.DESCRIPTION_REQUIRED");
 
             if (description.Length > 4000)
-                throw new ArgumentOutOfRangeException("DESCRIPTION_TOO_LONG");
+                throw new DomainException("Title is too long", "HelpRequest.DESCRIPTION_TOO_LONG");
 
             Description = description;
         }
@@ -74,10 +75,10 @@ namespace server.Domain.HelpRequest
         public void AddImage(string url)
         {
             if (Status != HelpRequestStatus.Open)
-                throw new ArgumentException("CANNOT_ADD_IMAGE_IN_CURRENT_STATUS");
+                throw new DomainException("Wrong help request status for adding image", "HelpRequest.CANNOT_ADD_IMAGE_IN_CURRENT_STATUS");
 
             if (_images.Count >= 5)
-                throw new ArgumentOutOfRangeException("IMAGE_LIMIT_EXCEEDED");
+                throw new DomainException("Too many images to add", "HelpRequest.IMAGE_LIMIT_EXCEEDED");
 
             _images.Add(new RequestImage(_images.Count, url));
         }
@@ -86,7 +87,7 @@ namespace server.Domain.HelpRequest
         {
             var image = _images.FirstOrDefault(i => i.Order == order);
             if (image == null)
-                throw new ArgumentException("IMAGE_NOT_FOUND");
+                throw new DomainException("Image doesnt exist or missing", "HelpRequest.IMAGE_NOT_FOUND");
 
             _images.Remove(image);
 
@@ -102,14 +103,14 @@ namespace server.Domain.HelpRequest
             }
             else
             {
-                throw new ArgumentException("INVALID_STATUS_TRANSITION");
+                throw new DomainException("Wrong status for transitioning", "HelpRequest.INVALID_STATUS_TRANSITION_IN_PROGRESS");
             }
         }
 
         public void Complete()
         {
             if (Status != HelpRequestStatus.InProgress)
-                throw new ArgumentException("INVALID_STATUS_TRANSITION");
+                throw new DomainException("Wrong status for transitioning", "HelpRequest.INVALID_STATUS_TRANSITION_COMPLETE");
 
             Status = HelpRequestStatus.Resolved;
         }
@@ -117,7 +118,7 @@ namespace server.Domain.HelpRequest
         public void Cancel()
         {
             if (Status is HelpRequestStatus.Resolved or HelpRequestStatus.Cancelled)
-                throw new ArgumentException("INVALID_STATUS_TRANSITION");
+                throw new DomainException("Wrong status for transitioning", "HelpRequest.INVALID_STATUS_TRANSITION_CANCEL");
 
             Status = HelpRequestStatus.Cancelled;
         }
