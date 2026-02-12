@@ -1,4 +1,4 @@
-﻿namespace server.Presentation.GraphQL.Types
+﻿namespace server.Presentation.GraphQL.Types.ErrorTypes
 {
     public sealed record ErrorPayload(
         string Code,

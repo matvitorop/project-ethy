@@ -1,8 +1,9 @@
-﻿namespace server.Presentation.GraphQL.Types
+﻿namespace server.Presentation.GraphQL.Types.RegistartionTypes
 {
-    public record LoginPayload(
+    public record RegisterPayload(
         bool Success,
         string? Token,
         string? ErrorCode,
         string? ErrorMessage);
+
 }

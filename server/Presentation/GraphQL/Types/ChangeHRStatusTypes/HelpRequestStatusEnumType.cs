@@ -1,7 +1,7 @@
 ﻿using GraphQL.Types;
 using server.Domain.HelpRequest;
 
-namespace server.Presentation.GraphQL.Types
+namespace server.Presentation.GraphQL.Types.ChangeHRStatusTypes
 {
     public sealed class HelpRequestStatusEnumType
     : EnumerationGraphType<HelpRequestStatus>

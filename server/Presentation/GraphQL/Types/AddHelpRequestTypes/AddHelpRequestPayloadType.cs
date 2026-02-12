@@ -1,7 +1,7 @@
 ﻿using GraphQL.Types;
 using server.Application.Handlers.AddHelpRequest;
 
-namespace server.Presentation.GraphQL.Types
+namespace server.Presentation.GraphQL.Types.AddHelpRequestTypes
 {
     public class AddHelpRequestPayloadType
     : ObjectGraphType<AddHelpRequestPayload>

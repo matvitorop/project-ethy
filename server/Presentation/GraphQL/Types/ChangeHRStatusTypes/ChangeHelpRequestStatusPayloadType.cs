@@ -1,6 +1,6 @@
 ﻿using GraphQL.Types;
 
-namespace server.Presentation.GraphQL.Types
+namespace server.Presentation.GraphQL.Types.ChangeHRStatusTypes
 {
     public class ChangeHelpRequestStatusPayloadType : ObjectGraphType<ChangeHelpRequestStatusPayload>
     {

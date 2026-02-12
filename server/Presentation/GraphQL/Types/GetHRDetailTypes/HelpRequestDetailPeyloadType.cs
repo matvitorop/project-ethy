@@ -1,6 +1,7 @@
 ﻿using GraphQL.Types;
+using server.Presentation.GraphQL.Types.ErrorTypes;
 
-namespace server.Presentation.GraphQL.Types
+namespace server.Presentation.GraphQL.Types.GetHRDetailTypes
 {
     public class HelpRequestDetailPeyloadType : ObjectGraphType<HelpRequestDetailPayload>
     {

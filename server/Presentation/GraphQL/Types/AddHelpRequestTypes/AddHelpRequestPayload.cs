@@ -1,4 +1,4 @@
-﻿namespace server.Presentation.GraphQL.Types
+﻿namespace server.Presentation.GraphQL.Types.AddHelpRequestTypes
 {
     public record AddHelpRequestPayload(
         bool Success,
