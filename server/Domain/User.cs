@@ -14,6 +14,8 @@
         public string PasswordHash { get; set; }
         public string PasswordSalt { get; set; }
         public UserRole Role { get; private set; }
+        public DateTime RegisteredAtUtc { get; private set; }
+        public bool HasActiveRequestLimit { get; private set; }
 
         private User() { }
 
@@ -25,6 +27,15 @@
             PasswordHash = passwordHash;
             PasswordSalt = passwordSalt;
             Role = role;
+
+            RegisteredAtUtc = DateTime.UtcNow;
+            HasActiveRequestLimit = true;
+
         }
+        public void RemoveActiveRequestLimit()
+        {
+            HasActiveRequestLimit = false;
+        }
+
     }
 }

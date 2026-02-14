@@ -118,7 +118,6 @@ namespace server.Infrastructure.Repositories
                     new { Id = id });
         }
 
-
         public async Task<IReadOnlyList<HelpRequestListItemDto>> GetPageAsync(CancellationToken ct, int page, int pageSize = 10)
         {
             using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);

@@ -25,6 +25,14 @@ namespace server.Presentation.GraphQL.Schemas
                 ResolvedType = provider.GetRequiredService<HelpRequestQuery>(),
                 Resolver = new FuncFieldResolver<object>(_ => new object())
             });
+
+            AddField(new FieldType
+            {
+                Name = "userQuery",
+                Description = "Queries for user queries operations",
+                ResolvedType = provider.GetRequiredService<UserQuery>(),
+                Resolver = new FuncFieldResolver<object>(_ => new object())
+            });
         }
     }
 }
