@@ -23,7 +23,6 @@ namespace server.Presentation.GraphQL.Queries
                         context.GetArgument<Guid>("userId")
                     ));
 
-
                 return result.ToPayload((value, error) => new GetUserStatisticPayload(value, error));
             });
         }

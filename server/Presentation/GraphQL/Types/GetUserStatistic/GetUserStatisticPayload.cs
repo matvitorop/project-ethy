@@ -7,5 +7,4 @@ namespace server.Presentation.GraphQL.Types.GetUserStatistic
         UserStatisticsDto? Data,
         ErrorPayload? Error
         );
-    
 }
