@@ -1,0 +1,39 @@
+name: Mirror to GitLab
+
+on:
+  push:
+    branches:
+      - "**"
+  workflow_dispatch:
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch all refs (branches + tags)
+        run: |
+          git fetch --prune --tags origin "+refs/heads/*:refs/remotes/origin/*"
+
+      - name: Add GitLab remote
+        env:
+          GITLAB_URL: ${{ secrets.GITLAB_URL }}
+          GITLAB_USERNAME: ${{ secrets.GITLAB_USERNAME }}
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+        run: |
+          git remote remove gitlab || true
+          git remote add gitlab "https://${GITLAB_USERNAME}:${GITLAB_TOKEN}@${GITLAB_URL#https://}"
+
+      - name: Fetch all refs (branches + tags)
+        run: |
+          git fetch --prune --tags origin "+refs/heads/*:refs/remotes/origin/*"
+
+      - name: Push all branches + tags to GitLab (no hidden refs)
+        run: |
+          git push --prune gitlab "refs/remotes/origin/*:refs/heads/*"
+          git push --prune gitlab "refs/tags/*:refs/tags/*"
