@@ -132,6 +132,7 @@ namespace server.Domain.HelpRequest
             }
         }
 
+        public bool HasExecutor => AssignedUserId.HasValue;
         public void AddResponse(Guid userId, string message)
         {
             if (CreatorId == userId)
@@ -139,6 +140,12 @@ namespace server.Domain.HelpRequest
 
             if (Status != HelpRequestStatus.Open)
                 throw new DomainException("Cannot respond to inactive request", "HelpRequest.NOT_OPEN");
+            
+            if (string.IsNullOrWhiteSpace(message))
+                throw new DomainException("Message is required", "HelpRequestResponse.MESSAGE_REQUIRED");
+
+            if (message.Length > 1000)
+                throw new DomainException("Message is too long", "HelpRequestResponse.MESSAGE_TOO_LONG");
 
             if (_responses.Any(r => r.UserId == userId && r.Status != HelpRequestResponseStatus.Cancelled))
                 throw new DomainException("User already responded", "HelpRequest.ALREADY_RESPONDED");
