@@ -53,7 +53,31 @@ namespace server.Domain.HelpRequest
             Status = HelpRequestStatus.Open;
             CreatedAtUtc = DateTime.UtcNow;
         }
+        internal HelpRequest(
+            Guid id,
+            Guid creatorId,
+            string title,
+            string description,
+            int status,
+            Guid? assignedUserId,
+            double? latitude,
+            double? longitude,
+            DateTime createdAtUtc,
+            IEnumerable<HelpRequestResponse> responses)
+        {
+            Id = id;
+            CreatorId = creatorId;
+            Title = title;
+            Description = description;
+            Status = (HelpRequestStatus)status;
+            AssignedUserId = assignedUserId;
+            CreatedAtUtc = createdAtUtc;
 
+            if (latitude.HasValue && longitude.HasValue)
+                Location = new HelpRequestGeoPoint(latitude.Value, longitude.Value);
+
+            _responses.AddRange(responses);
+        }
         private void SetTitle(string title)
         {
             if (string.IsNullOrWhiteSpace(title))

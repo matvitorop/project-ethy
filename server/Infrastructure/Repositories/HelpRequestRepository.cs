@@ -93,29 +93,36 @@ namespace server.Infrastructure.Repositories
                 throw;
             }
         }
-        public async Task<HelpRequest?> GetAggregateByIdAsync(CancellationToken ct,Guid id)
+        public async Task<HelpRequest?> GetAggregateByIdAsync(CancellationToken ct, Guid id)
         {
-            using var connection =
-                await _connectionFactory.CreateOpenConnectionAsync(ct);
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
 
-            const string sql = """
-                    SELECT 
-                        Id,
-                        CreatorId,
-                        Title,
-                        Description,
-                        Status,
-                        Latitude,
-                        Longitude,
-                        CreatedAtUtc
-                    FROM HelpRequests
-                    WHERE Id = @Id;
+            const string requestSql = """
+             SELECT Id, CreatorId, Title, Description, Status,
+                    AssignedUserId, Latitude, Longitude, CreatedAtUtc
+             FROM HelpRequests
+             WHERE Id = @Id;
+             """;
+
+            var row = await connection.QuerySingleOrDefaultAsync<HelpRequestRow>(
+                requestSql, new { Id = id });
+
+            if (row is null) return null;
+
+            const string responsesSql = """
+                SELECT Id, UserId, Status, Message, CreatedAtUtc
+                FROM HelpRequestResponses
+                WHERE HelpRequestId = @Id;
                 """;
 
-            return await connection
-                .QuerySingleOrDefaultAsync<HelpRequest>(
-                    sql,
-                    new { Id = id });
+            var responses = await connection.QueryAsync<HelpRequestResponse>(
+                responsesSql, new { Id = id });
+
+            return new HelpRequest(
+                row.Id, row.CreatorId, row.Title, row.Description,
+                row.Status, row.AssignedUserId,
+                row.Latitude, row.Longitude, row.CreatedAtUtc,
+                responses);
         }
 
         public async Task<IReadOnlyList<HelpRequestListItemDto>> GetPageAsync(CancellationToken ct, int page, int pageSize = 10)
@@ -220,6 +227,47 @@ namespace server.Infrastructure.Repositories
                 throw new InvalidOperationException(
                     $"HelpRequest with id '{id}' not found.");
             }
+        }
+
+        public async Task UpdateAsync(HelpRequest request, CancellationToken ct)
+        {
+        }
+
+        public async Task AddResponseAsync(Guid helpRequestId, HelpRequestResponse response, CancellationToken ct)
+        {
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
+
+            const string sql = """
+                INSERT INTO HelpRequestResponses (Id, HelpRequestId, UserId, Status, Message, CreatedAtUtc)
+                VALUES (@Id, @HelpRequestId, @UserId, @Status, @Message, @CreatedAtUtc);
+                """;
+
+            await connection.ExecuteAsync(
+                new CommandDefinition(
+                    sql,
+                    new
+                    {
+                        response.Id,
+                        HelpRequestId = helpRequestId,
+                        response.UserId,
+                        Status = (int)response.Status,
+                        response.Message,
+                        response.CreatedAtUtc
+                    },
+                    cancellationToken: ct));
+        }
+
+        private sealed class HelpRequestRow
+        {
+            public Guid Id { get; init; }
+            public Guid CreatorId { get; init; }
+            public string Title { get; init; } = null!;
+            public string Description { get; init; } = null!;
+            public int Status { get; init; }
+            public Guid? AssignedUserId { get; init; }
+            public double? Latitude { get; init; }
+            public double? Longitude { get; init; }
+            public DateTime CreatedAtUtc { get; init; }
         }
     }
 }
