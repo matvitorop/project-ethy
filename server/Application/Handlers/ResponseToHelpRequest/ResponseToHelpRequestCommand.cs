@@ -6,5 +6,5 @@ namespace server.Application.Handlers.ResponseToHelpRequestHandler
     public sealed record ResponseToHelpRequestCommand(
         Guid HelpRequestId, 
         Guid UserId,
-        string Message) : IRequest<Result>;
+        string Message) : IRequest<Result<Guid>>;
 }
