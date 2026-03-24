@@ -13,5 +13,10 @@ namespace server.Application.IRepositories
         // Think about this methods
         Task<HelpRequest?> GetAggregateByIdAsync(CancellationToken ct, Guid id);
         Task UpdateStatusAsync(CancellationToken ct, Guid id, HelpRequestStatus status);
+
+        // Rethink this method
+        Task UpdateAsync(HelpRequest request, CancellationToken ct);
+
+        Task AddResponseAsync(Guid helpRequestId, HelpRequestResponse response, CancellationToken ct);
     }
 }

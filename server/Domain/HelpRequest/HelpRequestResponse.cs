@@ -31,6 +31,20 @@ namespace server.Domain.HelpRequest
             Message = message;
         }
 
+        internal HelpRequestResponse(
+            Guid id,
+            Guid userId,
+            int status,
+            string message,
+            DateTime createdAtUtc)
+        {
+            Id = id;
+            UserId = userId;
+            Status = (HelpRequestResponseStatus)status;
+            Message = message;
+            CreatedAtUtc = createdAtUtc;
+        }
+
         internal void Accept()
         {
             if (Status != HelpRequestResponseStatus.Pending)

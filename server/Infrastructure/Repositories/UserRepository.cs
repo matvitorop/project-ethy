@@ -85,12 +85,12 @@ namespace server.Infrastructure.Repositories
                     COUNT(hr.Id) AS TotalRequests,
 
                     SUM(CASE 
-                            WHEN hr.Status IN (0,2) THEN 1 
+                            WHEN hr.Status IN (1, 2) THEN 1 
                             ELSE 0 
                         END) AS ActiveRequests,
 
                     SUM(CASE 
-                            WHEN hr.Status IN (3,4) THEN 1 
+                            WHEN hr.Status IN (3) THEN 1 
                             ELSE 0 
                         END) AS CompletedRequests
 
