@@ -50,11 +50,12 @@ namespace server.Application.Handlers.ChangeHelpRequestStatus
                         ex.Code));
             }
 
-            await _repository.UpdateStatusAsync(
-                ct,
-                helpRequest.Id,
-                helpRequest.Status
-                );
+            var requiresFullUpdate = request.NewStatus == HelpRequestStatus.Cancelled;
+
+            if (requiresFullUpdate)
+                await _repository.UpdateAsync(helpRequest, ct);
+            else
+                await _repository.UpdateStatusAsync(ct, helpRequest.Id, helpRequest.Status);
 
             return Result<ChangeHelpRequestStatusResult>.Success(
                 new ChangeHelpRequestStatusResult(

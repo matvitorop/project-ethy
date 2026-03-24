@@ -231,6 +231,48 @@ namespace server.Infrastructure.Repositories
 
         public async Task UpdateAsync(HelpRequest request, CancellationToken ct)
         {
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
+            using var tx = connection.BeginTransaction();
+
+            try
+            {
+                // Оновлюємо статус самого запиту
+                const string updateRequest = """
+                    UPDATE HelpRequests
+                    SET Status = @Status, AssignedUserId = @AssignedUserId
+                    WHERE Id = @Id;
+                    """;
+
+                await connection.ExecuteAsync(new CommandDefinition(
+                    updateRequest,
+                    new { request.Id, Status = (int)request.Status, request.AssignedUserId },
+                    transaction: tx,
+                    cancellationToken: ct));
+
+                // Оновлюємо статуси всіх responses одним запитом через CASE
+                // Але простіше — оновлювати по одному, responses зазвичай 1-5 штук
+                const string updateResponse = """
+                    UPDATE HelpRequestResponses
+                    SET Status = @Status
+                    WHERE Id = @Id;
+                    """;
+
+                foreach (var response in request.Responses)
+                {
+                    await connection.ExecuteAsync(new CommandDefinition(
+                        updateResponse,
+                        new { response.Id, Status = (int)response.Status },
+                        transaction: tx,
+                        cancellationToken: ct));
+                }
+
+                tx.Commit();
+            }
+            catch
+            {
+                tx.Rollback();
+                throw;
+            }
         }
 
         public async Task AddResponseAsync(Guid helpRequestId, HelpRequestResponse response, CancellationToken ct)

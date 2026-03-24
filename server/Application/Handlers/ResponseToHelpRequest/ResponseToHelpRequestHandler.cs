@@ -5,7 +5,7 @@ using server.Domain.Primitives;
 
 namespace server.Application.Handlers.ResponseToHelpRequestHandler
 {
-    public class ResponseToHelpRequestHandler : IRequestHandler<ResponseToHelpRequestCommand, Result>
+    public class ResponseToHelpRequestHandler : IRequestHandler<ResponseToHelpRequestCommand, Result<Guid>>
     {
 
         private readonly IHelpRequestRepository _repository;
@@ -16,7 +16,7 @@ namespace server.Application.Handlers.ResponseToHelpRequestHandler
             _repository = repository;
         }
 
-        public async Task<Result> Handle(ResponseToHelpRequestCommand request,
+        public async Task<Result<Guid>> Handle(ResponseToHelpRequestCommand request,
             CancellationToken ct)
         {
             try
@@ -24,22 +24,21 @@ namespace server.Application.Handlers.ResponseToHelpRequestHandler
                 var helpRequest = await _repository.GetAggregateByIdAsync(ct, request.HelpRequestId);
 
                 if (helpRequest is null)
-                    return Result.Failure(new Error("Help request not found", "HelpRequest.NOT_FOUND"));
+                    return Result<Guid>.Failure(new Error("Help request not found", "HelpRequest.NOT_FOUND"));
 
-                helpRequest.AddResponse(request.UserId, request.Message);
-
-                var newResponse = helpRequest.Responses.Last();
+                var newResponse = helpRequest.AddResponse(request.UserId, request.Message);
+                
                 await _repository.AddResponseAsync(helpRequest.Id, newResponse, ct);
-
-                return Result.Success();
+                
+                return Result<Guid>.Success(newResponse.Id);
             }
             catch (DomainException ex)
             {
-                return Result.Failure(new Error(ex.Message, ex.Code));
+                return Result<Guid>.Failure(new Error(ex.Message, ex.Code));
             }
             catch (Exception)
             {
-                return Result.Failure(new Error("An unexpected error occurred", "HelpRequestResponse.GENERAL_ERROR"));
+                return Result<Guid>.Failure(new Error("An unexpected error occurred", "HelpRequestResponse.GENERAL_ERROR"));
             }
         }
     }

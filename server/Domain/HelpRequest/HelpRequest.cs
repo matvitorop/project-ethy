@@ -157,7 +157,7 @@ namespace server.Domain.HelpRequest
         }
 
         public bool HasExecutor => AssignedUserId.HasValue;
-        public void AddResponse(Guid userId, string message)
+        public HelpRequestResponse AddResponse(Guid userId, string message)
         {
             if (CreatorId == userId)
                 throw new DomainException("Cannot respond to own request", "HelpRequest.SELF_RESPONSE");
@@ -174,7 +174,10 @@ namespace server.Domain.HelpRequest
             if (_responses.Any(r => r.UserId == userId && r.Status != HelpRequestResponseStatus.Cancelled))
                 throw new DomainException("User already responded", "HelpRequest.ALREADY_RESPONDED");
 
-            _responses.Add(new HelpRequestResponse(userId, message));
+            var response = new HelpRequestResponse(userId, message);
+            _responses.Add(response);
+
+            return response;
         }
 
         public void CancelResponse(Guid userId)
