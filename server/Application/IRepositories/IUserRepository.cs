@@ -1,4 +1,5 @@
-﻿using server.Domain;
+﻿using server.Application.Handlers.GetUserStatistics;
+using server.Domain;
 
 namespace server.Application.IRepositories
 {
@@ -6,5 +7,6 @@ namespace server.Application.IRepositories
     {
         Task<User?> GetByEmailAsync(string email);
         Task<User?> AddAsync(User user);
+        Task<UserStatisticsDto?> GetUserStatisticsAsync(Guid userId, CancellationToken ct);
     }
 }

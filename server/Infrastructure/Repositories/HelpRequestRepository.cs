@@ -2,6 +2,7 @@
 using Microsoft.Data.SqlClient;
 using server.Application.Handlers.GetActiveRequests;
 using server.Application.Handlers.GetFullHelpRequest;
+using server.Application.Handlers.GetHelpRequestResponses;
 using server.Application.IRepositories;
 using server.Application.IServices;
 using server.Domain.HelpRequest;
@@ -93,31 +94,37 @@ namespace server.Infrastructure.Repositories
                 throw;
             }
         }
-        public async Task<HelpRequest?> GetAggregateByIdAsync(CancellationToken ct,Guid id)
+        public async Task<HelpRequest?> GetAggregateByIdAsync(CancellationToken ct, Guid id)
         {
-            using var connection =
-                await _connectionFactory.CreateOpenConnectionAsync(ct);
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
 
-            const string sql = """
-                    SELECT 
-                        Id,
-                        CreatorId,
-                        Title,
-                        Description,
-                        Status,
-                        Latitude,
-                        Longitude,
-                        CreatedAtUtc
-                    FROM HelpRequests
-                    WHERE Id = @Id;
+            const string requestSql = """
+             SELECT Id, CreatorId, Title, Description, Status,
+                    AssignedUserId, Latitude, Longitude, CreatedAtUtc
+             FROM HelpRequests
+             WHERE Id = @Id;
+             """;
+
+            var row = await connection.QuerySingleOrDefaultAsync<HelpRequestRow>(
+                requestSql, new { Id = id });
+
+            if (row is null) return null;
+
+            const string responsesSql = """
+                SELECT Id, UserId, Status, Message, CreatedAtUtc
+                FROM HelpRequestResponses
+                WHERE HelpRequestId = @Id;
                 """;
 
-            return await connection
-                .QuerySingleOrDefaultAsync<HelpRequest>(
-                    sql,
-                    new { Id = id });
-        }
+            var responses = await connection.QueryAsync<HelpRequestResponse>(
+                responsesSql, new { Id = id });
 
+            return new HelpRequest(
+                row.Id, row.CreatorId, row.Title, row.Description,
+                row.Status, row.AssignedUserId,
+                row.Latitude, row.Longitude, row.CreatedAtUtc,
+                responses);
+        }
 
         public async Task<IReadOnlyList<HelpRequestListItemDto>> GetPageAsync(CancellationToken ct, int page, int pageSize = 10)
         {
@@ -222,5 +229,120 @@ namespace server.Infrastructure.Repositories
                     $"HelpRequest with id '{id}' not found.");
             }
         }
+
+        public async Task UpdateAsync(HelpRequest request, CancellationToken ct)
+        {
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
+            using var tx = connection.BeginTransaction();
+
+            try
+            {
+                // Оновлюємо статус самого запиту
+                const string updateRequest = """
+                    UPDATE HelpRequests
+                    SET Status = @Status, AssignedUserId = @AssignedUserId
+                    WHERE Id = @Id;
+                    """;
+
+                await connection.ExecuteAsync(new CommandDefinition(
+                    updateRequest,
+                    new { request.Id, Status = (int)request.Status, request.AssignedUserId },
+                    transaction: tx,
+                    cancellationToken: ct));
+
+                // Оновлюємо статуси всіх responses одним запитом через CASE
+                // Але простіше — оновлювати по одному, responses зазвичай 1-5 штук
+                const string updateResponse = """
+                    UPDATE HelpRequestResponses
+                    SET Status = @Status
+                    WHERE Id = @Id;
+                    """;
+
+                foreach (var response in request.Responses)
+                {
+                    await connection.ExecuteAsync(new CommandDefinition(
+                        updateResponse,
+                        new { response.Id, Status = (int)response.Status },
+                        transaction: tx,
+                        cancellationToken: ct));
+                }
+
+                tx.Commit();
+            }
+            catch
+            {
+                tx.Rollback();
+                throw;
+            }
+        }
+
+        public async Task AddResponseAsync(Guid helpRequestId, HelpRequestResponse response, CancellationToken ct)
+        {
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
+
+            const string sql = """
+                INSERT INTO HelpRequestResponses (Id, HelpRequestId, UserId, Status, Message, CreatedAtUtc)
+                VALUES (@Id, @HelpRequestId, @UserId, @Status, @Message, @CreatedAtUtc);
+                """;
+
+            await connection.ExecuteAsync(
+                new CommandDefinition(
+                    sql,
+                    new
+                    {
+                        response.Id,
+                        HelpRequestId = helpRequestId,
+                        response.UserId,
+                        Status = (int)response.Status,
+                        response.Message,
+                        response.CreatedAtUtc
+                    },
+                    cancellationToken: ct));
+        }
+
+        private sealed class HelpRequestRow
+        {
+            public Guid Id { get; init; }
+            public Guid CreatorId { get; init; }
+            public string Title { get; init; } = null!;
+            public string Description { get; init; } = null!;
+            public int Status { get; init; }
+            public Guid? AssignedUserId { get; init; }
+            public double? Latitude { get; init; }
+            public double? Longitude { get; init; }
+            public DateTime CreatedAtUtc { get; init; }
+        }
+
+        public async Task<Guid?> GetCreatorIdAsync(CancellationToken ct, Guid helpRequestId)
+        {
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
+
+            const string sql = """
+                SELECT CreatorId FROM HelpRequests
+                WHERE Id = @Id;
+                """;
+
+            return await connection.QuerySingleOrDefaultAsync<Guid?>(
+                new CommandDefinition(sql, new { Id = helpRequestId }, cancellationToken: ct));
+        }
+
+        public async Task<IReadOnlyList<HelpRequestResponseDto>> GetResponsesByHelpRequestIdAsync(
+            CancellationToken ct, Guid helpRequestId)
+        {
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
+
+            const string sql = """
+                SELECT Id, UserId, Message, Status, CreatedAtUtc
+                FROM HelpRequestResponses
+                WHERE HelpRequestId = @HelpRequestId
+                ORDER BY CreatedAtUtc ASC;
+                """;
+
+            var result = await connection.QueryAsync<HelpRequestResponseDto>(
+                new CommandDefinition(sql, new { HelpRequestId = helpRequestId }, cancellationToken: ct));
+
+            return result.AsList();
+        }
+
     }
 }
