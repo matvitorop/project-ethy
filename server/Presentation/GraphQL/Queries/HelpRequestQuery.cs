@@ -3,11 +3,13 @@ using GraphQL.Types;
 using MediatR;
 using server.Application.Handlers.GetActiveRequests;
 using server.Application.Handlers.GetFullHelpRequest;
+using server.Application.Handlers.GetHelpRequestResponses;
 using server.Presentation.GraphQL.Extensions;
 using server.Presentation.GraphQL.Types;
 using server.Presentation.GraphQL.Types.ErrorTypes;
 using server.Presentation.GraphQL.Types.GetHRDetailTypes;
 using server.Presentation.GraphQL.Types.GetHRListTypes;
+using server.Presentation.GraphQL.Types.GetHRResponsesTypes;
 
 namespace server.Presentation.GraphQL.Queries
 {
@@ -47,6 +49,23 @@ namespace server.Presentation.GraphQL.Queries
                 );
 
                 return result.ToPayload((value, error) => new HelpRequestDetailPayload(value, error));
+            });
+
+            Field<HelpRequestResponsesPayloadType>("helpRequestResponses")
+            .Authorize()
+            .Arguments(
+                new QueryArgument<NonNullGraphType<IdGraphType>> { Name = "helpRequestId" }
+            )
+            .ResolveAsync(async context =>
+            {
+                var result = await mediator.Send(
+                    new GetHelpRequestResponsesQuery(
+                        context.GetArgument<Guid>("helpRequestId"),
+                        context.GetUserId()
+                    ));
+
+                return result.ToPayload(
+                    (value, error) => new HelpRequestResponsesPayload(value, error));
             });
         }
     }

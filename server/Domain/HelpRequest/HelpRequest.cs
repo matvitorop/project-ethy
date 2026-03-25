@@ -16,6 +16,10 @@ namespace server.Domain.HelpRequest
     {
         private readonly List<RequestImage> _images = new();
 
+        private readonly List<HelpRequestResponse> _responses = new();
+        public IReadOnlyCollection<HelpRequestResponse> Responses => _responses.AsReadOnly();
+        public Guid? AssignedUserId { get; private set; }
+
         public Guid Id { get; private set; }
         public string Title { get; private set; }
         public string Description { get; private set; }
@@ -49,7 +53,31 @@ namespace server.Domain.HelpRequest
             Status = HelpRequestStatus.Open;
             CreatedAtUtc = DateTime.UtcNow;
         }
+        internal HelpRequest(
+            Guid id,
+            Guid creatorId,
+            string title,
+            string description,
+            int status,
+            Guid? assignedUserId,
+            double? latitude,
+            double? longitude,
+            DateTime createdAtUtc,
+            IEnumerable<HelpRequestResponse> responses)
+        {
+            Id = id;
+            CreatorId = creatorId;
+            Title = title;
+            Description = description;
+            Status = (HelpRequestStatus)status;
+            AssignedUserId = assignedUserId;
+            CreatedAtUtc = createdAtUtc;
 
+            if (latitude.HasValue && longitude.HasValue)
+                Location = new HelpRequestGeoPoint(latitude.Value, longitude.Value);
+
+            _responses.AddRange(responses);
+        }
         private void SetTitle(string title)
         {
             if (string.IsNullOrWhiteSpace(title))
@@ -95,7 +123,7 @@ namespace server.Domain.HelpRequest
                 _images[i] = new RequestImage(i, _images[i].ImageUrl);
         }
 
-        public void MarkInProgress()
+        internal void MarkInProgress()
         {
             if (Status == HelpRequestStatus.Open || Status == HelpRequestStatus.Resolved)
             {
@@ -110,7 +138,7 @@ namespace server.Domain.HelpRequest
         public void Complete()
         {
             if (Status != HelpRequestStatus.InProgress)
-                throw new DomainException("Wrong status for transitioning", "HelpRequest.INVALID_STATUS_TRANSITION_COMPLETE");
+                throw new DomainException("Wrong status", "HelpRequest.INVALID_STATUS_TRANSITION_COMPLETE");
 
             Status = HelpRequestStatus.Resolved;
         }
@@ -118,9 +146,75 @@ namespace server.Domain.HelpRequest
         public void Cancel()
         {
             if (Status is HelpRequestStatus.Resolved or HelpRequestStatus.Cancelled)
-                throw new DomainException("Wrong status for transitioning", "HelpRequest.INVALID_STATUS_TRANSITION_CANCEL");
+                throw new DomainException("Wrong status", "HelpRequest.INVALID_STATUS_TRANSITION_CANCEL");
 
             Status = HelpRequestStatus.Cancelled;
+
+            foreach (var r in _responses)
+            {
+                r.Reject();
+            }
+        }
+
+        public bool HasExecutor => AssignedUserId.HasValue;
+        public HelpRequestResponse AddResponse(Guid userId, string message)
+        {
+            if (CreatorId == userId)
+                throw new DomainException("Cannot respond to own request", "HelpRequest.SELF_RESPONSE");
+
+            if (Status != HelpRequestStatus.Open)
+                throw new DomainException("Cannot respond to inactive request", "HelpRequest.NOT_OPEN");
+            
+            if (string.IsNullOrWhiteSpace(message))
+                throw new DomainException("Message is required", "HelpRequestResponse.MESSAGE_REQUIRED");
+
+            if (message.Length > 1000)
+                throw new DomainException("Message is too long", "HelpRequestResponse.MESSAGE_TOO_LONG");
+
+            if (_responses.Any(r => r.UserId == userId && r.Status != HelpRequestResponseStatus.Cancelled))
+                throw new DomainException("User already responded", "HelpRequest.ALREADY_RESPONDED");
+
+            var response = new HelpRequestResponse(userId, message);
+            _responses.Add(response);
+
+            return response;
+        }
+
+        public void CancelResponse(Guid userId)
+        {
+            var response = _responses
+                .FirstOrDefault(r => r.UserId == userId);
+
+            if (response is null)
+                throw new DomainException("Response not found", "HelpRequestResponse.NOT_FOUND");
+
+            response.Cancel();
+        }
+
+        public void AssignExecutor(Guid responseId)
+        {
+            if (Status != HelpRequestStatus.Open)
+                throw new DomainException("Request is not open", "HelpRequest.NOT_OPEN");
+
+            var response = _responses
+                .FirstOrDefault(r => r.Id == responseId);
+
+            if (response is null)
+                throw new DomainException("Response not found", "HelpRequestResponse.NOT_FOUND");
+
+            if (response.Status != HelpRequestResponseStatus.Pending)
+                throw new DomainException("Invalid response state", "HelpRequestResponse.INVALID_STATE");
+
+            response.Accept();
+
+            foreach (var r in _responses.Where(r => r.Id != responseId))
+            {
+                r.Reject();
+            }
+
+            AssignedUserId = response.UserId;
+
+            Status = HelpRequestStatus.InProgress;
         }
     }
 }
