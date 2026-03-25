@@ -2,6 +2,7 @@
 using Microsoft.Data.SqlClient;
 using server.Application.Handlers.GetActiveRequests;
 using server.Application.Handlers.GetFullHelpRequest;
+using server.Application.Handlers.GetHelpRequestResponses;
 using server.Application.IRepositories;
 using server.Application.IServices;
 using server.Domain.HelpRequest;
@@ -311,5 +312,37 @@ namespace server.Infrastructure.Repositories
             public double? Longitude { get; init; }
             public DateTime CreatedAtUtc { get; init; }
         }
+
+        public async Task<Guid?> GetCreatorIdAsync(CancellationToken ct, Guid helpRequestId)
+        {
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
+
+            const string sql = """
+                SELECT CreatorId FROM HelpRequests
+                WHERE Id = @Id;
+                """;
+
+            return await connection.QuerySingleOrDefaultAsync<Guid?>(
+                new CommandDefinition(sql, new { Id = helpRequestId }, cancellationToken: ct));
+        }
+
+        public async Task<IReadOnlyList<HelpRequestResponseDto>> GetResponsesByHelpRequestIdAsync(
+            CancellationToken ct, Guid helpRequestId)
+        {
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
+
+            const string sql = """
+                SELECT Id, UserId, Message, Status, CreatedAtUtc
+                FROM HelpRequestResponses
+                WHERE HelpRequestId = @HelpRequestId
+                ORDER BY CreatedAtUtc ASC;
+                """;
+
+            var result = await connection.QueryAsync<HelpRequestResponseDto>(
+                new CommandDefinition(sql, new { HelpRequestId = helpRequestId }, cancellationToken: ct));
+
+            return result.AsList();
+        }
+
     }
 }
