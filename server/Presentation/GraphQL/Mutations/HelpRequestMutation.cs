@@ -2,11 +2,13 @@
 using GraphQL.Types;
 using MediatR;
 using server.Application.Handlers.AddHelpRequest;
+using server.Application.Handlers.AssignExecutor;
 using server.Application.Handlers.ChangeHelpRequestStatus;
 using server.Application.Handlers.ResponseToHelpRequestHandler;
 using server.Domain.HelpRequest;
 using server.Presentation.GraphQL.Extensions;
 using server.Presentation.GraphQL.Types.AddHelpRequestTypes;
+using server.Presentation.GraphQL.Types.AssignExecutorTypes;
 using server.Presentation.GraphQL.Types.ChangeHRStatusTypes;
 using server.Presentation.GraphQL.Types.ErrorTypes;
 using server.Presentation.GraphQL.Types.ResponseToHRTypes;
@@ -96,6 +98,25 @@ namespace server.Presentation.GraphQL.Mutations
 
                 return result.ToPayload(
                     (value, error) => new ResponseToHelpRequestPayload(value, error));
+            });
+
+            Field<AssignExecutorPayloadType>("assignExecutor")
+            .Authorize()
+            .Arguments(
+                new QueryArgument<NonNullGraphType<IdGraphType>> { Name = "helpRequestId" },
+                new QueryArgument<NonNullGraphType<IdGraphType>> { Name = "responseId" }
+            )
+            .ResolveAsync(async context =>
+            {
+                var result = await mediator.Send(
+                    new AssignExecutorCommand(
+                        context.GetArgument<Guid>("helpRequestId"),
+                        context.GetArgument<Guid>("responseId"),
+                        context.GetUserId()
+                    ));
+
+                return result.ToPayload(
+                    (value, error) => new AssignExecutorPayload(value, error));
             });
 
         }
