@@ -1,6 +1,7 @@
 ﻿using server.Application.Handlers.GetActiveRequests;
 using server.Application.Handlers.GetFullHelpRequest;
 using server.Application.Handlers.GetHelpRequestResponses;
+using server.Domain.Chat;
 using server.Domain.HelpRequest;
 
 namespace server.Application.IRepositories
@@ -14,9 +15,11 @@ namespace server.Application.IRepositories
         // Think about this methods
         Task<HelpRequest?> GetAggregateByIdAsync(CancellationToken ct, Guid id);
         Task UpdateStatusAsync(CancellationToken ct, Guid id, HelpRequestStatus status);
-
+        
         // Rethink this method
         Task UpdateAsync(HelpRequest request, CancellationToken ct);
+        
+        Task AssignExecutorAsync(HelpRequest request, Chat chat, CancellationToken ct);
 
         Task AddResponseAsync(Guid helpRequestId, HelpRequestResponse response, CancellationToken ct);
 

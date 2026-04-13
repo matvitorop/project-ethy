@@ -2,10 +2,12 @@
 using GraphQL.Types;
 using MediatR;
 using server.Application.Handlers.GetActiveRequests;
+using server.Application.Handlers.GetChatMessages;
 using server.Application.Handlers.GetFullHelpRequest;
 using server.Application.Handlers.GetHelpRequestResponses;
 using server.Presentation.GraphQL.Extensions;
 using server.Presentation.GraphQL.Types;
+using server.Presentation.GraphQL.Types.ChatMessagesTypes;
 using server.Presentation.GraphQL.Types.ErrorTypes;
 using server.Presentation.GraphQL.Types.GetHRDetailTypes;
 using server.Presentation.GraphQL.Types.GetHRListTypes;
@@ -66,6 +68,25 @@ namespace server.Presentation.GraphQL.Queries
 
                 return result.ToPayload(
                     (value, error) => new HelpRequestResponsesPayload(value, error));
+            });
+
+            // If will more than 1 endpoint related to chat messages, consider to move it to separate query type
+            Field<ChatMessagesPayloadType>("chatMessages")
+            .Authorize()
+            .Arguments(
+                new QueryArgument<NonNullGraphType<IdGraphType>> { Name = "helpRequestId" }
+            )
+            .ResolveAsync(async context =>
+            {
+                var userId = context.GetUserId();
+
+                var result = await mediator.Send(
+                    new GetChatMessagesQuery(
+                        context.GetArgument<Guid>("helpRequestId"),
+                        userId));
+
+                return result.ToPayload(
+                    (value, error) => new ChatMessagesPayload(value, error));
             });
         }
     }

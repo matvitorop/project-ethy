@@ -5,6 +5,7 @@ using server.Application.Handlers.GetFullHelpRequest;
 using server.Application.Handlers.GetHelpRequestResponses;
 using server.Application.IRepositories;
 using server.Application.IServices;
+using server.Domain.Chat;
 using server.Domain.HelpRequest;
 using System.Data;
 
@@ -237,35 +238,33 @@ namespace server.Infrastructure.Repositories
 
             try
             {
-                // Оновлюємо статус самого запиту
-                const string updateRequest = """
-                    UPDATE HelpRequests
-                    SET Status = @Status, AssignedUserId = @AssignedUserId
-                    WHERE Id = @Id;
+                await UpdateHelpRequestCoreAsync(connection, tx, request, ct);
+                tx.Commit();
+            }
+            catch
+            {
+                tx.Rollback();
+                throw;
+            }
+        }
+
+        public async Task AssignExecutorAsync(HelpRequest request, Chat chat, CancellationToken ct)
+        {
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
+            using var tx = connection.BeginTransaction();
+
+            try
+            {
+                await UpdateHelpRequestCoreAsync(connection, tx, request, ct);
+
+                const string insertChat = """
+                    INSERT INTO Chats (Id, HelpRequestId, OwnerId, AssigneeId, CreatedAtUtc)
+                    VALUES (@Id, @HelpRequestId, @OwnerId, @AssigneeId, @CreatedAtUtc);
                     """;
 
                 await connection.ExecuteAsync(new CommandDefinition(
-                    updateRequest,
-                    new { request.Id, Status = (int)request.Status, request.AssignedUserId },
-                    transaction: tx,
-                    cancellationToken: ct));
-
-                // Оновлюємо статуси всіх responses одним запитом через CASE
-                // Але простіше — оновлювати по одному, responses зазвичай 1-5 штук
-                const string updateResponse = """
-                    UPDATE HelpRequestResponses
-                    SET Status = @Status
-                    WHERE Id = @Id;
-                    """;
-
-                foreach (var response in request.Responses)
-                {
-                    await connection.ExecuteAsync(new CommandDefinition(
-                        updateResponse,
-                        new { response.Id, Status = (int)response.Status },
-                        transaction: tx,
-                        cancellationToken: ct));
-                }
+                    insertChat, chat,
+                    transaction: tx, cancellationToken: ct));
 
                 tx.Commit();
             }
@@ -342,6 +341,38 @@ namespace server.Infrastructure.Repositories
                 new CommandDefinition(sql, new { HelpRequestId = helpRequestId }, cancellationToken: ct));
 
             return result.AsList();
+        }
+
+        private async Task UpdateHelpRequestCoreAsync(
+            IDbConnection connection,
+            IDbTransaction tx,
+            HelpRequest request,
+            CancellationToken ct)
+        {
+            const string updateRequest = """
+                 UPDATE HelpRequests
+                 SET Status = @Status, AssignedUserId = @AssignedUserId
+                 WHERE Id = @Id;
+                 """;
+
+            await connection.ExecuteAsync(new CommandDefinition(
+                updateRequest,
+                new { request.Id, Status = (int)request.Status, request.AssignedUserId },
+                transaction: tx, cancellationToken: ct));
+
+            const string updateResponse = """
+                UPDATE HelpRequestResponses
+                SET Status = @Status
+                WHERE Id = @Id;
+                """;
+
+            foreach (var response in request.Responses)
+            {
+                await connection.ExecuteAsync(new CommandDefinition(
+                    updateResponse,
+                    new { response.Id, Status = (int)response.Status },
+                    transaction: tx, cancellationToken: ct));
+            }
         }
 
     }
