@@ -22,6 +22,7 @@ using server.Presentation.GraphQL;
 using server.Presentation.GraphQL.Helpers;
 using server.Presentation.GraphQL.Mutations;
 using server.Presentation.GraphQL.Schemas;
+using server.Presentation.Hubs;
 using server.Presentation.Schemas;
 using System.Data;
 using System.Security.Claims;
@@ -85,10 +86,12 @@ builder.Services.AddHostedService<TemporaryFileCleanupService>();
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IHelpRequestRepository, HelpRequestRepository>();
+builder.Services.AddScoped<IChatRepository, ChatRepository>();
 builder.Services.AddScoped<IPasswordHasher, Pbkdf2PasswordHasher>();
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
 builder.Services.AddTransient<AuthMutation>();
 builder.Services.AddScoped<IImageStorageService, LocalImageStorageService>();
+builder.Services.AddSignalR();
 
 // CONTROLLERS REGISTRATION
 builder.Services.AddControllers()
@@ -196,4 +199,8 @@ app.UseGraphQL<ISchema>("/graphql");
 app.UseGraphQLPlayground("/graphql/playground");
 
 // =====================
+// Chat endpoint for SignalR
+// =====================
+app.MapHub<ChatHub>("/hubs/chat");
+
 app.Run();

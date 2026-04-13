@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using server.Application.IRepositories;
+using server.Domain.Chat;
 using server.Domain.Exceptions;
 using server.Domain.Primitives;
 
@@ -40,7 +41,13 @@ namespace server.Application.Handlers.AssignExecutor
                     new Error(ex.Message, ex.Code));
             }
 
-            await _repository.UpdateAsync(helpRequest, ct);
+            // Chat creation is done here because it is a part of the same transaction as help request update.
+            var chat = new Chat(
+                helpRequest.Id,
+                helpRequest.CreatorId,
+                helpRequest.AssignedUserId!.Value);
+
+            await _repository.AssignExecutorAsync(helpRequest, chat, ct);
 
             return Result<AssignExecutorResult>.Success(
                 new AssignExecutorResult(
