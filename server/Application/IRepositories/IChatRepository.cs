@@ -1,4 +1,5 @@
-﻿using server.Domain.Chat;
+﻿using server.Application.Handlers.GetChatMessages;
+using server.Domain.Chat;
 
 namespace server.Application.IRepositories
 {
