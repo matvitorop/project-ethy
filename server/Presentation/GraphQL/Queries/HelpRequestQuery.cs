@@ -3,8 +3,10 @@ using GraphQL.Types;
 using MediatR;
 using server.Application.Handlers.GetActiveRequests;
 using server.Application.Handlers.GetChatMessages;
+using server.Application.Handlers.GetEventLog;
 using server.Application.Handlers.GetFullHelpRequest;
 using server.Application.Handlers.GetHelpRequestResponses;
+using server.Application.Handlers.GetStages;
 using server.Presentation.GraphQL.Extensions;
 using server.Presentation.GraphQL.Types;
 using server.Presentation.GraphQL.Types.ChatMessagesTypes;
@@ -12,6 +14,8 @@ using server.Presentation.GraphQL.Types.ErrorTypes;
 using server.Presentation.GraphQL.Types.GetHRDetailTypes;
 using server.Presentation.GraphQL.Types.GetHRListTypes;
 using server.Presentation.GraphQL.Types.GetHRResponsesTypes;
+using server.Presentation.GraphQL.Types.StageLogTypes;
+using server.Presentation.GraphQL.Types.StageTypes;
 
 namespace server.Presentation.GraphQL.Queries
 {
@@ -87,6 +91,34 @@ namespace server.Presentation.GraphQL.Queries
 
                 return result.ToPayload(
                     (value, error) => new ChatMessagesPayload(value, error));
+            });
+
+            Field<StagesPayloadType>("stages")
+            .Arguments(
+                new QueryArgument<NonNullGraphType<IdGraphType>> { Name = "helpRequestId" }
+            )
+            .ResolveAsync(async context =>
+            {
+                var result = await mediator.Send(
+                    new GetStagesQuery(
+                        context.GetArgument<Guid>("helpRequestId")));
+
+                return result.ToPayload(
+                    (value, error) => new StagesPayload(value, error));
+            });
+
+            Field<EventLogPayloadType>("eventLog")
+            .Arguments(
+                new QueryArgument<NonNullGraphType<IdGraphType>> { Name = "helpRequestId" }
+            )
+            .ResolveAsync(async context =>
+            {
+                var result = await mediator.Send(
+                    new GetEventLogQuery(
+                        context.GetArgument<Guid>("helpRequestId")));
+            
+                return result.ToPayload(
+                    (value, error) => new EventLogPayload(value, error));
             });
         }
     }
