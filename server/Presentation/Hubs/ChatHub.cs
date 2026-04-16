@@ -1,6 +1,10 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using server.Application.Handlers.ConfirmStage;
+using server.Application.Handlers.DeleteStage;
+using server.Application.Handlers.ProposeStage;
+using server.Application.Handlers.RejectStage;
 using server.Application.Handlers.SendMessage;
 using server.Presentation.GraphQL.Extensions;
 using System.Security.Claims;
@@ -33,8 +37,7 @@ namespace server.Presentation.Hubs
         //Send message to the chat.
         public async Task SendMessage(string helpRequestId, string content)
         {
-            var senderId = Guid.Parse(
-                Context.User!.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var senderId = GetUserId();
 
             var result = await _mediator.Send(
                 new SendMessageCommand(
@@ -44,7 +47,10 @@ namespace server.Presentation.Hubs
 
             if (result.IsFailure)
             {
-                await Clients.Caller.SendAsync("Error", result.Error.Code, result.Error.Message);
+                await Clients.Caller.SendAsync(
+                    "Error", 
+                    result.Error.Code, 
+                    result.Error.Message);
                 return;
             }
 
@@ -57,5 +63,123 @@ namespace server.Presentation.Hubs
                 createdAtUtc = DateTime.UtcNow
             });
         }
+
+        //Stages coomunication methods
+        public async Task ProposeStage(
+            string helpRequestId,
+            string chatId,
+            string content)
+        {
+            var userId = GetUserId();
+
+            var result = await _mediator.Send(
+                new ProposeStageCommand(
+                    Guid.Parse(helpRequestId),
+                    Guid.Parse(chatId),
+                    userId,
+                    content));
+
+            if (result.IsFailure)
+            {
+                await Clients.Caller.SendAsync(
+                    "Error",
+                    result.Error.Code,
+                    result.Error.Message);
+                return;
+            }
+
+            await Clients.Group(helpRequestId).SendAsync("StageProposed", new
+            {
+                stageId = result.Value,
+                proposedByUserId = userId,
+                content,
+                createdAtUtc = DateTime.UtcNow
+            });
+        }
+
+        public async Task ConfirmStage(string helpRequestId, string stageId)
+        {
+            var userId = GetUserId();
+
+            var result = await _mediator.Send(
+                new ConfirmStageCommand(
+                    Guid.Parse(stageId),
+                    userId));
+
+            if (result.IsFailure)
+            {
+                await Clients.Caller.SendAsync(
+                    "Error",
+                    result.Error.Code,
+                    result.Error.Message);
+                return;
+            }
+
+            await Clients.Group(helpRequestId).SendAsync("StageConfirmed", new
+            {
+                stageId,
+                confirmedByUserId = userId,
+                resolvedAtUtc = DateTime.UtcNow
+            });
+        }
+
+        public async Task RejectStage(
+            string helpRequestId,
+            string stageId,
+            string reason)
+        {
+            var userId = GetUserId();
+
+            var result = await _mediator.Send(
+                new RejectStageCommand(
+                    Guid.Parse(stageId),
+                    userId,
+                    reason));
+
+            if (result.IsFailure)
+            {
+                await Clients.Caller.SendAsync(
+                    "Error",
+                    result.Error.Code,
+                    result.Error.Message);
+                return;
+            }
+
+            await Clients.Group(helpRequestId).SendAsync("StageRejected", new
+            {
+                stageId,
+                rejectedByUserId = userId,
+                reason,
+                resolvedAtUtc = DateTime.UtcNow
+            });
+        }
+
+        public async Task DeleteStage(string helpRequestId, string stageId)
+        {
+            var userId = GetUserId();
+
+            var result = await _mediator.Send(
+                new DeleteStageCommand(
+                    Guid.Parse(stageId),
+                    userId));
+
+            if (result.IsFailure)
+            {
+                await Clients.Caller.SendAsync(
+                    "Error",
+                    result.Error.Code,
+                    result.Error.Message);
+                return;
+            }
+
+            await Clients.Group(helpRequestId).SendAsync("StageDeleted", new
+            {
+                stageId,
+                deletedByUserId = userId
+            });
+        }
+
+        private Guid GetUserId() =>
+            Guid.Parse(Context.User!.FindFirstValue(ClaimTypes.NameIdentifier)!);
     }
 }
