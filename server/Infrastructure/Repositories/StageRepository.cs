@@ -6,7 +6,7 @@ using server.Domain.HelpRequest;
 
 namespace server.Infrastructure.Repositories
 {
-    public class StageRepository : IStageRepository
+    public class StageRepository : BaseRepository, IStageRepository
     {
         private readonly ISqlConnectionFactory _connectionFactory;
 
@@ -183,34 +183,6 @@ namespace server.Infrastructure.Repositories
                     cancellationToken: ct));
 
             return result.AsList();
-        }
-
-        //Private helper method to insert event log within a transaction
-        private static async Task InsertEventAsync(
-            System.Data.IDbConnection connection,
-            System.Data.IDbTransaction tx,
-            HelpRequestEvent logEvent,
-            CancellationToken ct)
-        {
-            const string insertEvent = """
-                INSERT INTO HelpRequestEventLog
-                    (Id, HelpRequestId, ActorId, EventType, Payload, CreatedAtUtc)
-                VALUES
-                    (@Id, @HelpRequestId, @ActorId, @EventType, @Payload, @CreatedAtUtc);
-                """;
-
-            await connection.ExecuteAsync(new CommandDefinition(
-                insertEvent,
-                new
-                {
-                    logEvent.Id,
-                    logEvent.HelpRequestId,
-                    logEvent.ActorId,
-                    EventType = (int)logEvent.EventType,
-                    logEvent.Payload,
-                    logEvent.CreatedAtUtc
-                },
-                transaction: tx, cancellationToken: ct));
         }
 
         private sealed class StageRow
