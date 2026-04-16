@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using server.Application.Handlers.GetStages;
+using server.Application.Handlers.GetStageTemplates;
 using server.Application.IRepositories;
 using server.Application.IServices;
 using server.Domain.HelpRequest;
@@ -184,7 +185,22 @@ namespace server.Infrastructure.Repositories
 
             return result.AsList();
         }
+        public async Task<IReadOnlyList<StageTemplateDto>> GetTemplatesAsync(CancellationToken ct)
+        {
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
 
+            const string sql = """
+                SELECT Id, Content, IsAutomatic
+                FROM StageTemplates
+                WHERE IsAutomatic = 0
+                ORDER BY Content ASC;
+                """;
+
+            var result = await connection.QueryAsync<StageTemplateDto>(
+                new CommandDefinition(sql, cancellationToken: ct));
+
+            return result.AsList();
+        }
         private sealed class StageRow
         {
             public Guid Id { get; init; }

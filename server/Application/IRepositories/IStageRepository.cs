@@ -1,4 +1,5 @@
 ﻿using server.Application.Handlers.GetStages;
+using server.Application.Handlers.GetStageTemplates;
 using server.Domain.HelpRequest;
 
 namespace server.Application.IRepositories
@@ -11,5 +12,6 @@ namespace server.Application.IRepositories
         Task<HelpRequestStage?> GetByIdAsync(Guid stageId, CancellationToken ct);
         Task<IReadOnlyList<StageDto>> GetStagesAsync(Guid helpRequestId, CancellationToken ct);
         Task<IReadOnlyList<EventLogDto>> GetEventLogAsync(Guid helpRequestId, CancellationToken ct);
+        Task<IReadOnlyList<StageTemplateDto>> GetTemplatesAsync(CancellationToken ct);
     }
 }
