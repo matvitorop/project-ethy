@@ -19,7 +19,7 @@ namespace server.Application.IRepositories
         // Rethink this method
         Task UpdateAsync(HelpRequest request, CancellationToken ct);
         
-        Task AssignExecutorAsync(HelpRequest request, Chat chat, CancellationToken ct);
+        Task AssignExecutorAsync(HelpRequest request, Chat chat, HelpRequestStage firstStage, HelpRequestEvent logEvent, CancellationToken ct);
 
         Task AddResponseAsync(Guid helpRequestId, HelpRequestResponse response, CancellationToken ct);
 

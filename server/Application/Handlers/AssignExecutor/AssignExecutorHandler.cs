@@ -2,7 +2,9 @@
 using server.Application.IRepositories;
 using server.Domain.Chat;
 using server.Domain.Exceptions;
+using server.Domain.HelpRequest;
 using server.Domain.Primitives;
+using System.Text.Json;
 
 namespace server.Application.Handlers.AssignExecutor
 {
@@ -47,7 +49,22 @@ namespace server.Application.Handlers.AssignExecutor
                 helpRequest.CreatorId,
                 helpRequest.AssignedUserId!.Value);
 
-            await _repository.AssignExecutorAsync(helpRequest, chat, ct);
+            var firstStage = HelpRequestStage.CreateConfirmed(
+                helpRequest.Id,
+                chat.Id,
+                helpRequest.CreatorId,
+                "Executive assigned");
+
+            var logEvent = new HelpRequestEvent(
+                helpRequest.Id,
+                request.CurrentUserId,
+                HelpRequestEventType.ExecutorAssigned,
+                JsonSerializer.Serialize(new
+                {
+                    assignedUserId = helpRequest.AssignedUserId
+                }));
+
+            await _repository.AssignExecutorAsync(helpRequest, chat, firstStage, logEvent, ct);
 
             return Result<AssignExecutorResult>.Success(
                 new AssignExecutorResult(

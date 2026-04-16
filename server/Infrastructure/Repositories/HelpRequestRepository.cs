@@ -11,7 +11,7 @@ using System.Data;
 
 namespace server.Infrastructure.Repositories
 {
-    public class HelpRequestRepository : IHelpRequestRepository
+    public class HelpRequestRepository : BaseRepository, IHelpRequestRepository
     {
         private readonly ISqlConnectionFactory _connectionFactory;
 
@@ -248,7 +248,7 @@ namespace server.Infrastructure.Repositories
             }
         }
 
-        public async Task AssignExecutorAsync(HelpRequest request, Chat chat, CancellationToken ct)
+        public async Task AssignExecutorAsync(HelpRequest request, Chat chat, HelpRequestStage firstStage, HelpRequestEvent logEvent, CancellationToken ct)
         {
             using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
             using var tx = connection.BeginTransaction();
@@ -262,9 +262,34 @@ namespace server.Infrastructure.Repositories
                     VALUES (@Id, @HelpRequestId, @OwnerId, @AssigneeId, @CreatedAtUtc);
                     """;
 
+                await connection.ExecuteAsync(new CommandDefinition(insertChat, chat, transaction: tx, cancellationToken: ct));
+
+                const string insertStage = """
+                    INSERT INTO HelpRequestStages
+                        (Id, HelpRequestId, ChatId, ProposedByUserId,
+                         Content, Status, RejectionReason, CreatedAtUtc, ResolvedAtUtc)
+                    VALUES
+                        (@Id, @HelpRequestId, @ChatId, @ProposedByUserId,
+                         @Content, @Status, @RejectionReason, @CreatedAtUtc, @ResolvedAtUtc);
+                    """;
+
                 await connection.ExecuteAsync(new CommandDefinition(
-                    insertChat, chat,
+                    insertStage,
+                    new
+                    {
+                        firstStage.Id,
+                        firstStage.HelpRequestId,
+                        firstStage.ChatId,
+                        firstStage.ProposedByUserId,
+                        firstStage.Content,
+                        Status = (int)firstStage.Status,
+                        firstStage.RejectionReason,
+                        firstStage.CreatedAtUtc,
+                        firstStage.ResolvedAtUtc
+                    },
                     transaction: tx, cancellationToken: ct));
+
+                await InsertEventAsync(connection, tx, logEvent, ct);
 
                 tx.Commit();
             }
