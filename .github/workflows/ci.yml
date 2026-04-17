@@ -1,0 +1,285 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: ["**"]
+  workflow_dispatch:
+
+# =====================================================================
+# STAGE ORDER: build → test → docker → deploy
+# Кожен наступний stage стартує тільки після успіху попереднього
+# =====================================================================
+
+jobs:
+
+  # ═══════════════════════════════════════════════════════
+  # STAGE: build
+  # ═══════════════════════════════════════════════════════
+
+  build-server:
+    name: Build — .NET Server
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Cache NuGet пакетів — прискорює повторні запуски
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ hashFiles('**/server/*.csproj') }}
+          restore-keys: |
+            nuget-
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore dependencies
+        run: dotnet restore server/server.csproj
+
+      - name: Build
+        run: dotnet build server/server.csproj --no-restore --configuration Release
+
+      # Artifact — передаємо скомпільований результат у наступні stages
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-build
+          path: server/bin/Release/
+          retention-days: 1
+
+  build-client:
+    name: Build — React Client
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Cache node_modules — прискорює повторні запуски
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: client/node_modules
+          key: npm-${{ hashFiles('client/package-lock.json') }}
+          restore-keys: |
+            npm-
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        working-directory: client
+        run: npm ci
+
+      - name: Build client
+        working-directory: client
+        run: npm run build
+
+      # Artifact — передаємо dist/ у наступні stages
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: client-build
+          path: client/dist/
+          retention-days: 1
+
+  # ═══════════════════════════════════════════════════════
+  # STAGE: test
+  # Залежить від успішного build
+  # ═══════════════════════════════════════════════════════
+
+  test-server:
+    name: Test — .NET Server
+    runs-on: ubuntu-latest
+    needs: build-server
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ hashFiles('**/server/*.csproj') }}
+          restore-keys: |
+            nuget-
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore dependencies
+        run: dotnet restore server/server.csproj
+
+      # Тести відсутні — перевіряємо що build проходить без попереджень
+      - name: Verify build (no tests yet)
+        run: |
+          dotnet build server/server.csproj --no-restore --configuration Release
+          echo "✓ Server build verified — no test project yet"
+
+      # Зберігаємо звіт як artifact для звіту л.р.
+      - name: Generate build report
+        run: |
+          mkdir -p build-report
+          echo "Server build report" > build-report/server-info.txt
+          echo "Date: $(date)" >> build-report/server-info.txt
+          echo "Commit: ${{ github.sha }}" >> build-report/server-info.txt
+          echo "Branch: ${{ github.ref_name }}" >> build-report/server-info.txt
+          echo "Status: PASSED" >> build-report/server-info.txt
+
+      - name: Upload build report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-report
+          path: build-report/
+          retention-days: 7
+
+  test-client:
+    name: Test — React Client (lint)
+    runs-on: ubuntu-latest
+    needs: build-client
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: client/node_modules
+          key: npm-${{ hashFiles('client/package-lock.json') }}
+          restore-keys: |
+            npm-
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        working-directory: client
+        run: npm ci
+
+      # Lint як замінник тестів
+      - name: Run lint
+        working-directory: client
+        run: npm run lint
+
+  # ═══════════════════════════════════════════════════════
+  # STAGE: docker
+  # Збірка Docker образів — залежить від test stage
+  # ═══════════════════════════════════════════════════════
+
+  docker-server:
+    name: Docker — Build Server Image
+    runs-on: ubuntu-latest
+    needs: test-server
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build server Docker image
+        run: |
+          docker build \
+            --file server/Dockerfile \
+            --tag ethy-server:${{ github.sha }} \
+            --tag ethy-server:latest \
+            server/
+
+      - name: Verify image
+        run: |
+          docker images ethy-server
+          echo "✓ Server image built successfully"
+
+  docker-client:
+    name: Docker — Build Client Image
+    runs-on: ubuntu-latest
+    needs: test-client
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Завантажуємо artifact з build stage
+      - name: Download client build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: client-build
+          path: client/dist/
+
+      - name: Build client Docker image
+        run: |
+          docker build \
+            --file client/Dockerfile \
+            --tag ethy-client:${{ github.sha }} \
+            --tag ethy-client:latest \
+            client/
+
+      - name: Verify image
+        run: |
+          docker images ethy-client
+          echo "✓ Client image built successfully"
+
+  # ═══════════════════════════════════════════════════════
+  # STAGE: deploy
+  # Імітація розгортання — залежить від docker stage
+  # ═══════════════════════════════════════════════════════
+
+  deploy:
+    name: Deploy — Generate Manifest
+    runs-on: ubuntu-latest
+    needs: [docker-server, docker-client]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Завантажуємо build-report artifact з test stage
+      - name: Download build report
+        uses: actions/download-artifact@v4
+        with:
+          name: build-report
+          path: build-report/
+
+      # Генеруємо deployment manifest — демонструє передачу artifacts між stages
+      - name: Generate deployment manifest
+        run: |
+          mkdir -p deployment
+          echo "========================================" > deployment/manifest.txt
+          echo "  ETHY PLATFORM — DEPLOYMENT MANIFEST  " >> deployment/manifest.txt
+          echo "========================================" >> deployment/manifest.txt
+          echo "" >> deployment/manifest.txt
+          echo "Deployment date : $(date)" >> deployment/manifest.txt
+          echo "Commit SHA      : ${{ github.sha }}" >> deployment/manifest.txt
+          echo "Branch          : ${{ github.ref_name }}" >> deployment/manifest.txt
+          echo "Triggered by    : ${{ github.actor }}" >> deployment/manifest.txt
+          echo "" >> deployment/manifest.txt
+          echo "--- Images ---" >> deployment/manifest.txt
+          echo "ethy-server : ${{ github.sha }}" >> deployment/manifest.txt
+          echo "ethy-client : ${{ github.sha }}" >> deployment/manifest.txt
+          echo "" >> deployment/manifest.txt
+          echo "--- Build report ---" >> deployment/manifest.txt
+          cat build-report/server-info.txt >> deployment/manifest.txt
+          echo "" >> deployment/manifest.txt
+          echo "Status: READY FOR DEPLOYMENT" >> deployment/manifest.txt
+
+      - name: Print manifest
+        run: cat deployment/manifest.txt
+
+      # Зберігаємо manifest як artifact для звіту
+      - name: Upload deployment manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-manifest
+          path: deployment/
+          retention-days: 7
