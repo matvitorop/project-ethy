@@ -1,4 +1,5 @@
-import { useState, ChangeEvent, FormEvent, CSSProperties } from "react";
+import { useState } from "react";
+import type { ChangeEvent, FormEvent, CSSProperties } from "react";
 
 const API_URL = "https://localhost:7246/graphql";
 
