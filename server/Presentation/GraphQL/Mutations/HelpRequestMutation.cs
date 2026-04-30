@@ -4,12 +4,14 @@ using MediatR;
 using server.Application.Handlers.AddHelpRequest;
 using server.Application.Handlers.AssignExecutor;
 using server.Application.Handlers.ChangeHelpRequestStatus;
+using server.Application.Handlers.EditHelpRequest;
 using server.Application.Handlers.ResponseToHelpRequestHandler;
 using server.Domain.HelpRequest;
 using server.Presentation.GraphQL.Extensions;
 using server.Presentation.GraphQL.Types.AddHelpRequestTypes;
 using server.Presentation.GraphQL.Types.AssignExecutorTypes;
 using server.Presentation.GraphQL.Types.ChangeHRStatusTypes;
+using server.Presentation.GraphQL.Types.EditHelpRequestTypes;
 using server.Presentation.GraphQL.Types.ErrorTypes;
 using server.Presentation.GraphQL.Types.ResponseToHRTypes;
 
@@ -118,6 +120,33 @@ namespace server.Presentation.GraphQL.Mutations
                 return result.ToPayload(
                     (value, error) => new AssignExecutorPayload(value, error));
             });
+
+            Field<EditHelpRequestPayloadType>("editHelpRequest")
+                .Authorize()
+                .Arguments(
+                    new QueryArgument<NonNullGraphType<IdGraphType>> { Name = "helpRequestId" },
+                    new QueryArgument<NonNullGraphType<StringGraphType>> { Name = "title" },
+                    new QueryArgument<NonNullGraphType<StringGraphType>> { Name = "description" },
+                    new QueryArgument<FloatGraphType> { Name = "latitude" },
+                    new QueryArgument<FloatGraphType> { Name = "longitude" }
+                )
+                .ResolveAsync(async context =>
+                {
+                    var userId = context.GetUserId();
+
+                    var result = await mediator.Send(
+                        new EditHelpRequestCommand(
+                            context.GetArgument<Guid>("helpRequestId"),
+                            userId,
+                            context.GetArgument<string>("title"),
+                            context.GetArgument<string>("description"),
+                            context.GetArgument<double?>("latitude"),
+                            context.GetArgument<double?>("longitude")
+                        ));
+
+                    return result.ToPayload(
+                        error => new EditHelpRequestPayload(error == null, error));
+                });
 
         }
     }
