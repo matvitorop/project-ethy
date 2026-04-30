@@ -27,5 +27,8 @@ namespace server.Application.IRepositories
         Task<IReadOnlyList<HelpRequestResponseDto>> GetResponsesByHelpRequestIdAsync(
             CancellationToken ct, Guid helpRequestId);
         Task EditAsync(HelpRequest request, HelpRequestEvent logEvent, CancellationToken ct);
+
+        Task SoftDeleteAsync(Guid id, CancellationToken ct);
+        Task CancelAsync(HelpRequest request, HelpRequestEvent logEvent, CancellationToken ct);
     }
 }

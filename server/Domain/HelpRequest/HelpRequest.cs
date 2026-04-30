@@ -36,6 +36,9 @@ namespace server.Domain.HelpRequest
 
         public DateTime? UpdatedAtUtc { get; private set; }
 
+        public bool IsDeleted { get; private set; }
+        public string? CancellationReason { get; private set; }
+
         private HelpRequest() { }
 
         public HelpRequest(
@@ -66,6 +69,8 @@ namespace server.Domain.HelpRequest
             double? longitude,
             DateTime createdAtUtc,
             DateTime? updatedAtUtc,
+            bool isDeleted,
+            string? cancellationReason,
             IEnumerable<HelpRequestResponse> responses)
         {
             Id = id;
@@ -76,6 +81,9 @@ namespace server.Domain.HelpRequest
             AssignedUserId = assignedUserId;
             CreatedAtUtc = createdAtUtc;
             UpdatedAtUtc = updatedAtUtc;
+            IsDeleted = isDeleted;
+            CancellationReason = cancellationReason;
+
             if (latitude.HasValue && longitude.HasValue)
                 Location = new HelpRequestGeoPoint(latitude.Value, longitude.Value);
 
@@ -228,7 +236,7 @@ namespace server.Domain.HelpRequest
         {
             if (Status != HelpRequestStatus.Open)
                 throw new DomainException(
-                    "Cannot edit inactive request",
+                    "Cannot edit current request",
                     "HelpRequest.CANNOT_EDIT");
 
             SetTitle(title);
@@ -239,6 +247,45 @@ namespace server.Domain.HelpRequest
                 : null;
 
             UpdatedAtUtc = DateTime.UtcNow;
+        }
+
+        public void Delete()
+        {
+            if (Status != HelpRequestStatus.Open)
+                throw new DomainException(
+                    "Cannot delete inactive request",
+                    "HelpRequest.CANNOT_DELETE");
+
+            if (IsDeleted)
+                throw new DomainException(
+                    "Request is already deleted",
+                    "HelpRequest.ALREADY_DELETED");
+
+            IsDeleted = true;
+        }
+
+        public void Cancel(string reason)
+        {
+            if (Status is HelpRequestStatus.Resolved or HelpRequestStatus.Cancelled)
+                throw new DomainException(
+                    "Wrong status",
+                    "HelpRequest.INVALID_STATUS_TRANSITION_CANCEL");
+
+            if (string.IsNullOrWhiteSpace(reason))
+                throw new DomainException(
+                    "Cancellation reason is required",
+                    "HelpRequest.CANCELLATION_REASON_REQUIRED");
+
+            if (reason.Length > 500)
+                throw new DomainException(
+                    "Cancellation reason is too long",
+                    "HelpRequest.CANCELLATION_REASON_TOO_LONG");
+
+            Status = HelpRequestStatus.Cancelled;
+            CancellationReason = reason;
+
+            foreach (var r in _responses)
+                r.Reject();
         }
     }
 }
