@@ -101,7 +101,9 @@ namespace server.Infrastructure.Repositories
 
             const string requestSql = """
              SELECT Id, CreatorId, Title, Description, Status,
-                    AssignedUserId, Latitude, Longitude, CreatedAtUtc, UpdatedAtUtc
+                    AssignedUserId, Latitude, Longitude, 
+                    CreatedAtUtc, UpdatedAtUtc, 
+                    IsDeleted, CancellationReason
              FROM HelpRequests
              WHERE Id = @Id;
              """;
@@ -124,6 +126,7 @@ namespace server.Infrastructure.Repositories
                 row.Id, row.CreatorId, row.Title, row.Description,
                 row.Status, row.AssignedUserId,
                 row.Latitude, row.Longitude, row.CreatedAtUtc, row.UpdatedAtUtc,
+                row.IsDeleted, row.CancellationReason,
                 responses);
         }
 
@@ -147,6 +150,7 @@ namespace server.Infrastructure.Repositories
                     WHERE HelpRequestId = hr.Id
                     ORDER BY [Order] ASC
                 ) img
+                WHERE hr.IsDeleted = 0
                 ORDER BY hr.CreatedAtUtc DESC
                 OFFSET @Offset ROWS
                 FETCH NEXT @PageSize ROWS ONLY;
@@ -218,7 +222,7 @@ namespace server.Infrastructure.Repositories
                 const string sql = """
             UPDATE HelpRequests
             SET Status = @Status
-            WHERE Id = @Id;
+            WHERE Id = @Id AND IsDeleted = 0;
             """;
 
                 var affectedRows = await connection.ExecuteAsync(
@@ -353,6 +357,8 @@ namespace server.Infrastructure.Repositories
             public double? Longitude { get; init; }
             public DateTime CreatedAtUtc { get; init; }
             public DateTime? UpdatedAtUtc { get; init; }
+            public bool IsDeleted { get; init; }
+            public string? CancellationReason { get; init; }
         }
 
         public async Task<Guid?> GetCreatorIdAsync(CancellationToken ct, Guid helpRequestId)
@@ -456,6 +462,78 @@ namespace server.Infrastructure.Repositories
                 if (affectedRows == 0)
                     throw new InvalidOperationException(
                         $"HelpRequest with id '{request.Id}' not found.");
+
+                await InsertEventAsync(connection, tx, logEvent, ct);
+
+                tx.Commit();
+            }
+            catch
+            {
+                tx.Rollback();
+                throw;
+            }
+        }
+
+        public async Task SoftDeleteAsync(Guid id, CancellationToken ct)
+        {
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
+
+            const string sql = """
+                UPDATE HelpRequests
+                SET IsDeleted = 1
+                WHERE Id = @Id;
+                """;
+
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(sql, new { Id = id }, cancellationToken: ct));
+
+            if (affectedRows == 0)
+                throw new InvalidOperationException(
+                    $"HelpRequest with id '{id}' not found.");
+        }
+
+        public async Task CancelAsync(
+            HelpRequest request,
+            HelpRequestEvent logEvent,
+            CancellationToken ct)
+        {
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
+            using var tx = connection.BeginTransaction();
+
+            try
+            {
+                const string updateRequest = """
+                    UPDATE HelpRequests
+                    SET Status             = @Status,
+                        CancellationReason = @CancellationReason
+                    WHERE Id = @Id;
+                    """;
+
+                await connection.ExecuteAsync(new CommandDefinition(
+                    updateRequest,
+                    new
+                    {
+                        request.Id,
+                        Status = (int)request.Status,
+                        request.CancellationReason
+                    },
+                    transaction: tx,
+                    cancellationToken: ct));
+
+                const string updateResponse = """
+                    UPDATE HelpRequestResponses
+                    SET Status = @Status
+                    WHERE Id = @Id;
+                    """;
+
+                foreach (var response in request.Responses)
+                {
+                    await connection.ExecuteAsync(new CommandDefinition(
+                        updateResponse,
+                        new { response.Id, Status = (int)response.Status },
+                        transaction: tx,
+                        cancellationToken: ct));
+                }
 
                 await InsertEventAsync(connection, tx, logEvent, ct);
 
