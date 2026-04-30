@@ -151,6 +151,7 @@ namespace server.Infrastructure.Repositories
                     ORDER BY [Order] ASC
                 ) img
                 WHERE hr.IsDeleted = 0
+                    AND hr.Status != 4
                 ORDER BY hr.CreatedAtUtc DESC
                 OFFSET @Offset ROWS
                 FETCH NEXT @PageSize ROWS ONLY;
