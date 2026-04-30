@@ -7,7 +7,8 @@
         StageProposed = 2,
         StageConfirmed = 3,
         StageRejected = 4,
-        StageDeleted = 5
+        StageDeleted = 5,
+        HelpRequestEdited = 6
     }
 
     public class HelpRequestEvent

@@ -101,7 +101,7 @@ namespace server.Infrastructure.Repositories
 
             const string requestSql = """
              SELECT Id, CreatorId, Title, Description, Status,
-                    AssignedUserId, Latitude, Longitude, CreatedAtUtc
+                    AssignedUserId, Latitude, Longitude, CreatedAtUtc, UpdatedAtUtc
              FROM HelpRequests
              WHERE Id = @Id;
              """;
@@ -123,7 +123,7 @@ namespace server.Infrastructure.Repositories
             return new HelpRequest(
                 row.Id, row.CreatorId, row.Title, row.Description,
                 row.Status, row.AssignedUserId,
-                row.Latitude, row.Longitude, row.CreatedAtUtc,
+                row.Latitude, row.Longitude, row.CreatedAtUtc, row.UpdatedAtUtc,
                 responses);
         }
 
@@ -352,6 +352,7 @@ namespace server.Infrastructure.Repositories
             public double? Latitude { get; init; }
             public double? Longitude { get; init; }
             public DateTime CreatedAtUtc { get; init; }
+            public DateTime? UpdatedAtUtc { get; init; }
         }
 
         public async Task<Guid?> GetCreatorIdAsync(CancellationToken ct, Guid helpRequestId)
@@ -417,5 +418,54 @@ namespace server.Infrastructure.Repositories
             }
         }
 
+        public async Task EditAsync(
+            HelpRequest request,
+            HelpRequestEvent logEvent,
+            CancellationToken ct)
+        {
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
+            using var tx = connection.BeginTransaction();
+
+            try
+            {
+                const string sql = """
+                UPDATE HelpRequests
+                SET Title        = @Title,
+                    Description  = @Description,
+                    Latitude     = @Latitude,
+                    Longitude    = @Longitude,
+                    UpdatedAtUtc = @UpdatedAtUtc
+                WHERE Id = @Id;
+                """;
+
+                var affectedRows = await connection.ExecuteAsync(
+                    new CommandDefinition(
+                        sql,
+                        new
+                        {
+                            request.Id,
+                            request.Title,
+                            request.Description,
+                            Latitude = request.Location?.Latitude,
+                            Longitude = request.Location?.Longitude,
+                            request.UpdatedAtUtc
+                        },
+                        transaction: tx,
+                        cancellationToken: ct));
+
+                if (affectedRows == 0)
+                    throw new InvalidOperationException(
+                        $"HelpRequest with id '{request.Id}' not found.");
+
+                await InsertEventAsync(connection, tx, logEvent, ct);
+
+                tx.Commit();
+            }
+            catch
+            {
+                tx.Rollback();
+                throw;
+            }
+        }
     }
 }
