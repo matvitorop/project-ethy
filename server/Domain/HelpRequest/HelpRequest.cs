@@ -34,6 +34,8 @@ namespace server.Domain.HelpRequest
 
         public IReadOnlyCollection<RequestImage> Images => _images.AsReadOnly();
 
+        public DateTime? UpdatedAtUtc { get; private set; }
+
         private HelpRequest() { }
 
         public HelpRequest(
@@ -215,6 +217,27 @@ namespace server.Domain.HelpRequest
             AssignedUserId = response.UserId;
 
             Status = HelpRequestStatus.InProgress;
+        }
+
+        public void Edit(
+            string title,
+            string description,
+            double? latitude,
+            double? longitude)
+        {
+            if (Status != HelpRequestStatus.Open)
+                throw new DomainException(
+                    "Cannot edit inactive request",
+                    "HelpRequest.CANNOT_EDIT");
+
+            SetTitle(title);
+            SetDescription(description);
+
+            Location = (latitude.HasValue && longitude.HasValue)
+                ? new HelpRequestGeoPoint(latitude.Value, longitude.Value)
+                : null;
+
+            UpdatedAtUtc = DateTime.UtcNow;
         }
     }
 }
