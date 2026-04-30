@@ -1,0 +1,2 @@
+﻿ALTER TABLE HelpRequests
+ADD UpdatedAtUtc DATETIME2 NULL;
