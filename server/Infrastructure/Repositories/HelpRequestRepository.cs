@@ -204,34 +204,48 @@ namespace server.Infrastructure.Repositories
             };
         }
 
-        public async Task UpdateStatusAsync(CancellationToken ct, Guid id, HelpRequestStatus status)
+        public async Task UpdateStatusAsync(
+            CancellationToken ct,
+            Guid id,
+            HelpRequestStatus status,
+            HelpRequestEvent logEvent)
         {
             using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
+            using var tx = connection.BeginTransaction();
 
-            const string sql = """
-                UPDATE HelpRequests
-                SET Status = @Status
-                WHERE Id = @Id;
+            try
+            {
+                const string sql = """
+            UPDATE HelpRequests
+            SET Status = @Status
+            WHERE Id = @Id;
             """;
 
-            var affectedRows = await connection.ExecuteAsync(
-                new CommandDefinition(
-                    sql,
-                    new
-                    {
-                        Id = id,
-                        Status = status
-                    },
-                    cancellationToken: ct));
+                var affectedRows = await connection.ExecuteAsync(
+                    new CommandDefinition(
+                        sql,
+                        new { Id = id, Status = (int)status },
+                        transaction: tx,
+                        cancellationToken: ct));
 
-            if (affectedRows == 0)
+                if (affectedRows == 0)
+                    throw new InvalidOperationException(
+                        $"HelpRequest with id '{id}' not found.");
+
+                await InsertEventAsync(connection, tx, logEvent, ct);
+
+                tx.Commit();
+            }
+            catch
             {
-                throw new InvalidOperationException(
-                    $"HelpRequest with id '{id}' not found.");
+                tx.Rollback();
+                throw;
             }
         }
 
-        public async Task UpdateAsync(HelpRequest request, CancellationToken ct)
+        public async Task UpdateAsync(HelpRequest request,
+            HelpRequestEvent logEvent,
+            CancellationToken ct)
         {
             using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
             using var tx = connection.BeginTransaction();
@@ -239,6 +253,9 @@ namespace server.Infrastructure.Repositories
             try
             {
                 await UpdateHelpRequestCoreAsync(connection, tx, request, ct);
+                
+                await InsertEventAsync(connection, tx, logEvent, ct);
+                
                 tx.Commit();
             }
             catch
