@@ -26,5 +26,6 @@ namespace server.Application.IRepositories
         Task<Guid?> GetCreatorIdAsync(CancellationToken ct, Guid helpRequestId);
         Task<IReadOnlyList<HelpRequestResponseDto>> GetResponsesByHelpRequestIdAsync(
             CancellationToken ct, Guid helpRequestId);
+        Task EditAsync(HelpRequest request, HelpRequestEvent logEvent, CancellationToken ct);
     }
 }

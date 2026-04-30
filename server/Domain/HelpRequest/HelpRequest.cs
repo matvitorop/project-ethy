@@ -65,6 +65,7 @@ namespace server.Domain.HelpRequest
             double? latitude,
             double? longitude,
             DateTime createdAtUtc,
+            DateTime? updatedAtUtc,
             IEnumerable<HelpRequestResponse> responses)
         {
             Id = id;
@@ -74,7 +75,7 @@ namespace server.Domain.HelpRequest
             Status = (HelpRequestStatus)status;
             AssignedUserId = assignedUserId;
             CreatedAtUtc = createdAtUtc;
-
+            UpdatedAtUtc = updatedAtUtc;
             if (latitude.HasValue && longitude.HasValue)
                 Location = new HelpRequestGeoPoint(latitude.Value, longitude.Value);
 
