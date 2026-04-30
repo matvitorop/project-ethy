@@ -5,6 +5,7 @@ using server.Application.IRepositories;
 using server.Domain.Exceptions;
 using server.Domain.HelpRequest;
 using server.Domain.Primitives;
+using System.Text.Json;
 
 namespace server.Application.Handlers.ChangeHelpRequestStatus
 {
@@ -20,23 +21,22 @@ namespace server.Application.Handlers.ChangeHelpRequestStatus
         }
 
         public async Task<Result<ChangeHelpRequestStatusResult>> Handle(
-            ChangeHelpRequestStatusCommand request,
-            CancellationToken ct)
+    ChangeHelpRequestStatusCommand request,
+    CancellationToken ct)
         {
             var helpRequest = await _repository
-            .GetAggregateByIdAsync(ct, request.HelpRequestId);
+                .GetAggregateByIdAsync(ct, request.HelpRequestId);
 
             if (helpRequest is null)
-            {
                 return Result<ChangeHelpRequestStatusResult>.Failure(
                     new Error("Help request not found", "HelpRequest.HR_STATUS_NOT_FOUND"));
-            }
 
             if (helpRequest.CreatorId != request.CurrentUserId)
-            {
                 return Result<ChangeHelpRequestStatusResult>.Failure(
                     new Error("Forbidden", "HelpRequest.FORBIDDEN"));
-            }
+
+            // Зберігаємо попередній статус для логу
+            var previousStatus = helpRequest.Status;
 
             try
             {
@@ -45,24 +45,31 @@ namespace server.Application.Handlers.ChangeHelpRequestStatus
             catch (DomainException ex)
             {
                 return Result<ChangeHelpRequestStatusResult>.Failure(
-                    new Error(
-                        ex.Message,
-                        ex.Code));
+                    new Error(ex.Message, ex.Code));
             }
+
+            // Створюємо подію після успішної зміни статусу
+            var logEvent = new HelpRequestEvent(
+                helpRequest.Id,
+                request.CurrentUserId,
+                HelpRequestEventType.StatusChanged,
+                JsonSerializer.Serialize(new
+                {
+                    previousStatus = previousStatus.ToString(),
+                    newStatus = helpRequest.Status.ToString()
+                }));
 
             var requiresFullUpdate = request.NewStatus == HelpRequestStatus.Cancelled;
 
             if (requiresFullUpdate)
-                await _repository.UpdateAsync(helpRequest, ct);
+                await _repository.UpdateAsync(helpRequest, logEvent, ct);
             else
-                await _repository.UpdateStatusAsync(ct, helpRequest.Id, helpRequest.Status);
+                await _repository.UpdateStatusAsync(ct, helpRequest.Id, helpRequest.Status, logEvent);
 
             return Result<ChangeHelpRequestStatusResult>.Success(
                 new ChangeHelpRequestStatusResult(
                     helpRequest.Id,
-                    helpRequest.Status
-                )
-            );
+                    helpRequest.Status));
         }
 
         private static void ApplyStatus(
