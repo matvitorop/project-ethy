@@ -3,17 +3,21 @@ using GraphQL.Types;
 using MediatR;
 using server.Application.Handlers.AddHelpRequest;
 using server.Application.Handlers.AssignExecutor;
+using server.Application.Handlers.CancelHelpRequest;
 using server.Application.Handlers.ChangeHelpRequestStatus;
 using server.Application.Handlers.EditHelpRequest;
 using server.Application.Handlers.ResponseToHelpRequestHandler;
+using server.Application.Handlers.SoftDeleteHelpRequest;
 using server.Domain.HelpRequest;
 using server.Presentation.GraphQL.Extensions;
 using server.Presentation.GraphQL.Types.AddHelpRequestTypes;
 using server.Presentation.GraphQL.Types.AssignExecutorTypes;
+using server.Presentation.GraphQL.Types.CancelHelpRequestTypes;
 using server.Presentation.GraphQL.Types.ChangeHRStatusTypes;
 using server.Presentation.GraphQL.Types.EditHelpRequestTypes;
 using server.Presentation.GraphQL.Types.ErrorTypes;
 using server.Presentation.GraphQL.Types.ResponseToHRTypes;
+using server.Presentation.GraphQL.Types.SoftDeleteHelpRequestTypes;
 
 namespace server.Presentation.GraphQL.Mutations
 {
@@ -147,6 +151,45 @@ namespace server.Presentation.GraphQL.Mutations
                 return result.ToPayload(
                     error => new EditHelpRequestPayload(error == null, error));
             });
+
+            Field<SoftDeleteHelpRequestPayloadType>("softDeleteHelpRequest")
+            .Authorize()
+            .Arguments(
+                new QueryArgument<NonNullGraphType<IdGraphType>> { Name = "helpRequestId" }
+            )
+            .ResolveAsync(async context =>
+            {
+                var userId = context.GetUserId();
+
+                var result = await mediator.Send(
+                    new SoftDeleteHelpRequestCommand(
+                        context.GetArgument<Guid>("helpRequestId"),
+                        userId));
+
+                return result.ToPayload(
+                    error => new SoftDeleteHelpRequestPayload(error == null, error));
+            });
+
+            Field<CancelHelpRequestPayloadType>("cancelHelpRequest")
+            .Authorize()
+            .Arguments(
+                new QueryArgument<NonNullGraphType<IdGraphType>> { Name = "helpRequestId" },
+                new QueryArgument<NonNullGraphType<StringGraphType>> { Name = "reason" }
+            )
+            .ResolveAsync(async context =>
+            {
+                var userId = context.GetUserId();
+            
+                var result = await mediator.Send(
+                    new CancelHelpRequestCommand(
+                        context.GetArgument<Guid>("helpRequestId"),
+                        userId,
+                        context.GetArgument<string>("reason")));
+            
+                return result.ToPayload(
+                    error => new CancelHelpRequestPayload(error == null, error));
+            });
+
 
         }
     }
