@@ -283,9 +283,21 @@ namespace server.Domain.HelpRequest
 
             Status = HelpRequestStatus.Cancelled;
             CancellationReason = reason;
+            AssignedUserId = null;
 
             foreach (var r in _responses)
                 r.Reject();
+        }
+
+        public void Restore()
+        {
+            if (Status != HelpRequestStatus.Cancelled)
+                throw new DomainException(
+                    "Only cancelled requests can be restored",
+                    "HelpRequest.CANNOT_RESTORE");
+
+            Status = HelpRequestStatus.Open;
+            CancellationReason = null;
         }
     }
 }
