@@ -11,5 +11,7 @@ namespace server.Application.IRepositories
         Task<User?> GetByIdAsync(Guid id, CancellationToken ct);
         Task UpdateUsernameAsync(Guid id, string username, CancellationToken ct);
         Task UpdatePasswordAsync(Guid id, string passwordHash, string passwordSalt, CancellationToken ct);
+        Task<bool> IsAdminAsync(Guid userId, CancellationToken ct);
+        Task SoftDeleteAsync(User user, CancellationToken ct);
     }
 }

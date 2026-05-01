@@ -1,4 +1,4 @@
-﻿using server.Application.Handlers.User.GetProfile;
+﻿using server.Application.Handlers.UserHandlers.GetProfile;
 using server.Presentation.GraphQL.Types.ErrorTypes;
 
 namespace server.Presentation.GraphQL.Types.ProfileTypes

@@ -18,7 +18,9 @@ namespace server.Domain
         public UserRole Role { get; private set; }
         public DateTime RegisteredAtUtc { get; private set; }
         public bool HasActiveRequestLimit { get; private set; }
-
+        public bool IsDeleted { get; private set; }
+        public DateTime? DeletedAtUtc { get; private set; }
+        public Guid? DeletedById { get; private set; }
         private User() { }
 
         public User(string userName, string email, string passwordHash, string passwordSalt, UserRole role)
@@ -62,6 +64,18 @@ namespace server.Domain
 
             PasswordHash = passwordHash;
             PasswordSalt = passwordSalt;
+        }
+
+        public void SoftDelete(Guid deletedById)
+        {
+            if (IsDeleted)
+                throw new DomainException(
+                    "User is already deleted",
+                    "User.ALREADY_DELETED");
+
+            IsDeleted = true;
+            DeletedAtUtc = DateTime.UtcNow;
+            DeletedById = deletedById;
         }
     }
 }
