@@ -22,5 +22,7 @@ namespace server.Application.IRepositories
         Task SoftDeleteAsync(Guid id, CancellationToken ct);
         Task CancelAsync(HelpRequest request, HelpRequestEvent logEvent, CancellationToken ct);
         Task RestoreAsync(HelpRequest request, HelpRequestEvent logEvent, CancellationToken ct);
+        Task<bool> HasActiveRequestsAsOwnerAsync(Guid userId, CancellationToken ct);
+        Task<bool> HasActiveRequestsAsAssigneeAsync(Guid userId, CancellationToken ct);
     }
 }
