@@ -169,5 +169,48 @@ namespace server.Infrastructure.Repositories
                 throw new InvalidOperationException(
                     $"User with id '{id}' not found.");
         }
+
+        public async Task<bool> IsAdminAsync(Guid userId, CancellationToken ct)
+        {
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
+
+            const string sql = """
+                SELECT COUNT(1) FROM Users
+                WHERE Id = @Id AND Role = 'Admin';
+                """;
+
+            var count = await connection.ExecuteScalarAsync<int>(
+                new CommandDefinition(sql, new { Id = userId }, cancellationToken: ct));
+
+            return count > 0;
+        }
+
+        public async Task SoftDeleteAsync(User user, CancellationToken ct)
+        {
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
+
+            const string sql = """
+                UPDATE Users
+                SET IsDeleted    = 1,
+                    DeletedAtUtc = @DeletedAtUtc,
+                    DeletedById  = @DeletedById
+                WHERE Id = @Id;
+                """;
+
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(
+                    sql,
+                    new
+                    {
+                        Id = user.Id,
+                        user.DeletedAtUtc,
+                        user.DeletedById
+                    },
+                    cancellationToken: ct));
+
+            if (affectedRows == 0)
+                throw new InvalidOperationException(
+                    $"User with id '{user.Id}' not found.");
+        }
     }
 }

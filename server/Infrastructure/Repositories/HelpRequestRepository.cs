@@ -591,6 +591,43 @@ namespace server.Infrastructure.Repositories
             }
         }
 
+        public async Task<bool> HasActiveRequestsAsOwnerAsync(
+            Guid userId, CancellationToken ct)
+        {
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
+
+            const string sql = """
+                SELECT COUNT(1) FROM HelpRequests
+                WHERE CreatorId = @UserId
+                  AND Status IN (1, 2)   -- 1 = Open, 2 = InProgress
+                  AND IsDeleted = 0;
+                """;
+
+            var count = await connection.ExecuteScalarAsync<int>(
+                new CommandDefinition(sql, new { UserId = userId }, cancellationToken: ct));
+
+            return count > 0;
+        }
+
+        public async Task<bool> HasActiveRequestsAsAssigneeAsync(
+            Guid userId, CancellationToken ct)
+        {
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
+
+            const string sql = """
+                SELECT COUNT(1) FROM HelpRequests
+                WHERE AssignedUserId = @UserId
+                  AND Status = 2       -- 2 = InProgress
+                  AND IsDeleted = 0;
+                """;
+
+            var count = await connection.ExecuteScalarAsync<int>(
+                new CommandDefinition(sql, new { UserId = userId }, cancellationToken: ct));
+
+            return count > 0;
+        }
+
+
 
 
     }
