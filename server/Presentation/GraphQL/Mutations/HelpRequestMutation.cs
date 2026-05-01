@@ -7,6 +7,7 @@ using server.Application.Handlers.CancelHelpRequest;
 using server.Application.Handlers.ChangeHelpRequestStatus;
 using server.Application.Handlers.EditHelpRequest;
 using server.Application.Handlers.ResponseToHelpRequestHandler;
+using server.Application.Handlers.RestoreHelpRequest;
 using server.Application.Handlers.SoftDeleteHelpRequest;
 using server.Domain.HelpRequest;
 using server.Presentation.GraphQL.Extensions;
@@ -17,6 +18,7 @@ using server.Presentation.GraphQL.Types.ChangeHRStatusTypes;
 using server.Presentation.GraphQL.Types.EditHelpRequestTypes;
 using server.Presentation.GraphQL.Types.ErrorTypes;
 using server.Presentation.GraphQL.Types.ResponseToHRTypes;
+using server.Presentation.GraphQL.Types.RestoreHelpRequestTypes;
 using server.Presentation.GraphQL.Types.SoftDeleteHelpRequestTypes;
 
 namespace server.Presentation.GraphQL.Mutations
@@ -189,6 +191,26 @@ namespace server.Presentation.GraphQL.Mutations
                 return result.ToPayload(
                     error => new CancelHelpRequestPayload(error == null, error));
             });
+
+            Field<RestoreHelpRequestPayloadType>("restoreHelpRequest")
+            .Authorize()
+            .Arguments(
+                new QueryArgument<NonNullGraphType<IdGraphType>> { Name = "helpRequestId" }
+            )
+            .ResolveAsync(async context =>
+            {
+                var userId = context.GetUserId();
+
+                var result = await mediator.Send(
+                    new RestoreHelpRequestCommand(
+                        context.GetArgument<Guid>("helpRequestId"),
+                        userId));
+
+                return result.ToPayload(
+                    error => new RestoreHelpRequestPayload(error == null, error));
+            });
+
+
 
 
         }
