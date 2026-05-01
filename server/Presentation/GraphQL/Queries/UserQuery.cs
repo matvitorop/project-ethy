@@ -2,8 +2,10 @@
 using GraphQL.Types;
 using MediatR;
 using server.Application.Handlers.GetUserStatistics;
+using server.Application.Handlers.User.GetProfile;
 using server.Presentation.GraphQL.Extensions;
 using server.Presentation.GraphQL.Types.GetUserStatistic;
+using server.Presentation.GraphQL.Types.ProfileTypes;
 
 namespace server.Presentation.GraphQL.Queries
 {
@@ -25,7 +27,22 @@ namespace server.Presentation.GraphQL.Queries
 
                 return result.ToPayload((value, error) => new GetUserStatisticPayload(value, error));
             });
+
+            Field<ProfilePayloadType>("profile")
+            .Authorize()
+            .ResolveAsync(async context =>
+            {
+                var userId = context.GetUserId();
+
+                var result = await mediator.Send(
+                    new GetProfileQuery(userId));
+
+                return result.ToPayload(
+                    (value, error) => new ProfilePayload(value, error));
+            });
         }
+
+
     }
 
 }

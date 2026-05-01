@@ -3,11 +3,14 @@ using GraphQL.Types;
 using MediatR;
 using server.Application.Handlers.LoginUser;
 using server.Application.Handlers.RegisterUser;
+using server.Application.Handlers.User.ChangePassword;
+using server.Application.Handlers.User.UpdateUsername;
 using server.Presentation.GraphQL.Extensions;
 using server.Presentation.GraphQL.Helpers;
 using server.Presentation.GraphQL.Types.ErrorTypes;
 using server.Presentation.GraphQL.Types.LoginTypes;
 using server.Presentation.GraphQL.Types.LogoutTypes;
+using server.Presentation.GraphQL.Types.ProfileTypes;
 using server.Presentation.GraphQL.Types.RegistartionTypes;
 
 namespace server.Presentation.GraphQL.Mutations
@@ -122,6 +125,50 @@ namespace server.Presentation.GraphQL.Mutations
                     );
 
                 });
+            Field<UpdateUsernamePayloadType>("updateUsername")
+            .Authorize()
+            .Arguments(
+                new QueryArgument<NonNullGraphType<StringGraphType>> { Name = "newUsername" }
+            )
+            .ResolveAsync(async context =>
+            {
+                var userId = context.GetUserId();
+
+                var result = await mediator.Send(
+                    new UpdateUsernameCommand(
+                        userId,
+                        context.GetArgument<string>("newUsername")));
+
+                return result.ToPayload(
+                    error => new UpdateUsernamePayload(error == null, error));
+            });
+
+            Field<ChangePasswordPayloadType>("changePassword")
+            .Authorize()
+            .Arguments(
+                new QueryArgument<NonNullGraphType<StringGraphType>> { Name = "oldPassword" },
+                new QueryArgument<NonNullGraphType<StringGraphType>> { Name = "newPassword" },
+                new QueryArgument<NonNullGraphType<StringGraphType>> { Name = "confirmNewPassword" }
+            )
+            .ResolveAsync(async context =>
+            {
+                var userId = context.GetUserId();
+
+                var result = await mediator.Send(
+                    new ChangePasswordCommand(
+                        userId,
+                        context.GetArgument<string>("oldPassword"),
+                        context.GetArgument<string>("newPassword"),
+                        context.GetArgument<string>("confirmNewPassword")));
+
+                return result.ToPayload(
+                    error => new ChangePasswordPayload(error == null, error));
+            });
+
+
+
+
+
 
         }
     }
