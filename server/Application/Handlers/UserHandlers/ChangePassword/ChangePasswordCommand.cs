@@ -1,7 +1,7 @@
 ﻿using MediatR;
 using server.Domain.Primitives;
 
-namespace server.Application.Handlers.User.ChangePassword
+namespace server.Application.Handlers.UserHandlers.ChangePassword
 {
     public sealed record ChangePasswordCommand(
         Guid UserId,

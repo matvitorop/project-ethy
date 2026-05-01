@@ -4,7 +4,7 @@ using server.Application.Services;
 using server.Domain.Exceptions;
 using server.Domain.Primitives;
 
-namespace server.Application.Handlers.User.ChangePassword
+namespace server.Application.Handlers.UserHandlers.ChangePassword
 {
     public sealed class ChangePasswordHandler
         : IRequestHandler<ChangePasswordCommand, Result>

@@ -3,7 +3,7 @@ using server.Application.IRepositories;
 using server.Domain.Exceptions;
 using server.Domain.Primitives;
 
-namespace server.Application.Handlers.User.UpdateUsername
+namespace server.Application.Handlers.UserHandlers.UpdateUsername
 {
     public sealed class UpdateUsernameHandler
         : IRequestHandler<UpdateUsernameCommand, Result>

@@ -2,7 +2,7 @@
 using GraphQL.Types;
 using MediatR;
 using server.Application.Handlers.GetUserStatistics;
-using server.Application.Handlers.User.GetProfile;
+using server.Application.Handlers.UserHandlers.GetProfile;
 using server.Presentation.GraphQL.Extensions;
 using server.Presentation.GraphQL.Types.GetUserStatistic;
 using server.Presentation.GraphQL.Types.ProfileTypes;

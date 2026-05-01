@@ -2,7 +2,7 @@
 using server.Application.IRepositories;
 using server.Domain.Primitives;
 
-namespace server.Application.Handlers.User.GetProfile
+namespace server.Application.Handlers.UserHandlers.GetProfile
 {
     public sealed class GetProfileHandler
         : IRequestHandler<GetProfileQuery, Result<ProfileDto>>

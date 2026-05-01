@@ -1,5 +1,5 @@
 ﻿using GraphQL.Types;
-using server.Application.Handlers.User.GetProfile;
+using server.Application.Handlers.UserHandlers.GetProfile;
 
 namespace server.Presentation.GraphQL.Types.ProfileTypes
 {
