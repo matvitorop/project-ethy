@@ -109,5 +109,65 @@ namespace server.Infrastructure.Repositories
                     new { UserId = userId },
                     cancellationToken: ct));
         }
+
+        public async Task<User?> GetByIdAsync(Guid id, CancellationToken ct)
+        {
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
+
+            const string sql = """
+                SELECT Id, Username, Email, PasswordHash, PasswordSalt, 
+                       Role, RegisteredAtUtc
+                FROM Users
+                WHERE Id = @Id;
+                """;
+
+            return await connection.QuerySingleOrDefaultAsync<User>(
+                new CommandDefinition(sql, new { Id = id }, cancellationToken: ct));
+        }
+
+        public async Task UpdateUsernameAsync(
+            Guid id, string username, CancellationToken ct)
+        {
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
+
+            const string sql = """
+                UPDATE Users
+                SET Username = @Username
+                WHERE Id = @Id;
+                """;
+
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(
+                    sql,
+                    new { Id = id, Username = username },
+                    cancellationToken: ct));
+
+            if (affectedRows == 0)
+                throw new InvalidOperationException(
+                    $"User with id '{id}' not found.");
+        }
+
+        public async Task UpdatePasswordAsync(
+            Guid id, string passwordHash, string passwordSalt, CancellationToken ct)
+        {
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
+
+            const string sql = """
+                UPDATE Users
+                SET PasswordHash = @PasswordHash,
+                    PasswordSalt = @PasswordSalt
+                WHERE Id = @Id;
+                """;
+
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(
+                    sql,
+                    new { Id = id, PasswordHash = passwordHash, PasswordSalt = passwordSalt },
+                    cancellationToken: ct));
+
+            if (affectedRows == 0)
+                throw new InvalidOperationException(
+                    $"User with id '{id}' not found.");
+        }
     }
 }
