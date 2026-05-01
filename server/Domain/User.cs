@@ -1,4 +1,6 @@
-﻿namespace server.Domain
+﻿using server.Domain.Exceptions;
+
+namespace server.Domain
 {
     public enum UserRole
     {
@@ -36,6 +38,30 @@
         {
             HasActiveRequestLimit = false;
         }
+        public void UpdateUsername(string username)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+                throw new DomainException(
+                    "Username is required",
+                    "User.USERNAME_REQUIRED");
 
+            if (username.Length > 50)
+                throw new DomainException(
+                    "Username is too long",
+                    "User.USERNAME_TOO_LONG");
+
+            Username = username;
+        }
+
+        public void UpdatePassword(string passwordHash, string passwordSalt)
+        {
+            if (string.IsNullOrWhiteSpace(passwordHash))
+                throw new DomainException(
+                    "Password hash is required",
+                    "User.PASSWORD_HASH_REQUIRED");
+
+            PasswordHash = passwordHash;
+            PasswordSalt = passwordSalt;
+        }
     }
 }
