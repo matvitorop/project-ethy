@@ -16,7 +16,6 @@ using server.Presentation.GraphQL.Types.AssignExecutorTypes;
 using server.Presentation.GraphQL.Types.CancelHelpRequestTypes;
 using server.Presentation.GraphQL.Types.ChangeHRStatusTypes;
 using server.Presentation.GraphQL.Types.EditHelpRequestTypes;
-using server.Presentation.GraphQL.Types.ErrorTypes;
 using server.Presentation.GraphQL.Types.ResponseToHRTypes;
 using server.Presentation.GraphQL.Types.RestoreHelpRequestTypes;
 using server.Presentation.GraphQL.Types.SoftDeleteHelpRequestTypes;
