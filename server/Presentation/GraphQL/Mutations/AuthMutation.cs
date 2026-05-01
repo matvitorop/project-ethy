@@ -4,6 +4,7 @@ using MediatR;
 using server.Application.Handlers.LoginUser;
 using server.Application.Handlers.RegisterUser;
 using server.Application.Handlers.UserHandlers.ChangePassword;
+using server.Application.Handlers.UserHandlers.SoftDeleteUser;
 using server.Application.Handlers.UserHandlers.UpdateUsername;
 using server.Presentation.GraphQL.Extensions;
 using server.Presentation.GraphQL.Helpers;
@@ -12,6 +13,7 @@ using server.Presentation.GraphQL.Types.LoginTypes;
 using server.Presentation.GraphQL.Types.LogoutTypes;
 using server.Presentation.GraphQL.Types.ProfileTypes;
 using server.Presentation.GraphQL.Types.RegistartionTypes;
+using server.Presentation.GraphQL.Types.SoftDeleteUserTypes;
 
 namespace server.Presentation.GraphQL.Mutations
 {
@@ -165,7 +167,25 @@ namespace server.Presentation.GraphQL.Mutations
                     error => new ChangePasswordPayload(error == null, error));
             });
 
+            Field<SoftDeleteUserPayloadType>("deleteAccount")
+            .Authorize()
+            .Arguments(
+                // targetUserId необов'язковий — якщо не передано, видаляємо себе
+                // якщо адмін передає targetUserId — видаляє іншого
+                new QueryArgument<IdGraphType> { Name = "targetUserId" }
+            )
+            .ResolveAsync(async context =>
+            {
+                var currentUserId = context.GetUserId();
+                var targetUserId = context.GetArgument<Guid?>("targetUserId")
+                    ?? currentUserId;
 
+                var result = await mediator.Send(
+                    new SoftDeleteUserCommand(targetUserId, currentUserId));
+
+                return result.ToPayload(
+                    error => new SoftDeleteUserPayload(error == null, error));
+            });
 
 
 
