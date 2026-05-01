@@ -546,5 +546,52 @@ namespace server.Infrastructure.Repositories
                 throw;
             }
         }
+
+        public async Task RestoreAsync(
+            HelpRequest request,
+            HelpRequestEvent logEvent,
+            CancellationToken ct)
+        {
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
+            using var tx = connection.BeginTransaction();
+
+            try
+            {
+                const string sql = """
+                    UPDATE HelpRequests
+                    SET Status             = @Status,
+                        CancellationReason = NULL,
+                        AssignedUserId     = NULL
+                    WHERE Id = @Id;
+                    """;
+
+                var affectedRows = await connection.ExecuteAsync(
+                    new CommandDefinition(
+                        sql,
+                        new
+                        {
+                            request.Id,
+                            Status = (int)request.Status
+                        },
+                        transaction: tx,
+                        cancellationToken: ct));
+
+                if (affectedRows == 0)
+                    throw new InvalidOperationException(
+                        $"HelpRequest with id '{request.Id}' not found.");
+
+                await InsertEventAsync(connection, tx, logEvent, ct);
+
+                tx.Commit();
+            }
+            catch
+            {
+                tx.Rollback();
+                throw;
+            }
+        }
+
+
+
     }
 }
