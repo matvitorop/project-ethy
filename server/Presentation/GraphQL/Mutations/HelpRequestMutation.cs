@@ -7,6 +7,7 @@ using server.Application.Handlers.CancelHelpRequest;
 using server.Application.Handlers.ChangeHelpRequestStatus;
 using server.Application.Handlers.EditHelpRequest;
 using server.Application.Handlers.HelpRequestResponseHandlers.CancelResponse;
+using server.Application.Handlers.HelpRequestResponseHandlers.ResignAsExecutor;
 using server.Application.Handlers.ResponseToHelpRequestHandler;
 using server.Application.Handlers.RestoreHelpRequest;
 using server.Application.Handlers.SoftDeleteHelpRequest;
@@ -18,6 +19,7 @@ using server.Presentation.GraphQL.Types.CancelHelpRequestTypes;
 using server.Presentation.GraphQL.Types.CancelResponseTypes;
 using server.Presentation.GraphQL.Types.ChangeHRStatusTypes;
 using server.Presentation.GraphQL.Types.EditHelpRequestTypes;
+using server.Presentation.GraphQL.Types.ResignAsExecutorTypes;
 using server.Presentation.GraphQL.Types.ResponseToHRTypes;
 using server.Presentation.GraphQL.Types.RestoreHelpRequestTypes;
 using server.Presentation.GraphQL.Types.SoftDeleteHelpRequestTypes;
@@ -228,6 +230,33 @@ namespace server.Presentation.GraphQL.Mutations
                 return result.ToPayload(
                     error => new CancelResponsePayload(error == null, error));
             });
+
+            Field<ResignAsExecutorPayloadType>("resignAsExecutor")
+            .Authorize()
+            .Arguments(
+                new QueryArgument<NonNullGraphType<IdGraphType>> { Name = "helpRequestId" },
+                new QueryArgument<NonNullGraphType<StringGraphType>> { Name = "reason" }
+            )
+            .ResolveAsync(async context =>
+            {
+                var userId = context.GetUserId();
+
+                var result = await mediator.Send(
+                    new ResignAsExecutorCommand(
+                        context.GetArgument<Guid>("helpRequestId"),
+                        userId,
+                        context.GetArgument<string>("reason")));
+
+                return result.ToPayload(
+                    error => new ResignAsExecutorPayload(error == null, error));
+            });
+
+
+
+
+
+
+
 
 
         }
