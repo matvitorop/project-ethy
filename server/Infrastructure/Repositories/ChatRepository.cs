@@ -39,10 +39,16 @@ namespace server.Infrastructure.Repositories
                   AND IsActive = 1;
                 """;
 
-            return await connection.QuerySingleOrDefaultAsync<Chat>(
+            var row = await connection.QuerySingleOrDefaultAsync<ChatRow>(
                 new CommandDefinition(sql,
                     new { HelpRequestId = helpRequestId },
                     cancellationToken: ct));
+
+            if (row is null) return null;
+
+            return new Chat(
+                row.Id, row.HelpRequestId, row.OwnerId,
+                row.AssigneeId, row.CreatedAtUtc, row.IsActive);
         }
 
         public async Task AddMessageAsync(ChatMessage message, CancellationToken ct)
@@ -76,6 +82,16 @@ namespace server.Infrastructure.Repositories
                     cancellationToken: ct));
 
             return result.AsList();
+        }
+
+        private sealed class ChatRow
+        {
+            public Guid Id { get; init; }
+            public Guid HelpRequestId { get; init; }
+            public Guid OwnerId { get; init; }
+            public Guid AssigneeId { get; init; }
+            public DateTime CreatedAtUtc { get; init; }
+            public bool IsActive { get; init; }
         }
     }
 }
