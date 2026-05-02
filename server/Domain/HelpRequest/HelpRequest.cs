@@ -304,5 +304,21 @@ namespace server.Domain.HelpRequest
             Status = HelpRequestStatus.Open;
             CancellationReason = null;
         }
+
+        public void ResignAsExecutor(Guid userId)
+        {
+            if (Status != HelpRequestStatus.InProgress)
+                throw new DomainException(
+                    "Cannot resign from inactive request",
+                    "HelpRequest.NOT_IN_PROGRESS");
+
+            if (AssignedUserId != userId)
+                throw new DomainException(
+                    "You are not the assigned executor",
+                    "HelpRequest.NOT_EXECUTOR");
+
+            Status = HelpRequestStatus.Open;
+            AssignedUserId = null;
+        }
     }
 }
