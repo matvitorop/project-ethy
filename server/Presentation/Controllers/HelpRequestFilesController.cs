@@ -32,5 +32,22 @@ namespace server.Presentation.Controllers
                 imageUrls = urls
             });
         }
+
+        [HttpPost("reports")]
+        public async Task<IActionResult> UploadReportImage([FromForm] IFormFile file, CancellationToken ct)
+        {
+            if (file is null)
+                return BadRequest("NO_FILE");
+
+            try
+            {
+                var url = await _storage.SaveReportImageAsync(file, ct);
+                return Ok(new { imageUrl = url });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
     }
 }

@@ -1,0 +1,2 @@
+﻿ALTER TABLE HelpRequests
+ADD LastAssignedUserId UNIQUEIDENTIFIER NULL;
