@@ -77,5 +77,26 @@ namespace server.Infrastructure
 
             return committedUrls;
         }
+
+        public async Task<string> SaveReportImageAsync(IFormFile file, CancellationToken ct)
+        {
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+
+            await using var stream = file.OpenReadStream();
+
+            if (!FileSignatureValidator.IsValidImage(stream, extension))
+                throw new InvalidOperationException("Invalid file signature");
+
+            var uploadsDir = Path.Combine(_env.WebRootPath, "uploads", "reports");
+            Directory.CreateDirectory(uploadsDir);
+
+            var fileName = $"{Guid.NewGuid()}{extension}";
+            var filePath = Path.Combine(uploadsDir, fileName);
+
+            await using var fileStream = new FileStream(filePath, FileMode.Create);
+            await file.CopyToAsync(fileStream, ct);
+
+            return $"/uploads/reports/{fileName}";
+        }
     }
 }
