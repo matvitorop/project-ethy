@@ -7,6 +7,7 @@ using server.Application.Handlers.GetEventLog;
 using server.Application.Handlers.GetFullHelpRequest;
 using server.Application.Handlers.GetHelpRequestResponses;
 using server.Application.Handlers.GetStages;
+using server.Application.Handlers.HelpRequestResponseHandlers.GetReports;
 using server.Presentation.GraphQL.Extensions;
 using server.Presentation.GraphQL.Types;
 using server.Presentation.GraphQL.Types.ChatMessagesTypes;
@@ -14,6 +15,7 @@ using server.Presentation.GraphQL.Types.ErrorTypes;
 using server.Presentation.GraphQL.Types.GetHRDetailTypes;
 using server.Presentation.GraphQL.Types.GetHRListTypes;
 using server.Presentation.GraphQL.Types.GetHRResponsesTypes;
+using server.Presentation.GraphQL.Types.ReportTypes;
 using server.Presentation.GraphQL.Types.StageLogTypes;
 using server.Presentation.GraphQL.Types.StageTypes;
 
@@ -119,6 +121,20 @@ namespace server.Presentation.GraphQL.Queries
             
                 return result.ToPayload(
                     (value, error) => new EventLogPayload(value, error));
+            });
+
+            Field<ReportsPayloadType>("reports")
+            .Arguments(
+                new QueryArgument<NonNullGraphType<IdGraphType>> { Name = "helpRequestId" }
+            )
+            .ResolveAsync(async context =>
+            {
+                var result = await mediator.Send(
+                    new GetReportsQuery(
+                        context.GetArgument<Guid>("helpRequestId")));
+
+                return result.ToPayload(
+                    (value, error) => new ReportsPayload(value, error));
             });
         }
     }

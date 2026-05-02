@@ -298,20 +298,6 @@ namespace server.Presentation.GraphQL.Mutations
                     (value, error) => new CreateReportPayload(value, error));
             });
 
-            Field<ReportsPayloadType>("reports")
-            .Arguments(
-                new QueryArgument<NonNullGraphType<IdGraphType>> { Name = "helpRequestId" }
-            )
-            .ResolveAsync(async context =>
-            {
-                var result = await mediator.Send(
-                    new GetReportsQuery(
-                        context.GetArgument<Guid>("helpRequestId")));
-
-                return result.ToPayload(
-                    (value, error) => new ReportsPayload(value, error));
-            });
-
 
 
         }
