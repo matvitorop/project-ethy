@@ -7,6 +7,8 @@ using server.Application.Handlers.CancelHelpRequest;
 using server.Application.Handlers.ChangeHelpRequestStatus;
 using server.Application.Handlers.EditHelpRequest;
 using server.Application.Handlers.HelpRequestResponseHandlers.CancelResponse;
+using server.Application.Handlers.HelpRequestResponseHandlers.CreateReport;
+using server.Application.Handlers.HelpRequestResponseHandlers.GetReports;
 using server.Application.Handlers.HelpRequestResponseHandlers.RemoveExecutor;
 using server.Application.Handlers.HelpRequestResponseHandlers.ResignAsExecutor;
 using server.Application.Handlers.ResponseToHelpRequestHandler;
@@ -21,6 +23,7 @@ using server.Presentation.GraphQL.Types.CancelResponseTypes;
 using server.Presentation.GraphQL.Types.ChangeHRStatusTypes;
 using server.Presentation.GraphQL.Types.EditHelpRequestTypes;
 using server.Presentation.GraphQL.Types.RemoveExecutorTypes;
+using server.Presentation.GraphQL.Types.ReportTypes;
 using server.Presentation.GraphQL.Types.ResignAsExecutorTypes;
 using server.Presentation.GraphQL.Types.ResponseToHRTypes;
 using server.Presentation.GraphQL.Types.RestoreHelpRequestTypes;
@@ -273,9 +276,41 @@ namespace server.Presentation.GraphQL.Mutations
                     error => new RemoveExecutorPayload(error == null, error));
             });
 
+            Field<CreateReportPayloadType>("createReport")
+            .Authorize()
+            .Arguments(
+                new QueryArgument<NonNullGraphType<IdGraphType>> { Name = "helpRequestId" },
+                new QueryArgument<NonNullGraphType<StringGraphType>> { Name = "comment" },
+                new QueryArgument<StringGraphType> { Name = "imageUrl" }
+            )
+            .ResolveAsync(async context =>
+            {
+                var userId = context.GetUserId();
 
+                var result = await mediator.Send(
+                    new CreateReportCommand(
+                        context.GetArgument<Guid>("helpRequestId"),
+                        userId,
+                        context.GetArgument<string>("comment"),
+                        context.GetArgument<string?>("imageUrl")));
 
+                return result.ToPayload(
+                    (value, error) => new CreateReportPayload(value, error));
+            });
 
+            Field<ReportsPayloadType>("reports")
+            .Arguments(
+                new QueryArgument<NonNullGraphType<IdGraphType>> { Name = "helpRequestId" }
+            )
+            .ResolveAsync(async context =>
+            {
+                var result = await mediator.Send(
+                    new GetReportsQuery(
+                        context.GetArgument<Guid>("helpRequestId")));
+
+                return result.ToPayload(
+                    (value, error) => new ReportsPayload(value, error));
+            });
 
 
 
