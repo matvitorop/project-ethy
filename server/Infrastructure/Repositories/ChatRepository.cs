@@ -35,7 +35,8 @@ namespace server.Infrastructure.Repositories
             const string sql = """
                 SELECT Id, HelpRequestId, OwnerId, AssigneeId, CreatedAtUtc
                 FROM Chats
-                WHERE HelpRequestId = @HelpRequestId;
+                WHERE HelpRequestId = @HelpRequestId
+                  AND IsActive = 1;
                 """;
 
             return await connection.QuerySingleOrDefaultAsync<Chat>(
