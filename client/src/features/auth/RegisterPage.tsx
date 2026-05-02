@@ -2,13 +2,24 @@ import { useState } from 'react'
 import { useMutation } from '@apollo/client/react'
 import { Link, useNavigate } from 'react-router-dom'
 import { REGISTER } from '../../api/queries'
+import type { AuthPayload } from '../../api/types'
+interface RegisterData {
+    auth: {
+        register: AuthPayload
+    }
+}
 
+interface RegisterVars {
+    username: string
+    email: string
+    password: string
+}
 export default function RegisterPage() {
     const navigate = useNavigate()
     const [form, setForm] = useState({ username: '', email: '', password: '' })
     const [error, setError] = useState<string | null>(null)
 
-    const [register, { loading }] = useMutation(REGISTER, {
+    const [register, { loading }] = useMutation<RegisterData, RegisterVars>(REGISTER, {
         onCompleted: (data) => {
             const result = data.auth.register
             if (result.error) {

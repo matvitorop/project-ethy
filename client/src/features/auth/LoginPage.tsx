@@ -3,12 +3,33 @@ import { useMutation } from '@apollo/client/react'
 import { Link, useNavigate } from 'react-router-dom'
 import { LOGIN } from '../../api/queries'
 
+interface AuthError {
+    code: string
+    message: string
+}
+
+interface AuthPayload {
+    token: string | null
+    error: AuthError | null
+}
+
+interface LoginData {
+    auth: {
+        login: AuthPayload
+    }
+}
+
+interface LoginVars {
+    email: string
+    password: string
+}
+
 export default function LoginPage() {
     const navigate = useNavigate()
     const [form, setForm] = useState({ email: '', password: '' })
     const [error, setError] = useState<string | null>(null)
 
-    const [login, { loading }] = useMutation(LOGIN, {
+    const [login, { loading }] = useMutation<LoginData, LoginVars>(LOGIN, {
         onCompleted: (data) => {
             const result = data.auth.login
             if (result.error) {
