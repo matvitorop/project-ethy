@@ -38,7 +38,7 @@ namespace server.Domain.HelpRequest
 
         public bool IsDeleted { get; private set; }
         public string? CancellationReason { get; private set; }
-
+        public Guid? LastAssignedUserId { get; private set; }
         private HelpRequest() { }
 
         public HelpRequest(
@@ -65,6 +65,7 @@ namespace server.Domain.HelpRequest
             string description,
             int status,
             Guid? assignedUserId,
+            Guid? lastAssignedUserId,
             double? latitude,
             double? longitude,
             DateTime createdAtUtc,
@@ -79,6 +80,7 @@ namespace server.Domain.HelpRequest
             Description = description;
             Status = (HelpRequestStatus)status;
             AssignedUserId = assignedUserId;
+            LastAssignedUserId = lastAssignedUserId;
             CreatedAtUtc = createdAtUtc;
             UpdatedAtUtc = updatedAtUtc;
             IsDeleted = isDeleted;
@@ -229,7 +231,7 @@ namespace server.Domain.HelpRequest
             }
 
             AssignedUserId = response.UserId;
-
+            LastAssignedUserId = response.UserId;
             Status = HelpRequestStatus.InProgress;
         }
 
