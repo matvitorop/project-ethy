@@ -193,6 +193,11 @@ namespace server.Domain.HelpRequest
 
         public void CancelResponse(Guid userId)
         {
+            if (Status != HelpRequestStatus.Open)
+                throw new DomainException(
+                    "Cannot cancel response on inactive request",
+                    "HelpRequest.NOT_OPEN");
+
             var response = _responses
                 .FirstOrDefault(r => r.UserId == userId);
 

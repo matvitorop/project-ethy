@@ -627,7 +627,36 @@ namespace server.Infrastructure.Repositories
             return count > 0;
         }
 
+        public async Task CancelResponseAsync(
+            Guid helpRequestId,
+            Guid userId,
+            CancellationToken ct)
+        {
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
 
+            const string sql = """
+                UPDATE HelpRequestResponses
+                SET Status = @Status
+                WHERE HelpRequestId = @HelpRequestId
+                  AND UserId = @UserId
+                  AND Status = 0;
+                """;
+
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(
+                    sql,
+                    new
+                    {
+                        Status = (int)HelpRequestResponseStatus.Cancelled,
+                        HelpRequestId = helpRequestId,
+                        UserId = userId
+                    },
+                    cancellationToken: ct));
+
+            if (affectedRows == 0)
+                throw new InvalidOperationException(
+                    $"Pending response for user '{userId}' not found.");
+        }
 
 
     }
