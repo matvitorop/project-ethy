@@ -101,7 +101,8 @@ namespace server.Infrastructure.Repositories
 
             const string requestSql = """
              SELECT Id, CreatorId, Title, Description, Status,
-                    AssignedUserId, Latitude, Longitude, 
+                    AssignedUserId, LastAssignedUserId,
+                    Latitude, Longitude, 
                     CreatedAtUtc, UpdatedAtUtc, 
                     IsDeleted, CancellationReason
              FROM HelpRequests
@@ -125,7 +126,9 @@ namespace server.Infrastructure.Repositories
             return new HelpRequest(
                 row.Id, row.CreatorId, row.Title, row.Description,
                 row.Status, row.AssignedUserId,
-                row.Latitude, row.Longitude, row.CreatedAtUtc, row.UpdatedAtUtc,
+                row.LastAssignedUserId,
+                row.Latitude, row.Longitude, 
+                row.CreatedAtUtc, row.UpdatedAtUtc,
                 row.IsDeleted, row.CancellationReason,
                 responses);
         }
@@ -354,6 +357,7 @@ namespace server.Infrastructure.Repositories
             public string Description { get; init; } = null!;
             public int Status { get; init; }
             public Guid? AssignedUserId { get; init; }
+            public Guid? LastAssignedUserId { get; init; }
             public double? Latitude { get; init; }
             public double? Longitude { get; init; }
             public DateTime CreatedAtUtc { get; init; }
@@ -401,13 +405,13 @@ namespace server.Infrastructure.Repositories
         {
             const string updateRequest = """
                  UPDATE HelpRequests
-                 SET Status = @Status, AssignedUserId = @AssignedUserId
+                 SET Status = @Status, AssignedUserId = @AssignedUserId, LastAssignedUserId = @LastAssignedUserId
                  WHERE Id = @Id;
                  """;
 
             await connection.ExecuteAsync(new CommandDefinition(
                 updateRequest,
-                new { request.Id, Status = (int)request.Status, request.AssignedUserId },
+                new { request.Id, Status = (int)request.Status, request.AssignedUserId, request.LastAssignedUserId },
                 transaction: tx, cancellationToken: ct));
 
             const string updateResponse = """
