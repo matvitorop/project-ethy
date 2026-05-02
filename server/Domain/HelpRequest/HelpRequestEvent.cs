@@ -9,7 +9,8 @@
         StageRejected = 4,
         StageDeleted = 5,
         HelpRequestEdited = 6,
-        ExecutorResigned = 7
+        ExecutorResigned = 7,
+        ExecutorRemoved = 8
     }
 
     public class HelpRequestEvent
