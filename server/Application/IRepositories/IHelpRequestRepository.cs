@@ -25,5 +25,6 @@ namespace server.Application.IRepositories
         Task<bool> HasActiveRequestsAsOwnerAsync(Guid userId, CancellationToken ct);
         Task<bool> HasActiveRequestsAsAssigneeAsync(Guid userId, CancellationToken ct);
         Task CancelResponseAsync(Guid helpRequestId, Guid userId, CancellationToken ct);
+        Task ResignAsExecutorAsync(HelpRequest request, Chat chat, HelpRequestEvent logEvent, CancellationToken ct);
     }
 }
