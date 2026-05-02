@@ -320,5 +320,31 @@ namespace server.Domain.HelpRequest
             Status = HelpRequestStatus.Open;
             AssignedUserId = null;
         }
+
+        public void RemoveExecutor(Guid userId, string reason)
+        {
+            if (Status != HelpRequestStatus.InProgress)
+                throw new DomainException(
+                    "Cannot remove executor from inactive request",
+                    "HelpRequest.NOT_IN_PROGRESS");
+        
+            if (CreatorId != userId)
+                throw new DomainException(
+                    "Only owner can remove executor",
+                    "HelpRequest.NOT_OWNER");
+        
+            if (string.IsNullOrWhiteSpace(reason))
+                throw new DomainException(
+                    "Reason is required",
+                    "HelpRequest.REASON_REQUIRED");
+        
+            if (reason.Length > 500)
+                throw new DomainException(
+                    "Reason is too long",
+                    "HelpRequest.REASON_TOO_LONG");
+        
+            Status = HelpRequestStatus.Open;
+            AssignedUserId = null;
+        }
     }
 }

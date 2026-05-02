@@ -705,8 +705,52 @@ namespace server.Infrastructure.Repositories
             }
         }
 
+        public async Task RemoveExecutorAsync(
+            HelpRequest request,
+            Chat chat,
+            HelpRequestEvent logEvent,
+            CancellationToken ct)
+        {
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
+            using var tx = connection.BeginTransaction();
 
+            try
+            {
+                const string updateRequest = """
+                    UPDATE HelpRequests
+                    SET Status         = @Status,
+                        AssignedUserId = NULL
+                    WHERE Id = @Id;
+                    """;
 
+                await connection.ExecuteAsync(new CommandDefinition(
+                    updateRequest,
+                    new { request.Id, Status = (int)request.Status },
+                    transaction: tx,
+                    cancellationToken: ct));
+
+                const string deactivateChat = """
+                    UPDATE Chats
+                    SET IsActive = 0
+                    WHERE Id = @Id;
+                    """;
+
+                await connection.ExecuteAsync(new CommandDefinition(
+                    deactivateChat,
+                    new { chat.Id },
+                    transaction: tx,
+                    cancellationToken: ct));
+
+                await InsertEventAsync(connection, tx, logEvent, ct);
+
+                tx.Commit();
+            }
+            catch
+            {
+                tx.Rollback();
+                throw;
+            }
+        }
 
 
     }
