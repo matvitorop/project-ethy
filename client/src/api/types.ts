@@ -130,3 +130,12 @@ export interface EventLogData {
         }
     }
 }
+
+export interface CreateHelpRequestData {
+    helpRequest: {
+        createHelpRequest: {
+            item: { id: string } | null
+            error: ApiError | null
+        }
+    }
+}
