@@ -133,3 +133,27 @@ export const GET_EVENT_LOG = gql`
     }
   }
 `
+export const CREATE_HELP_REQUEST = gql`
+  mutation CreateHelpRequest(
+    $title: String!
+    $description: String!
+    $latitude: Float
+    $longitude: Float
+    $imageUrls: [String]
+  ) {
+    helpRequest {
+      createHelpRequest(
+        title: $title
+        description: $description
+        latitude: $latitude
+        longitude: $longitude
+        imageUrls: $imageUrls
+      ) {
+        item {
+          id
+        }
+        error { code message }
+      }
+    }
+  }
+`
