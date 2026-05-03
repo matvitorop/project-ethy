@@ -33,6 +33,18 @@ export const GET_PROFILE = gql`
   }
 `
 
+export const LOGOUT = gql`
+  mutation Logout {
+    auth {
+      logout {
+        message
+        error { code message }
+      }
+    }
+  }
+`
+
+
 export const GET_HELP_REQUESTS = gql`
   query GetHelpRequests($page: Int!, $pageSize: Int!) {
     helpRequestQuer {

@@ -2,6 +2,7 @@ import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 
 interface AuthState {
     isAuthenticated: boolean
+    isInitialized: boolean
     userId: string | null
     username: string | null
     email: string | null
@@ -9,6 +10,7 @@ interface AuthState {
 
 const initialState: AuthState = {
     isAuthenticated: false,
+    isInitialized: false,
     userId: null,
     username: null,
     email: null,
@@ -34,8 +36,11 @@ const authSlice = createSlice({
             state.username = null
             state.email = null
         },
+        setInitialized: (state, action: PayloadAction<boolean>) => {
+            state.isInitialized = action.payload
+        },
     },
 })
 
-export const { setAuth, clearAuth } = authSlice.actions
+export const { setAuth, clearAuth, setInitialized } = authSlice.actions
 export default authSlice.reducer
