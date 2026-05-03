@@ -37,7 +37,7 @@ export interface LogoutData {
 }
 
 export interface ProfileData {
-    user: {
+    userQuery: {
         profile: {
             profile: {
                 id: string
@@ -45,6 +45,30 @@ export interface ProfileData {
                 email: string
                 registeredAtUtc: string
             } | null
+            error: ApiError | null
+        }
+    }
+}
+
+export type HelpRequestStatus =
+    | 'Draft'
+    | 'Open'
+    | 'InProgress'
+    | 'Resolved'
+    | 'Cancelled'
+
+export interface HelpRequestListItem {
+    id: string
+    title: string
+    status: number
+    previewImageUrl: string | null
+    createdAt: string
+}
+
+export interface HelpRequestsPageData {
+    helpRequestQuer: {
+        helpRequestQuery: {
+            items: HelpRequestListItem[]
             error: ApiError | null
         }
     }

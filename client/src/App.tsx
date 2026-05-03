@@ -7,6 +7,7 @@ import ToastContainer from './components/Toast'
 import HomePage from './pages/HomePage'
 import LoginPage from './features/auth/LoginPage'
 import RegisterPage from './features/auth/RegisterPage'
+import RequestsListPage from './features/requests/RequestsListPage'
 
 export default function App() {
     return (
@@ -20,7 +21,7 @@ export default function App() {
 
                 <Route element={<PrivateRoute />}>
                     <Route element={<AppLayout />}>
-                        {/* Авторизовані сторінки */}
+                        <Route path="/requests" element={<RequestsListPage />} />
                     </Route>
                 </Route>
             </Routes>

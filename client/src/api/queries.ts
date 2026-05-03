@@ -24,9 +24,14 @@ export const LOGIN = gql`
 
 export const GET_PROFILE = gql`
   query GetProfile {
-    user {
+    userQuery {
       profile {
-        profile { id username email registeredAtUtc }
+        profile {
+          id
+          username
+          email
+          registeredAtUtc
+        }
         error { code message }
       }
     }
@@ -46,9 +51,19 @@ export const LOGOUT = gql`
 
 
 export const GET_HELP_REQUESTS = gql`
-  query GetHelpRequests($page: Int!, $pageSize: Int!) {
+  query GetHelpRequests(
+    $page: Int!
+    $pageSize: Int!
+    $status: HelpRequestStatus
+    $statuses: [HelpRequestStatus]
+  ) {
     helpRequestQuer {
-      helpRequestQuery(page: $page, pageSize: $pageSize) {
+      helpRequestQuery(
+        page: $page
+        pageSize: $pageSize
+        status: $status
+        statuses: $statuses
+      ) {
         items {
           id
           title

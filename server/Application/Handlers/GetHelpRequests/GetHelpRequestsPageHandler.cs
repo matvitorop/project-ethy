@@ -30,7 +30,9 @@ namespace server.Application.Handlers.GetHelpRequests
             var items = await _repo.GetPageAsync(
                 ct,
                 request.Page,
-                request.PageSize);
+                request.PageSize,
+                request.Status,
+                request.Statuses);
 
             return Result<IReadOnlyList<HelpRequestListItemDto>>.Success(items);
         }
