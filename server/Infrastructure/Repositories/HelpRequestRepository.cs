@@ -133,19 +133,16 @@ namespace server.Infrastructure.Repositories
                 responses);
         }
 
-        public async Task<IReadOnlyList<HelpRequestListItemDto>> GetPageAsync(CancellationToken ct, int page, int pageSize = 10)
+        public async Task<IReadOnlyList<HelpRequestListItemDto>> GetPageAsync(CancellationToken ct, int page, int pageSize = 10, HelpRequestStatus? status = null)
         {
             using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
 
             var offset = (page - 1) * pageSize;
 
             var sql = """
-                SELECT 
-                    hr.Id,
-                    hr.Title,
-                    hr.Status,
-                    img.ImageUrl AS PreviewImageUrl,
-                    hr.CreatedAtUtc AS CreatedAt
+                SELECT hr.Id, hr.Title, hr.Status,
+                       img.ImageUrl AS PreviewImageUrl,
+                       hr.CreatedAtUtc AS CreatedAt
                 FROM HelpRequests hr
                 OUTER APPLY (
                     SELECT TOP 1 ImageUrl
@@ -154,7 +151,9 @@ namespace server.Infrastructure.Repositories
                     ORDER BY [Order] ASC
                 ) img
                 WHERE hr.IsDeleted = 0
-                    AND hr.Status != 4
+                """ +
+                (status.HasValue ? " AND hr.Status = @Status" : "") +
+                """
                 ORDER BY hr.CreatedAtUtc DESC
                 OFFSET @Offset ROWS
                 FETCH NEXT @PageSize ROWS ONLY;
@@ -163,7 +162,7 @@ namespace server.Infrastructure.Repositories
             var result = await connection.QueryAsync<HelpRequestListItemDto>(
                 new CommandDefinition(
                     sql,
-                    new { Offset = offset, PageSize = pageSize },
+                    new { Offset = offset, PageSize = pageSize, Status = status.HasValue ? (int?)((int)status.Value) : null },
                     cancellationToken: ct
                     ));
 
