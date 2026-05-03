@@ -8,8 +8,10 @@ using server.Application.Handlers.GetFullHelpRequest;
 using server.Application.Handlers.GetHelpRequestResponses;
 using server.Application.Handlers.GetStages;
 using server.Application.Handlers.HelpRequestResponseHandlers.GetReports;
+using server.Domain.HelpRequest;
 using server.Presentation.GraphQL.Extensions;
 using server.Presentation.GraphQL.Types;
+using server.Presentation.GraphQL.Types.ChangeHRStatusTypes;
 using server.Presentation.GraphQL.Types.ChatMessagesTypes;
 using server.Presentation.GraphQL.Types.ErrorTypes;
 using server.Presentation.GraphQL.Types.GetHRDetailTypes;
@@ -29,16 +31,17 @@ namespace server.Presentation.GraphQL.Queries
             .Authorize()
             .Arguments(
                 new QueryArgument<NonNullGraphType<IntGraphType>> { Name = "page" },
-                new QueryArgument<NonNullGraphType<IntGraphType>> { Name = "pageSize" }
+                new QueryArgument<NonNullGraphType<IntGraphType>> { Name = "pageSize" },
+                new QueryArgument<HelpRequestStatusEnumType> { Name = "status" }
             )
             .ResolveAsync(async context =>
             {
                 var result = await mediator.Send(
                     new GetHelpRequestsPageQuery(
                         context.GetArgument<int>("page"),
-                        context.GetArgument<int>("pageSize")
+                        context.GetArgument<int>("pageSize"),
+                        context.GetArgument<HelpRequestStatus?>("status")
                     ));
-
 
                 return result.ToPayload((value, error) => new HelpRequestsPagePayload(value, error));
             });
