@@ -44,7 +44,8 @@ export default function ImageUploader({ value, onChange }: ImageUploaderProps) {
         if (!res.ok) throw new Error('Upload failed')
 
           const data = await res.json()
-          urls.push(...data.imageUrls)
+          const fullUrls = data.imageUrls.map((url: string) => `/uploads/temp/${url}`)
+          urls.push(...fullUrls)
       }
 
       onChange([...value, ...urls])
