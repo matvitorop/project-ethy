@@ -73,3 +73,63 @@ export interface HelpRequestsPageData {
         }
     }
 }
+
+export interface HelpRequestDetail {
+    id: string
+    title: string
+    description: string
+    status: number
+    creatorId: string
+    assignedUserId: string | null
+    latitude: number | null
+    longitude: number | null
+    createdAtUtc: string
+    updatedAtUtc: string | null
+    cancellationReason: string | null
+    imageUrls: string[]
+}
+
+export interface HelpRequestDetailData {
+    helpRequestQuer: {
+        helpRequestById: {
+            helpRequest: HelpRequestDetail | null
+            error: ApiError | null
+        }
+    }
+}
+
+export interface StageItem {
+    id: string
+    proposedByUserId: string
+    content: string
+    status: number
+    rejectionReason: string | null
+    createdAtUtc: string
+    resolvedAtUtc: string | null
+}
+
+export interface StagesData {
+    helpRequestQuer: {
+        stages: {
+            items: StageItem[] | null
+            error: ApiError | null
+        }
+    }
+}
+
+export interface EventLogItem {
+    id: string
+    actorId: string
+    eventType: number
+    payload: string
+    createdAtUtc: string
+}
+
+export interface EventLogData {
+    helpRequestQuer: {
+        eventLog: {
+            items: EventLogItem[] | null
+            error: ApiError | null
+        }
+    }
+}

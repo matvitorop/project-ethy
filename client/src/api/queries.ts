@@ -76,3 +76,63 @@ export const GET_HELP_REQUESTS = gql`
     }
   }
 `
+
+export const GET_HELP_REQUEST_BY_ID = gql`
+  query GetHelpRequestById($id: ID!) {
+    helpRequestQuer {
+      helpRequestById(id: $id) {
+        helpRequest {
+          id
+          title
+          description
+          status
+          creatorId
+          assignedUserId
+          latitude
+          longitude
+          createdAtUtc
+          updatedAtUtc
+          cancellationReason
+          imageUrls
+        }
+        error { code message }
+      }
+    }
+  }
+`
+
+export const GET_STAGES = gql`
+  query GetStages($helpRequestId: ID!) {
+    helpRequestQuer {
+      stages(helpRequestId: $helpRequestId) {
+        items {
+          id
+          proposedByUserId
+          content
+          status
+          rejectionReason
+          createdAtUtc
+          resolvedAtUtc
+        }
+        error { code message }
+      }
+    }
+  }
+`
+
+export const GET_EVENT_LOG = gql`
+  query GetEventLog($helpRequestId: ID!) {
+    helpRequestQuer {
+      eventLog(helpRequestId: $helpRequestId) {
+        items {
+          id
+          actorId
+          eventType
+          payload
+          createdAtUtc
+        }
+        error { code message }
+      }
+    }
+  }
+`
