@@ -2,20 +2,21 @@ import { useState } from 'react'
 import { useMutation } from '@apollo/client/react'
 import { Link, useNavigate } from 'react-router-dom'
 import { LOGIN } from '../../api/queries'
+import { useAppDispatch } from '../../store/hooks'
+import { setAuth } from '../../store/authSlice'
+import { addToast } from '../../store/uiSlice'
 
 interface AuthError {
     code: string
     message: string
 }
 
-interface AuthPayload {
-    token: string | null
-    error: AuthError | null
-}
-
 interface LoginData {
     auth: {
-        login: AuthPayload
+        login: {
+            token: string | null
+            error: AuthError | null
+        }
     }
 }
 
@@ -26,24 +27,34 @@ interface LoginVars {
 
 export default function LoginPage() {
     const navigate = useNavigate()
+    const dispatch = useAppDispatch()
     const [form, setForm] = useState({ email: '', password: '' })
-    const [error, setError] = useState<string | null>(null)
 
     const [login, { loading }] = useMutation<LoginData, LoginVars>(LOGIN, {
         onCompleted: (data) => {
             const result = data.auth.login
             if (result.error) {
-                setError(result.error.message)
+                dispatch(addToast({ type: 'error', message: result.error.message }))
             } else {
+                // userId і username отримаємо пізніше через GET_PROFILE
+                // поки зберігаємо мінімум щоб позначити що залогінений
+                dispatch(setAuth({
+                    userId: '',
+                    username: '',
+                    email: form.email,
+                }))
+                dispatch(addToast({ type: 'success', message: 'Вхід успішний!' }))
                 navigate('/requests')
             }
         },
-        onError: () => setError("Не вдалося з'єднатися з сервером"),
+        onError: () => dispatch(addToast({
+            type: 'error',
+            message: "Не вдалося з'єднатися з сервером",
+        })),
     })
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
-        setError(null)
         login({ variables: form })
     }
 
@@ -75,12 +86,6 @@ export default function LoginPage() {
                         onChange={v => setForm(f => ({ ...f, password: v }))}
                         placeholder="••••••••"
                     />
-
-                    {error && (
-                        <div className="px-4 py-3 bg-error/10 border border-error/30 text-error text-sm rounded-lg">
-                            {error}
-                        </div>
-                    )}
 
                     <button
                         type="submit"
