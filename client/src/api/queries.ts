@@ -149,7 +149,7 @@ export const CREATE_HELP_REQUEST = gql`
         longitude: $longitude
         imageUrls: $imageUrls
       ) {
-        item {
+        data {
           id
         }
         error { code message }

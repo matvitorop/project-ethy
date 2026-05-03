@@ -9,6 +9,7 @@ import LoginPage from './features/auth/LoginPage'
 import RegisterPage from './features/auth/RegisterPage'
 import RequestsListPage from './features/requests/RequestsListPage'
 import RequestDetailsPage from './features/requests/RequestDetailsPage'
+import CreateRequestPage from './features/requests/CreateRequestPage'
 
 export default function App() {
     return (
@@ -25,6 +26,7 @@ export default function App() {
                         <Route path="/requests" element={<RequestsListPage />} />
                         <Route path="/requests" element={<RequestsListPage />} />
                         <Route path="/requests/:id" element={<RequestDetailsPage />} />
+                        <Route path="/requests/new" element={<CreateRequestPage />} />
                     </Route>
                 </Route>
             </Routes>
