@@ -81,18 +81,15 @@ export const GET_HELP_REQUEST_BY_ID = gql`
   query GetHelpRequestById($id: ID!) {
     helpRequestQuer {
       helpRequestById(id: $id) {
-        helpRequest {
+        item {
           id
           title
           description
           status
           creatorId
-          assignedUserId
           latitude
           longitude
           createdAtUtc
-          updatedAtUtc
-          cancellationReason
           imageUrls
         }
         error { code message }
