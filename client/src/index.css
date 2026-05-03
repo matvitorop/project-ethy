@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Jua&family=Manrope:wght@400;500;600;700;800&family=Lexend:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -32,8 +33,6 @@
     --radius-xl: 16px;
 }
 
-@import url('https://fonts.googleapis.com/css2?family=Jua&family=Manrope:wght@400;500;600;700;800&family=Lexend:wght@400;500;600&display=swap');
-
 * {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -50,4 +49,34 @@ html, body, #root {
 
 button {
     font-family: inherit;
+}
+
+@keyframes slide-in {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.animate-slide-in {
+    animation: slide-in 0.2s ease-out;
+}
+
+[data-theme="dark"] {
+    --color-surface: #111827;
+    --color-surface-muted: #1F2937;
+    --color-surface-elevated: #1F2937;
+    --color-ink: #F9FAFB;
+    --color-ink-muted: #9CA3AF;
+    --color-ink-soft: #6B7280;
+    --color-border: #374151;
+    --color-border-muted: #1F2937;
+    --color-primary: #93B4E8;
+    --color-primary-light: #B8CDEF;
+    --color-accent-dark: #FEC130;
 }

@@ -2,10 +2,10 @@ import { Link } from 'react-router-dom'
 
 export default function HomePage() {
     return (
-        <div className="min-h-[calc(100vh-77px)] flex items-center">
+        <div className="flex items-center">
             <div className="max-w-6xl mx-auto px-8 py-20 grid md:grid-cols-2 gap-16 items-center">
                 <div>
-                    <div className="inline-block px-3 py-1 bg-accent/15 text-primary text-xs font-semibold rounded-full mb-6 tracking-wide">
+                    <div className="inline-block px-3 py-1 bg-accent/20 text-ink text-xs font-semibold rounded-full mb-6 tracking-wide">
                         ПЛАТФОРМА АДРЕСНОЇ ДОПОМОГИ
                     </div>
                     <h1 className="text-5xl md:text-6xl font-bold text-primary leading-[1.05] tracking-tight mb-6"

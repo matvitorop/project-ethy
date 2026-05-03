@@ -2,7 +2,11 @@ import { useState } from 'react'
 import { useMutation } from '@apollo/client/react'
 import { Link, useNavigate } from 'react-router-dom'
 import { REGISTER } from '../../api/queries'
+import { useAppDispatch } from '../../store/hooks'
+import { setAuth } from '../../store/authSlice'
+import { addToast } from '../../store/uiSlice'
 import type { AuthPayload } from '../../api/types'
+
 interface RegisterData {
     auth: {
         register: AuthPayload
@@ -14,26 +18,35 @@ interface RegisterVars {
     email: string
     password: string
 }
+
 export default function RegisterPage() {
     const navigate = useNavigate()
+    const dispatch = useAppDispatch()
     const [form, setForm] = useState({ username: '', email: '', password: '' })
-    const [error, setError] = useState<string | null>(null)
 
     const [register, { loading }] = useMutation<RegisterData, RegisterVars>(REGISTER, {
         onCompleted: (data) => {
             const result = data.auth.register
             if (result.error) {
-                setError(result.error.message)
+                dispatch(addToast({ type: 'error', message: result.error.message }))
             } else {
+                dispatch(setAuth({
+                    userId: '',
+                    username: form.username,
+                    email: form.email,
+                }))
+                dispatch(addToast({ type: 'success', message: 'Акаунт створено успішно!' }))
                 navigate('/requests')
             }
         },
-        onError: () => setError("Не вдалося з'єднатися з сервером"),
+        onError: () => dispatch(addToast({
+            type: 'error',
+            message: "Не вдалося з'єднатися з сервером",
+        })),
     })
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
-        setError(null)
         register({ variables: form })
     }
 
@@ -71,12 +84,6 @@ export default function RegisterPage() {
                         onChange={v => setForm(f => ({ ...f, password: v }))}
                         placeholder="••••••••"
                     />
-
-                    {error && (
-                        <div className="px-4 py-3 bg-error/10 border border-error/30 text-error text-sm rounded-lg">
-                            {error}
-                        </div>
-                    )}
 
                     <button
                         type="submit"
