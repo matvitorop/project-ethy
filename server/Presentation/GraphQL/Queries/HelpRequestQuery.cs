@@ -32,7 +32,8 @@ namespace server.Presentation.GraphQL.Queries
             .Arguments(
                 new QueryArgument<NonNullGraphType<IntGraphType>> { Name = "page" },
                 new QueryArgument<NonNullGraphType<IntGraphType>> { Name = "pageSize" },
-                new QueryArgument<HelpRequestStatusEnumType> { Name = "status" }
+                new QueryArgument<HelpRequestStatusEnumType> { Name = "status" },
+                new QueryArgument<ListGraphType<HelpRequestStatusEnumType>> { Name = "statuses" }
             )
             .ResolveAsync(async context =>
             {
@@ -40,10 +41,12 @@ namespace server.Presentation.GraphQL.Queries
                     new GetHelpRequestsPageQuery(
                         context.GetArgument<int>("page"),
                         context.GetArgument<int>("pageSize"),
-                        context.GetArgument<HelpRequestStatus?>("status")
+                        context.GetArgument<HelpRequestStatus?>("status"),
+                        context.GetArgument<List<HelpRequestStatus>?>("statuses")
                     ));
 
-                return result.ToPayload((value, error) => new HelpRequestsPagePayload(value, error));
+                return result.ToPayload((value, error) =>
+                    new HelpRequestsPagePayload(value, error));
             });
 
             Field<HelpRequestDetailPeyloadType>("helpRequestById")

@@ -10,6 +10,12 @@ namespace server.Presentation.GraphQL.Types.ChangeHRStatusTypes
         {
             Name = "HelpRequestStatus";
             Description = "Status of help request";
+
+            Add("Draft", HelpRequestStatus.Draft);
+            Add("Open", HelpRequestStatus.Open);
+            Add("InProgress", HelpRequestStatus.InProgress);
+            Add("Resolved", HelpRequestStatus.Resolved);
+            Add("Cancelled", HelpRequestStatus.Cancelled);
         }
     }
 }

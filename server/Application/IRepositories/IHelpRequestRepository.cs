@@ -9,7 +9,7 @@ namespace server.Application.IRepositories
     public interface IHelpRequestRepository
     {
         Task AddAsync(HelpRequest request, CancellationToken ct);
-        Task<IReadOnlyList<HelpRequestListItemDto>> GetPageAsync(CancellationToken ct, int page, int pageSize, HelpRequestStatus? status = null);
+        Task<IReadOnlyList<HelpRequestListItemDto>> GetPageAsync(CancellationToken ct, int page, int pageSize, HelpRequestStatus? status = null, IReadOnlyList<HelpRequestStatus>? statuses = null);
         Task<HelpRequestDetailDto?> GetHelpRequestById(CancellationToken ct, Guid id);
         Task<HelpRequest?> GetAggregateByIdAsync(CancellationToken ct, Guid id);
         Task UpdateStatusAsync(CancellationToken ct, Guid id, HelpRequestStatus status, HelpRequestEvent logEvent);

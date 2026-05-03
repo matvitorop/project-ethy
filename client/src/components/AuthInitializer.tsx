@@ -22,7 +22,7 @@ export default function AuthInitializer({ children }: { children: React.ReactNod
             return
         }
 
-        const profile = data.user.profile.profile
+        const profile = data.userQuery.profile.profile
         if (profile) {
             dispatch(setAuth({
                 userId: profile.id,

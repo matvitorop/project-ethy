@@ -133,13 +133,21 @@ namespace server.Infrastructure.Repositories
                 responses);
         }
 
-        public async Task<IReadOnlyList<HelpRequestListItemDto>> GetPageAsync(CancellationToken ct, int page, int pageSize = 10, HelpRequestStatus? status = null)
+        public async Task<IReadOnlyList<HelpRequestListItemDto>> GetPageAsync(CancellationToken ct, int page, int pageSize = 10, HelpRequestStatus? status = null, IReadOnlyList<HelpRequestStatus>? statuses = null)
         {
             using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
-
+            
             var offset = (page - 1) * pageSize;
 
-            var sql = """
+            string statusFilter;
+            if (status.HasValue)
+                statusFilter = "AND hr.Status = @Status";
+            else if (statuses != null && statuses.Count > 0)
+                statusFilter = "AND hr.Status IN @Statuses";
+            else
+                statusFilter = "";
+
+            var sql = $"""
                 SELECT hr.Id, hr.Title, hr.Status,
                        img.ImageUrl AS PreviewImageUrl,
                        hr.CreatedAtUtc AS CreatedAt
@@ -151,9 +159,7 @@ namespace server.Infrastructure.Repositories
                     ORDER BY [Order] ASC
                 ) img
                 WHERE hr.IsDeleted = 0
-                """ +
-                (status.HasValue ? " AND hr.Status = @Status" : "") +
-                """
+                {statusFilter}
                 ORDER BY hr.CreatedAtUtc DESC
                 OFFSET @Offset ROWS
                 FETCH NEXT @PageSize ROWS ONLY;
@@ -162,9 +168,14 @@ namespace server.Infrastructure.Repositories
             var result = await connection.QueryAsync<HelpRequestListItemDto>(
                 new CommandDefinition(
                     sql,
-                    new { Offset = offset, PageSize = pageSize, Status = status.HasValue ? (int?)((int)status.Value) : null },
-                    cancellationToken: ct
-                    ));
+                    new
+                    {
+                        Offset = offset,
+                        PageSize = pageSize,
+                        Status = status.HasValue ? (int?)((int)status.Value) : null,
+                        Statuses = statuses?.Select(s => (int)s).ToArray()
+                    },
+                    cancellationToken: ct));
 
             return result.AsList();
         }
