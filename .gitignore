@@ -388,3 +388,7 @@ pnpm-debug.log*
 # Системні файли macOS/Windows (опціонально, але корисно)
 .DS_Store
 Thumbs.db
+
+*.rar
+*.zip
+*.7z
