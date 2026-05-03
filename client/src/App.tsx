@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router-dom'
+import AuthInitializer from './components/AuthInitializer'
 import AppLayout from './layout/AppLayout'
 import PublicLayout from './layout/PublicLayout'
 import PrivateRoute from './components/PrivateRoute'
@@ -9,7 +10,7 @@ import RegisterPage from './features/auth/RegisterPage'
 
 export default function App() {
     return (
-        <>
+        <AuthInitializer>
             <Routes>
                 <Route element={<PublicLayout />}>
                     <Route path="/" element={<HomePage />} />
@@ -25,6 +26,6 @@ export default function App() {
             </Routes>
 
             <ToastContainer />
-        </>
+        </AuthInitializer>
     )
 }

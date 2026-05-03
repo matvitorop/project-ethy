@@ -26,3 +26,26 @@ export interface RegisterVars {
     email: string
     password: string
 }
+
+export interface LogoutData {
+    auth: {
+        logout: {
+            message: string | null
+            error: ApiError | null
+        }
+    }
+}
+
+export interface ProfileData {
+    user: {
+        profile: {
+            profile: {
+                id: string
+                username: string
+                email: string
+                registeredAtUtc: string
+            } | null
+            error: ApiError | null
+        }
+    }
+}
