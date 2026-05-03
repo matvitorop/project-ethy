@@ -8,6 +8,7 @@ import HomePage from './pages/HomePage'
 import LoginPage from './features/auth/LoginPage'
 import RegisterPage from './features/auth/RegisterPage'
 import RequestsListPage from './features/requests/RequestsListPage'
+import RequestDetailsPage from './features/requests/RequestDetailsPage'
 
 export default function App() {
     return (
@@ -22,6 +23,8 @@ export default function App() {
                 <Route element={<PrivateRoute />}>
                     <Route element={<AppLayout />}>
                         <Route path="/requests" element={<RequestsListPage />} />
+                        <Route path="/requests" element={<RequestsListPage />} />
+                        <Route path="/requests/:id" element={<RequestDetailsPage />} />
                     </Route>
                 </Route>
             </Routes>

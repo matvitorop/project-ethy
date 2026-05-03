@@ -80,19 +80,16 @@ export interface HelpRequestDetail {
     description: string
     status: number
     creatorId: string
-    assignedUserId: string | null
     latitude: number | null
     longitude: number | null
     createdAtUtc: string
-    updatedAtUtc: string | null
-    cancellationReason: string | null
     imageUrls: string[]
 }
 
 export interface HelpRequestDetailData {
     helpRequestQuer: {
         helpRequestById: {
-            helpRequest: HelpRequestDetail | null
+            item: HelpRequestDetail | null
             error: ApiError | null
         }
     }
