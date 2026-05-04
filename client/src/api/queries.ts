@@ -233,3 +233,22 @@ export const GET_CHAT_MESSAGES = gql`
     }
   }
 `
+
+export const GET_STAGES_FOR_CHAT = gql`
+  query GetStagesForChat($helpRequestId: ID!) {
+    helpRequestQuer {
+      stages(helpRequestId: $helpRequestId) {
+        items {
+          id
+          proposedByUserId
+          content
+          status
+          rejectionReason
+          createdAtUtc
+          resolvedAtUtc
+        }
+        error { code message }
+      }
+    }
+  }
+`

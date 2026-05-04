@@ -212,3 +212,15 @@ export interface ChatMessagesData {
         }
     }
 }
+
+export interface StageEvent {
+    stageId: string
+    proposedByUserId?: string
+    content?: string
+    confirmedByUserId?: string
+    rejectedByUserId?: string
+    reason?: string
+    deletedByUserId?: string
+    createdAtUtc?: string
+    resolvedAtUtc?: string
+}
