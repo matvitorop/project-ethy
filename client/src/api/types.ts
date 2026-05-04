@@ -251,3 +251,39 @@ export interface DeleteAccountData {
         }
     }
 }
+
+export interface ReportItem {
+    id: string
+    createdByUserId: string
+    lastAssignedUserId: string | null
+    comment: string
+    imageUrl: string | null
+    createdAtUtc: string
+}
+
+export interface ReportsData {
+    helpRequestQuer: {
+        reports: {
+            items: ReportItem[] | null
+            error: ApiError | null
+        }
+    }
+}
+
+export interface CreateReportData {
+    helpRequest: {
+        createReport: {
+            reportId: string | null
+            error: ApiError | null
+        }
+    }
+}
+
+export interface PendingReportsData {
+    helpRequestQuer: {
+        helpRequestQuery: {
+            items: HelpRequestListItem[]
+            error: ApiError | null
+        }
+    }
+}

@@ -133,10 +133,17 @@ namespace server.Infrastructure.Repositories
                 responses);
         }
 
-        public async Task<IReadOnlyList<HelpRequestListItemDto>> GetPageAsync(CancellationToken ct, int page, int pageSize = 10, HelpRequestStatus? status = null, IReadOnlyList<HelpRequestStatus>? statuses = null, Guid? creatorId = null, Guid? assignedUserId = null)
+        public async Task<IReadOnlyList<HelpRequestListItemDto>> GetPageAsync(
+            CancellationToken ct,
+            int page,
+            int pageSize = 10,
+            HelpRequestStatus? status = null,
+            IReadOnlyList<HelpRequestStatus>? statuses = null,
+            Guid? creatorId = null,
+            Guid? assignedUserId = null,
+            bool? hasNoReport = null)
         {
             using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
-            
             var offset = (page - 1) * pageSize;
 
             var filters = new List<string> { "hr.IsDeleted = 0" };
@@ -151,6 +158,14 @@ namespace server.Infrastructure.Repositories
 
             if (assignedUserId.HasValue)
                 filters.Add("hr.AssignedUserId = @AssignedUserId");
+
+            if (hasNoReport == true)
+                filters.Add("""
+                    NOT EXISTS (
+                        SELECT 1 FROM HelpRequestReports r
+                        WHERE r.HelpRequestId = hr.Id
+                    )
+                    """);
 
             var whereClause = "WHERE " + string.Join(" AND ", filters);
 
