@@ -32,7 +32,9 @@ namespace server.Application.Handlers.GetHelpRequests
                 request.Page,
                 request.PageSize,
                 request.Status,
-                request.Statuses);
+                request.Statuses, 
+                request.CreatorId,
+                request.AssignedUserId);
 
             return Result<IReadOnlyList<HelpRequestListItemDto>>.Success(items);
         }

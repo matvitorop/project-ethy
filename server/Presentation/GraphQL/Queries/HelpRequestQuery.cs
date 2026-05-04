@@ -35,7 +35,9 @@ namespace server.Presentation.GraphQL.Queries
                 new QueryArgument<NonNullGraphType<IntGraphType>> { Name = "page" },
                 new QueryArgument<NonNullGraphType<IntGraphType>> { Name = "pageSize" },
                 new QueryArgument<HelpRequestStatusEnumType> { Name = "status" },
-                new QueryArgument<ListGraphType<HelpRequestStatusEnumType>> { Name = "statuses" }
+                new QueryArgument<ListGraphType<HelpRequestStatusEnumType>> { Name = "statuses" },
+                new QueryArgument<IdGraphType> { Name = "creatorId" },  
+                new QueryArgument<IdGraphType> { Name = "assignedUserId" }
             )
             .ResolveAsync(async context =>
             {
