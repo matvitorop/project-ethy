@@ -133,19 +133,26 @@ namespace server.Infrastructure.Repositories
                 responses);
         }
 
-        public async Task<IReadOnlyList<HelpRequestListItemDto>> GetPageAsync(CancellationToken ct, int page, int pageSize = 10, HelpRequestStatus? status = null, IReadOnlyList<HelpRequestStatus>? statuses = null)
+        public async Task<IReadOnlyList<HelpRequestListItemDto>> GetPageAsync(CancellationToken ct, int page, int pageSize = 10, HelpRequestStatus? status = null, IReadOnlyList<HelpRequestStatus>? statuses = null, Guid? creatorId = null, Guid? assignedUserId = null)
         {
             using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
             
             var offset = (page - 1) * pageSize;
 
-            string statusFilter;
+            var filters = new List<string> { "hr.IsDeleted = 0" };
+
             if (status.HasValue)
-                statusFilter = "AND hr.Status = @Status";
+                filters.Add("hr.Status = @Status");
             else if (statuses != null && statuses.Count > 0)
-                statusFilter = "AND hr.Status IN @Statuses";
-            else
-                statusFilter = "";
+                filters.Add("hr.Status IN @Statuses");
+
+            if (creatorId.HasValue)
+                filters.Add("hr.CreatorId = @CreatorId");
+
+            if (assignedUserId.HasValue)
+                filters.Add("hr.AssignedUserId = @AssignedUserId");
+
+            var whereClause = "WHERE " + string.Join(" AND ", filters);
 
             var sql = $"""
                 SELECT hr.Id, hr.Title, hr.Status,
@@ -158,8 +165,7 @@ namespace server.Infrastructure.Repositories
                     WHERE HelpRequestId = hr.Id
                     ORDER BY [Order] ASC
                 ) img
-                WHERE hr.IsDeleted = 0
-                {statusFilter}
+                {whereClause}
                 ORDER BY hr.CreatedAtUtc DESC
                 OFFSET @Offset ROWS
                 FETCH NEXT @PageSize ROWS ONLY;
@@ -173,7 +179,9 @@ namespace server.Infrastructure.Repositories
                         Offset = offset,
                         PageSize = pageSize,
                         Status = status.HasValue ? (int?)((int)status.Value) : null,
-                        Statuses = statuses?.Select(s => (int)s).ToArray()
+                        Statuses = statuses?.Select(s => (int)s).ToArray(),
+                        CreatorId = creatorId,
+                        AssignedUserId = assignedUserId
                     },
                     cancellationToken: ct));
 
