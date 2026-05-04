@@ -1,11 +1,13 @@
 import { Link, Outlet } from 'react-router-dom'
-import { Sun, Moon, LogOut, MessageCircle } from 'lucide-react'
+import { Sun, Moon, LogOut, MessageCircle, ClipboardList } from 'lucide-react'
 import ChatPanel from '../features/chat/ChatPanel'
-import { toggleChatPanel } from '../store/uiSlice'
+import { toggleChatPanel, toggleReportsPanel } from '../store/uiSlice'
 import Logo from '../components/Logo'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { toggleTheme } from '../store/themeSlice'
 import { useLogout } from '../features/auth/useAuth'
+import ReportsPanel from '../features/reports/ReportsPanel'
+
 
 export default function AppLayout() {
     const dispatch = useAppDispatch()
@@ -42,6 +44,13 @@ export default function AppLayout() {
                             {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
                         </button>
                         <button
+                            onClick={() => dispatch(toggleReportsPanel())}
+                            className="p-2 rounded-lg border border-border hover:border-primary text-ink-muted hover:text-primary transition-colors"
+                            title="Звіти"
+                        >
+                            <ClipboardList size={16} />
+                        </button>
+                        <button
                             onClick={() => logout()}
                             disabled={logoutLoading}
                             className="p-2 rounded-lg border border-border hover:border-error text-ink-muted hover:text-error transition-colors disabled:opacity-50"
@@ -56,6 +65,7 @@ export default function AppLayout() {
                 <Outlet />
             </main>
             <ChatPanel />
+            <ReportsPanel />
         </div>
     )
 }
