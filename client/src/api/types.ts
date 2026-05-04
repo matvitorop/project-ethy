@@ -178,3 +178,37 @@ export interface AssignExecutorData {
         }
     }
 }
+
+export interface ChatListItem {
+    chatId: string
+    helpRequestId: string
+    helpRequestTitle: string
+    ownerId: string
+    assigneeId: string
+    createdAtUtc: string
+}
+
+export interface MyChatsData {
+    helpRequestQuer: {
+        myChats: {
+            items: ChatListItem[] | null
+            error: ApiError | null
+        }
+    }
+}
+
+export interface ChatMessage {
+    id: string
+    senderId: string
+    content: string
+    createdAtUtc: string
+}
+
+export interface ChatMessagesData {
+    helpRequestQuer: {
+        chatMessages: {
+            messages: ChatMessage[] | null
+            error: ApiError | null
+        }
+    }
+}
