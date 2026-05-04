@@ -199,3 +199,37 @@ export const ASSIGN_EXECUTOR = gql`
     }
   }
 `
+
+export const GET_MY_CHATS = gql`
+  query GetMyChats {
+    helpRequestQuer {
+      myChats {
+        items {
+          chatId
+          helpRequestId
+          helpRequestTitle
+          ownerId
+          assigneeId
+          createdAtUtc
+        }
+        error { code message }
+      }
+    }
+  }
+`
+
+export const GET_CHAT_MESSAGES = gql`
+  query GetChatMessages($helpRequestId: ID!) {
+    helpRequestQuer {
+      chatMessages(helpRequestId: $helpRequestId) {
+        messages {
+          id
+          senderId
+          content
+          createdAtUtc
+        }
+        error { code message }
+      }
+    }
+  }
+`

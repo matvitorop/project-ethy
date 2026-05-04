@@ -1,5 +1,7 @@
 import { Link, Outlet } from 'react-router-dom'
-import { Sun, Moon, LogOut } from 'lucide-react'
+import { Sun, Moon, LogOut, MessageCircle } from 'lucide-react'
+import ChatPanel from '../features/chat/ChatPanel'
+import { toggleChatPanel } from '../store/uiSlice'
 import Logo from '../components/Logo'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { toggleTheme } from '../store/themeSlice'
@@ -28,6 +30,12 @@ export default function AppLayout() {
                             {username || 'Профіль'}
                         </Link>
                         <button
+                            onClick={() => dispatch(toggleChatPanel())}
+                            className="p-2 rounded-lg border border-border hover:border-primary text-ink-muted hover:text-primary transition-colors"
+                        >
+                            <MessageCircle size={16} />
+                        </button>
+                        <button
                             onClick={() => dispatch(toggleTheme())}
                             className="p-2 rounded-lg border border-border hover:border-primary text-ink-muted hover:text-primary transition-colors"
                         >
@@ -47,6 +55,7 @@ export default function AppLayout() {
             <main className="flex-1 max-w-6xl mx-auto w-full px-8 py-8">
                 <Outlet />
             </main>
+            <ChatPanel />
         </div>
     )
 }
