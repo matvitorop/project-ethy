@@ -46,7 +46,9 @@ namespace server.Presentation.GraphQL.Queries
                         context.GetArgument<int>("page"),
                         context.GetArgument<int>("pageSize"),
                         context.GetArgument<HelpRequestStatus?>("status"),
-                        context.GetArgument<List<HelpRequestStatus>?>("statuses")
+                        context.GetArgument<List<HelpRequestStatus>?>("statuses"),
+                        context.GetArgument<Guid?>("creatorId"),      
+                        context.GetArgument<Guid?>("assignedUserId") 
                     ));
 
                 return result.ToPayload((value, error) =>

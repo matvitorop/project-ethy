@@ -252,3 +252,77 @@ export const GET_STAGES_FOR_CHAT = gql`
     }
   }
 `
+
+export const UPDATE_USERNAME = gql`
+  mutation UpdateUsername($newUsername: String!) {
+    auth {
+      updateUsername(newUsername: $newUsername) {
+        success
+        error { code message }
+      }
+    }
+  }
+`
+
+export const CHANGE_PASSWORD = gql`
+  mutation ChangePassword(
+    $oldPassword: String!
+    $newPassword: String!
+    $confirmNewPassword: String!
+  ) {
+    auth {
+      changePassword(
+        oldPassword: $oldPassword
+        newPassword: $newPassword
+        confirmNewPassword: $confirmNewPassword
+      ) {
+        success
+        error { code message }
+      }
+    }
+  }
+`
+
+export const DELETE_ACCOUNT = gql`
+  mutation DeleteAccount {
+    auth {
+      deleteAccount {
+        success
+        error { code message }
+      }
+    }
+  }
+`
+export const GET_MY_REQUESTS = gql`
+  query GetMyRequests($page: Int!, $pageSize: Int!, $creatorId: ID) {
+    helpRequestQuer {
+      helpRequestQuery(page: $page, pageSize: $pageSize, creatorId: $creatorId) {
+        items {
+          id
+          title
+          status
+          previewImageUrl
+          createdAt
+        }
+        error { code message }
+      }
+    }
+  }
+`
+
+export const GET_ASSIGNEE_REQUESTS = gql`
+  query GetAssigneeRequests($page: Int!, $pageSize: Int!, $assignedUserId: ID) {
+    helpRequestQuer {
+      helpRequestQuery(page: $page, pageSize: $pageSize, assignedUserId: $assignedUserId) {
+        items {
+          id
+          title
+          status
+          previewImageUrl
+          createdAt
+        }
+        error { code message }
+      }
+    }
+  }
+`

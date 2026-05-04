@@ -224,3 +224,30 @@ export interface StageEvent {
     createdAtUtc?: string
     resolvedAtUtc?: string
 }
+
+export interface UpdateUsernameData {
+    auth: {
+        updateUsername: {
+            success: boolean
+            error: ApiError | null
+        }
+    }
+}
+
+export interface ChangePasswordData {
+    auth: {
+        changePassword: {
+            success: boolean
+            error: ApiError | null
+        }
+    }
+}
+
+export interface DeleteAccountData {
+    auth: {
+        deleteAccount: {
+            success: boolean
+            error: ApiError | null
+        }
+    }
+}
