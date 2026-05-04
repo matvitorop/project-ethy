@@ -154,7 +154,7 @@ namespace server.Infrastructure.Repositories
                        RejectionReason, CreatedAtUtc, ResolvedAtUtc
                 FROM HelpRequestStages
                 WHERE HelpRequestId = @HelpRequestId
-                  AND Status IN (1)
+                  AND Status IN (0, 1)
                 ORDER BY CreatedAtUtc ASC;
                 """;
 
