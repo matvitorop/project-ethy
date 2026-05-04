@@ -34,7 +34,8 @@ namespace server.Application.Handlers.GetHelpRequests
                 request.Status,
                 request.Statuses, 
                 request.CreatorId,
-                request.AssignedUserId);
+                request.AssignedUserId,
+                request.HasNoReport);
 
             return Result<IReadOnlyList<HelpRequestListItemDto>>.Success(items);
         }

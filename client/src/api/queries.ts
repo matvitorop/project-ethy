@@ -326,3 +326,59 @@ export const GET_ASSIGNEE_REQUESTS = gql`
     }
   }
 `
+
+export const GET_PENDING_REPORTS = gql`
+  query GetPendingReports($page: Int!, $pageSize: Int!, $creatorId: ID) {
+    helpRequestQuer {
+      helpRequestQuery(
+        page: $page
+        pageSize: $pageSize
+        status: Resolved
+        creatorId: $creatorId
+        hasNoReport: true
+      ) {
+        items {
+          id
+          title
+          status
+          previewImageUrl
+          createdAt
+        }
+        error { code message }
+      }
+    }
+  }
+`
+
+export const GET_REPORTS = gql`
+  query GetReports($helpRequestId: ID!) {
+    helpRequestQuer {
+      reports(helpRequestId: $helpRequestId) {
+        items {
+          id
+          createdByUserId
+          lastAssignedUserId
+          comment
+          imageUrl
+          createdAtUtc
+        }
+        error { code message }
+      }
+    }
+  }
+`
+
+export const CREATE_REPORT = gql`
+  mutation CreateReport($helpRequestId: ID!, $comment: String!, $imageUrl: String) {
+    helpRequest {
+      createReport(
+        helpRequestId: $helpRequestId
+        comment: $comment
+        imageUrl: $imageUrl
+      ) {
+        reportId
+        error { code message }
+      }
+    }
+  }
+`

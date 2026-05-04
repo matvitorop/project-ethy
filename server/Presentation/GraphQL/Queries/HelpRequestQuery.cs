@@ -37,7 +37,8 @@ namespace server.Presentation.GraphQL.Queries
                 new QueryArgument<HelpRequestStatusEnumType> { Name = "status" },
                 new QueryArgument<ListGraphType<HelpRequestStatusEnumType>> { Name = "statuses" },
                 new QueryArgument<IdGraphType> { Name = "creatorId" },  
-                new QueryArgument<IdGraphType> { Name = "assignedUserId" }
+                new QueryArgument<IdGraphType> { Name = "assignedUserId" },
+                new QueryArgument<BooleanGraphType> { Name = "hasNoReport" }
             )
             .ResolveAsync(async context =>
             {
@@ -48,7 +49,8 @@ namespace server.Presentation.GraphQL.Queries
                         context.GetArgument<HelpRequestStatus?>("status"),
                         context.GetArgument<List<HelpRequestStatus>?>("statuses"),
                         context.GetArgument<Guid?>("creatorId"),      
-                        context.GetArgument<Guid?>("assignedUserId") 
+                        context.GetArgument<Guid?>("assignedUserId"),
+                        context.GetArgument<bool?>("hasNoReport")
                     ));
 
                 return result.ToPayload((value, error) =>

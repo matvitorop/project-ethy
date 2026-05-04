@@ -13,6 +13,8 @@ namespace server.Application.Handlers.GetActiveRequests
         public IReadOnlyList<HelpRequestStatus>? Statuses { get; }
         public Guid? CreatorId { get; } 
         public Guid? AssignedUserId { get; }
+        public bool? HasNoReport { get; }
+
 
         public GetHelpRequestsPageQuery(
             int page,
@@ -20,7 +22,8 @@ namespace server.Application.Handlers.GetActiveRequests
             HelpRequestStatus? status = null,
             IReadOnlyList<HelpRequestStatus>? statuses = null, 
             Guid? creatorId = null, 
-            Guid? assignedUserId = null)
+            Guid? assignedUserId = null,
+            bool? hasNoReport = null)
         {
             Page = page < 1 ? 1 : page;
             PageSize = pageSize is < 1 or > 50 ? 10 : pageSize;
@@ -28,6 +31,7 @@ namespace server.Application.Handlers.GetActiveRequests
             Statuses = statuses;
             CreatorId = creatorId;
             AssignedUserId = assignedUserId;
+            HasNoReport = hasNoReport;
         }
     }
 }
