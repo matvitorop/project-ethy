@@ -1,19 +1,23 @@
 import { useState, lazy, Suspense } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { useQuery } from '@apollo/client/react'
-import { ArrowLeft, MapPin, Calendar, AlertCircle } from 'lucide-react'
-import { GET_HELP_REQUEST_BY_ID, GET_STAGES, GET_EVENT_LOG } from '../../api/queries'
+import { useQuery, useMutation } from '@apollo/client/react'
+import { ArrowLeft, MapPin, Calendar, AlertCircle, Upload } from 'lucide-react'
+import { GET_HELP_REQUEST_BY_ID, GET_STAGES, GET_EVENT_LOG, GET_REPORTS, CREATE_REPORT } from '../../api/queries'
 import type {
   HelpRequestDetailData,
   StagesData,
-  EventLogData
+  EventLogData,
+    ReportsData,
+    CreateReportData
 } from '../../api/types'
-import { useAppSelector } from '../../store/hooks'
+import { useAppDispatch, useAppSelector } from '../../store/hooks'
+import { addToast } from '../../store/uiSlice'
 import { PageSpinner } from '../../components/Spinner'
 import StagesTimeline from './components/StagesTimeline'
 import EventLogList from './components/EventLogList'
 import RespondModal from './components/RespondModal'
 import CandidatesModal from './components/CandidatesModal'
+
 const API_BASE_URL = 'http://localhost:5274'
 
 // Lazy load карти щоб не блокувати рендер
@@ -27,7 +31,7 @@ const STATUS_CONFIG = {
   4: { label: 'Скасована', color: 'bg-error/15 text-error' },
 } as const
 
-type DetailTab = 'stages' | 'log'
+type DetailTab = 'stages' | 'log' | 'report'
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('uk-UA', {
@@ -46,7 +50,8 @@ export default function RequestDetailsPage() {
   const [respondModalOpen, setRespondModalOpen] = useState(false)
   const [candidatesModalOpen, setCandidatesModalOpen] = useState(false)
 
-    const { data, loading, error } = useQuery<HelpRequestDetailData>(
+  const dispatch = useAppDispatch()
+  const { data, loading, error } = useQuery<HelpRequestDetailData>(
     GET_HELP_REQUEST_BY_ID,
     { variables: { id }, fetchPolicy: 'cache-and-network' }
   )
@@ -59,7 +64,61 @@ export default function RequestDetailsPage() {
   const { data: logData } = useQuery<EventLogData>(
     GET_EVENT_LOG,
     { variables: { helpRequestId: id }, fetchPolicy: 'cache-and-network' }
-  )
+    )
+
+  const { data: reportsData, refetch: refetchReports } = useQuery<ReportsData>(GET_REPORTS, {
+        variables: { helpRequestId: id },
+        fetchPolicy: 'cache-and-network',
+        skip: !id,
+  })
+
+  const reports = reportsData?.helpRequestQuer.reports.items ?? []
+
+    // Mutation створення звіту:
+    const [reportComment, setReportComment] = useState('')
+    const [reportImage, setReportImage] = useState<string | null>(null)
+    const [reportUploading, setReportUploading] = useState(false)
+
+    const [createReport, { loading: creatingReport }] = useMutation<CreateReportData>(
+        CREATE_REPORT,
+        {
+            onCompleted: (data) => {
+                const result = data.helpRequest.createReport
+                if (result.error) {
+                    dispatch(addToast({ type: 'error', message: result.error.message }))
+                } else {
+                    dispatch(addToast({ type: 'success', message: 'Звіт створено!' }))
+                    setReportComment('')
+                    setReportImage(null)
+                    refetchReports()
+                }
+            },
+            onError: () => dispatch(addToast({ type: 'error', message: 'Помилка створення звіту' })),
+        }
+    )
+
+    // Завантаження фото для звіту:
+    const handleReportImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+        setReportUploading(true)
+        try {
+            const formData = new FormData()
+            formData.append('file', file, file.name)
+            const res = await fetch(`${API_BASE_URL}/api/files/help-requests/reports`, {
+                method: 'POST',
+                credentials: 'include',
+                body: formData,
+            })
+            if (!res.ok) throw new Error('Upload failed')
+            const data = await res.json()
+            setReportImage(`/uploads/reports/${data.imageUrl}`)
+        } catch {
+            dispatch(addToast({ type: 'error', message: 'Помилка завантаження фото' }))
+        } finally {
+            setReportUploading(false)
+        }
+    }
 
   if (loading) return <PageSpinner />
 
@@ -232,7 +291,8 @@ export default function RequestDetailsPage() {
         <div className="flex border-b border-border">
           {([
             { key: 'stages', label: `Етапи (${stages.length})` },
-            { key: 'log',    label: `Історія подій (${events.length})` },
+            { key: 'log', label: `Історія подій (${events.length})` },
+            { key: 'report', label: `Звіт (${reports.length})` },
           ] as const).map(tab => (
             <button
               key={tab.key}
@@ -254,7 +314,89 @@ export default function RequestDetailsPage() {
           )}
           {activeTab === 'log' && (
             <EventLogList events={events} />
-          )}
+                  )}
+                  {activeTab === 'report' && (
+                      <div className="space-y-4">
+                          {/* Існуючі звіти */}
+                          {reports.map(report => (
+                              <div key={report.id} className="p-4 bg-surface-muted rounded-xl border border-border space-y-2">
+                                  <p className="text-sm text-ink leading-relaxed">{report.comment}</p>
+                                  {report.imageUrl && (
+                                      <img
+                                          src={`${API_BASE_URL}${report.imageUrl}`}
+                                          alt="Звіт"
+                                          className="w-full max-h-48 object-cover rounded-lg"
+                                      />
+                                  )}
+                                  <p className="text-xs text-ink-muted">
+                                      {new Date(report.createdAtUtc).toLocaleDateString('uk-UA', {
+                                          day: 'numeric', month: 'long', year: 'numeric'
+                                      })}
+                                  </p>
+                              </div>
+                          ))}
+
+                          {/* Форма створення звіту */}
+                          {isOwner && hr.status === 3 && (
+                              <div className="space-y-3 pt-2 border-t border-border">
+                                  <p className="text-sm font-medium text-ink">Додати звіт</p>
+                                  <textarea
+                                      value={reportComment}
+                                      onChange={e => setReportComment(e.target.value)}
+                                      placeholder="Опишіть як пройшло отримання допомоги..."
+                                      rows={3}
+                                      className="w-full px-4 py-3 bg-surface-muted border border-border rounded-lg text-sm text-ink placeholder-ink-soft focus:outline-none focus:border-primary transition-colors resize-none"
+                                  />
+
+                                  {/* Фото */}
+                                  <div className="flex items-center gap-3">
+                                      <label className="flex items-center gap-2 px-3 py-2 border border-border rounded-lg text-xs text-ink-muted hover:border-primary hover:text-primary cursor-pointer transition-colors">
+                                          <Upload size={14} />
+                                          {reportUploading ? 'Завантаження...' : 'Додати фото'}
+                                          <input
+                                              type="file"
+                                              accept="image/*"
+                                              className="hidden"
+                                              onChange={handleReportImageUpload}
+                                              disabled={reportUploading}
+                                          />
+                                      </label>
+                                      {reportImage && (
+                                          <div className="flex items-center gap-2">
+                                              <span className="text-xs text-success">✓ Фото додано</span>
+                                              <button
+                                                  onClick={() => setReportImage(null)}
+                                                  className="text-xs text-error hover:underline"
+                                              >
+                                                  Видалити
+                                              </button>
+                                          </div>
+                                      )}
+                                  </div>
+
+                                  <button
+                                      onClick={() => createReport({
+                                          variables: {
+                                              helpRequestId: hr.id,
+                                              comment: reportComment.trim(),
+                                              imageUrl: reportImage,
+                                          }
+                                      })}
+                                      disabled={creatingReport || !reportComment.trim()}
+                                      className="w-full py-2.5 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary-light disabled:opacity-60 transition-colors"
+                                  >
+                                      {creatingReport ? 'Збереження...' : 'Опублікувати звіт'}
+                                  </button>
+                              </div>
+                          )}
+
+                          {reports.length === 0 && !(isOwner && hr.status === 3) && (
+                              <div className="text-center py-8 text-ink-muted text-sm">
+                                  Звітів поки немає
+                              </div>
+                          )}
+                      </div>
+                  )}
         </div>
           </div>
 

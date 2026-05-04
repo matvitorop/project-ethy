@@ -13,11 +13,12 @@ interface UiState {
     globalLoading: boolean
     chatPanelOpen: boolean
     activeChatId: string | null
+    reportsPanelOpen: boolean
 }
 
 const uiSlice = createSlice({
     name: 'ui',
-    initialState: { toasts: [], globalLoading: false, chatPanelOpen: false, activeChatId: null} as UiState,
+    initialState: { toasts: [], globalLoading: false, chatPanelOpen: false, activeChatId: null, reportsPanelOpen: false } as UiState,
     reducers: {
         addToast: (state, action: PayloadAction<{ type: ToastType; message: string }>) => {
             state.toasts.push({
@@ -45,8 +46,14 @@ const uiSlice = createSlice({
             state.chatPanelOpen = false
             state.activeChatId = null
         },
+        toggleReportsPanel: (state) => {
+            state.reportsPanelOpen = !state.reportsPanelOpen
+        },
+        closeReportsPanel: (state) => {
+            state.reportsPanelOpen = false
+        },
     },
 })
 
-export const { addToast, removeToast, setGlobalLoading, toggleChatPanel, openChat, closeChatPanel } = uiSlice.actions
+export const { addToast, removeToast, setGlobalLoading, toggleChatPanel, openChat, closeChatPanel, toggleReportsPanel, closeReportsPanel } = uiSlice.actions
 export default uiSlice.reducer
