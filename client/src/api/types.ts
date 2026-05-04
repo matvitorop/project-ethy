@@ -148,3 +148,21 @@ export interface RespondToHelpRequestData {
         }
     }
 }
+
+export interface HelpRequestResponse {
+    id: string
+    userId: string
+    username: string
+    message: string
+    status: number
+    createdAtUtc: string
+}
+
+export interface HelpRequestResponsesData {
+    helpRequestQuer: {
+        helpRequestResponses: {
+            items: HelpRequestResponse[] | null
+            error: ApiError | null
+        }
+    }
+}

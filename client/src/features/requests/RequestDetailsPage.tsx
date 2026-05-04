@@ -13,6 +13,7 @@ import { PageSpinner } from '../../components/Spinner'
 import StagesTimeline from './components/StagesTimeline'
 import EventLogList from './components/EventLogList'
 import RespondModal from './components/RespondModal'
+import CandidatesModal from './components/CandidatesModal'
 const API_BASE_URL = 'http://localhost:5274'
 
 // Lazy load карти щоб не блокувати рендер
@@ -42,9 +43,10 @@ export default function RequestDetailsPage() {
   const userId = useAppSelector(s => s.auth.userId)
   const [activeTab, setActiveTab] = useState<DetailTab>('stages')
   const [activeImage, setActiveImage] = useState(0)
-    const [respondModalOpen, setRespondModalOpen] = useState(false)
+  const [respondModalOpen, setRespondModalOpen] = useState(false)
+  const [candidatesModalOpen, setCandidatesModalOpen] = useState(false)
 
-  const { data, loading, error } = useQuery<HelpRequestDetailData>(
+    const { data, loading, error } = useQuery<HelpRequestDetailData>(
     GET_HELP_REQUEST_BY_ID,
     { variables: { id }, fetchPolicy: 'cache-and-network' }
   )
@@ -79,7 +81,6 @@ export default function RequestDetailsPage() {
   const stages = stagesData?.helpRequestQuer.stages.items ?? []
   const events = logData?.helpRequestQuer.eventLog.items ?? []
   const hasLocation = hr.latitude !== null && hr.longitude !== null
-
   return (
     <div className="max-w-4xl mx-auto">
       {/* Назад */}
@@ -186,46 +187,43 @@ export default function RequestDetailsPage() {
 
       {/* Кнопки дій */}
       <div className="flex flex-wrap gap-3 mb-8">
-        {isOwner && hr.status === 1 && (
-          <>
-            <Link
-              to={`/requests/${hr.id}/edit`}
-              className="px-4 py-2 text-sm font-medium border border-border rounded-lg hover:border-primary text-ink transition-colors"
-            >
-              Редагувати
-            </Link>
-            <button className="px-4 py-2 text-sm font-medium border border-error/30 rounded-lg hover:border-error text-error transition-colors">
-              Скасувати
-            </button>
-            <button className="px-4 py-2 text-sm font-medium border border-error/30 rounded-lg hover:border-error text-error transition-colors">
-              Видалити
-            </button>
-          </>
-        )}
+          {isOwner && hr.status === 1 && (
+              <>
+                  <Link
+                      to={`/requests/${hr.id}/edit`}
+                      className="px-4 py-2 text-sm font-medium border border-border rounded-lg hover:border-primary text-ink transition-colors"
+                  >
+                      Редагувати
+                  </Link>
+                  <button className="px-4 py-2 text-sm font-medium border border-error/30 rounded-lg hover:border-error text-error transition-colors">
+                      Скасувати
+                  </button>
+                  <button className="px-4 py-2 text-sm font-medium border border-error/30 rounded-lg hover:border-error text-error transition-colors">
+                      Видалити
+                  </button>
+                  <button
+                      onClick={() => setCandidatesModalOpen(true)}
+                      className="px-4 py-2 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary-light transition-colors"
+                  >
+                      Кандидати
+                  </button>
+              </>
+          )}
 
-        {isOwner && hr.status === 4 && (
-          <button className="px-4 py-2 text-sm font-medium border border-border rounded-lg hover:border-primary text-ink transition-colors">
-            Відновити
-          </button>
-        )}
+          {isOwner && hr.status === 4 && (
+              <button className="px-4 py-2 text-sm font-medium border border-border rounded-lg hover:border-primary text-ink transition-colors">
+                  Відновити
+              </button>
+          )}
 
-        {isOwner && hr.status === 1 && (
-          <Link
-            to={`/requests/${hr.id}/candidates`}
-            className="px-4 py-2 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary-light transition-colors"
-          >
-            Кандидати
-          </Link>
-        )}
-
-        {!isOwner && hr.status === 1 && (
-            <button
-                onClick={() => setRespondModalOpen(true)}
-                className="px-4 py-2 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary-light transition-colors"
-            >
-                Відгукнутись
-            </button>
-        )}
+          {!isOwner && hr.status === 1 && (
+              <button
+                  onClick={() => setRespondModalOpen(true)}
+                  className="px-4 py-2 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary-light transition-colors"
+              >
+                  Відгукнутись
+              </button>
+          )}
       </div>
 
       {/* Вкладки — Етапи і Лог */}
@@ -265,6 +263,20 @@ export default function RequestDetailsPage() {
               helpRequestId={hr.id}
               onSuccess={() => { }}
           />
+
+          <CandidatesModal
+              isOpen={candidatesModalOpen}
+              onClose={() => setCandidatesModalOpen(false)}
+              helpRequestId={hr.id}
+              canAssign={isOwner && hr.status === 1}
+              onAssign={(responseId) => {
+                  // Тут буде призначення виконавця — наступний крок
+                  console.log('Assign:', responseId)
+                  setCandidatesModalOpen(false)
+              }}
+          />
+
+
     </div>
   )
 }
