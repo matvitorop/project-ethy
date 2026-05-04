@@ -6,6 +6,7 @@ using server.Application.Handlers.GetChatMessages;
 using server.Application.Handlers.GetEventLog;
 using server.Application.Handlers.GetFullHelpRequest;
 using server.Application.Handlers.GetHelpRequestResponses;
+using server.Application.Handlers.GetMyChats;
 using server.Application.Handlers.GetStages;
 using server.Application.Handlers.HelpRequestResponseHandlers.GetReports;
 using server.Domain.HelpRequest;
@@ -13,6 +14,7 @@ using server.Presentation.GraphQL.Extensions;
 using server.Presentation.GraphQL.Types;
 using server.Presentation.GraphQL.Types.ChangeHRStatusTypes;
 using server.Presentation.GraphQL.Types.ChatMessagesTypes;
+using server.Presentation.GraphQL.Types.ChatTypes;
 using server.Presentation.GraphQL.Types.ErrorTypes;
 using server.Presentation.GraphQL.Types.GetHRDetailTypes;
 using server.Presentation.GraphQL.Types.GetHRListTypes;
@@ -141,6 +143,19 @@ namespace server.Presentation.GraphQL.Queries
 
                 return result.ToPayload(
                     (value, error) => new ReportsPayload(value, error));
+            });
+
+            Field<MyChatsPayloadType>("myChats")
+            .Authorize()
+            .ResolveAsync(async context =>
+            {
+                var userId = context.GetUserId();
+
+                var result = await mediator.Send(
+                    new GetMyChatsQuery(userId));
+
+                return result.ToPayload(
+                    (value, error) => new MyChatsPayload(value, error));
             });
         }
     }
