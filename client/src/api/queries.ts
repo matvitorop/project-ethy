@@ -168,3 +168,21 @@ export const RESPOND_TO_HELP_REQUEST = gql`
     }
   }
 `
+
+export const GET_HELP_REQUEST_RESPONSES = gql`
+  query GetHelpRequestResponses($helpRequestId: ID!) {
+    helpRequestQuer {
+      helpRequestResponses(helpRequestId: $helpRequestId) {
+        items {
+          id
+          userId
+          username
+          message
+          status
+          createdAtUtc
+        }
+        error { code message }
+      }
+    }
+  }
+`
