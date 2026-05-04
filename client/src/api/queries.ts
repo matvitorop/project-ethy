@@ -157,3 +157,14 @@ export const CREATE_HELP_REQUEST = gql`
     }
   }
 `
+
+export const RESPOND_TO_HELP_REQUEST = gql`
+  mutation RespondToHelpRequest($helpRequestId: ID!, $message: String!) {
+    helpRequest {
+      respondToHelpRequest(helpRequestId: $helpRequestId, message: $message) {
+        responseId
+        error { code message }
+      }
+    }
+  }
+`

@@ -139,3 +139,12 @@ export interface CreateHelpRequestData {
         }
     }
 }
+
+export interface RespondToHelpRequestData {
+    helpRequest: {
+        respondToHelpRequest: {
+            responseId: string | null
+            error: ApiError | null
+        }
+    }
+}
