@@ -2,7 +2,8 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import L from 'leaflet'
 
 // Фікс для іконки маркера в Vite
-delete (L.Icon.Default.prototype as any)._getIconUrl
+const iconDefault = L.Icon.Default.prototype as L.Icon.Default & { _getIconUrl?: () => string }
+delete iconDefault._getIconUrl
 L.Icon.Default.mergeOptions({
     iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
     iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
