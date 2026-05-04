@@ -1,4 +1,5 @@
 ﻿using server.Application.Handlers.GetChatMessages;
+using server.Application.Handlers.GetMyChats;
 using server.Domain.Chat;
 
 namespace server.Application.IRepositories
@@ -9,5 +10,6 @@ namespace server.Application.IRepositories
         Task<Chat?> GetByHelpRequestIdAsync(Guid helpRequestId, CancellationToken ct);
         Task AddMessageAsync(ChatMessage message, CancellationToken ct);
         Task<IReadOnlyList<ChatMessageDto>> GetMessagesAsync(Guid chatId, CancellationToken ct);
+        Task<IReadOnlyList<ChatListItemDto>> GetMyChatsAsync(Guid userId, CancellationToken ct);
     }
 }

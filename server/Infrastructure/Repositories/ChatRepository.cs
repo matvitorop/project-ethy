@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using server.Application.Handlers.GetChatMessages;
+using server.Application.Handlers.GetMyChats;
 using server.Application.IRepositories;
 using server.Application.IServices;
 using server.Domain.Chat;
@@ -79,6 +80,36 @@ namespace server.Infrastructure.Repositories
             var result = await connection.QueryAsync<ChatMessageDto>(
                 new CommandDefinition(sql,
                     new { ChatId = chatId },
+                    cancellationToken: ct));
+
+            return result.AsList();
+        }
+
+        public async Task<IReadOnlyList<ChatListItemDto>> GetMyChatsAsync(
+            Guid userId,
+            CancellationToken ct)
+        {
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
+
+            const string sql = """
+                SELECT 
+                    c.Id AS ChatId,
+                    c.HelpRequestId,
+                    hr.Title AS HelpRequestTitle,
+                    c.OwnerId,
+                    c.AssigneeId,
+                    c.CreatedAtUtc
+                FROM Chats c
+                INNER JOIN HelpRequests hr ON hr.Id = c.HelpRequestId
+                WHERE c.IsActive = 1
+                  AND (c.OwnerId = @UserId OR c.AssigneeId = @UserId)
+                  AND hr.IsDeleted = 0
+                ORDER BY c.CreatedAtUtc DESC;
+                """;
+
+            var result = await connection.QueryAsync<ChatListItemDto>(
+                new CommandDefinition(sql,
+                    new { UserId = userId },
                     cancellationToken: ct));
 
             return result.AsList();
