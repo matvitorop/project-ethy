@@ -186,3 +186,16 @@ export const GET_HELP_REQUEST_RESPONSES = gql`
     }
   }
 `
+export const ASSIGN_EXECUTOR = gql`
+  mutation AssignExecutor($helpRequestId: ID!, $responseId: ID!) {
+    helpRequest {
+      assignExecutor(helpRequestId: $helpRequestId, responseId: $responseId) {
+        data {
+          helpRequestId
+          assignedUserId
+        }
+        error { code message }
+      }
+    }
+  }
+`
