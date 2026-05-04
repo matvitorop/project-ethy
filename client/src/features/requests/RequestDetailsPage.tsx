@@ -12,6 +12,7 @@ import { useAppSelector } from '../../store/hooks'
 import { PageSpinner } from '../../components/Spinner'
 import StagesTimeline from './components/StagesTimeline'
 import EventLogList from './components/EventLogList'
+import RespondModal from './components/RespondModal'
 const API_BASE_URL = 'http://localhost:5274'
 
 // Lazy load карти щоб не блокувати рендер
@@ -41,6 +42,7 @@ export default function RequestDetailsPage() {
   const userId = useAppSelector(s => s.auth.userId)
   const [activeTab, setActiveTab] = useState<DetailTab>('stages')
   const [activeImage, setActiveImage] = useState(0)
+    const [respondModalOpen, setRespondModalOpen] = useState(false)
 
   const { data, loading, error } = useQuery<HelpRequestDetailData>(
     GET_HELP_REQUEST_BY_ID,
@@ -217,9 +219,12 @@ export default function RequestDetailsPage() {
         )}
 
         {!isOwner && hr.status === 1 && (
-          <button className="px-4 py-2 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary-light transition-colors">
-            Відгукнутись
-          </button>
+            <button
+                onClick={() => setRespondModalOpen(true)}
+                className="px-4 py-2 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary-light transition-colors"
+            >
+                Відгукнутись
+            </button>
         )}
       </div>
 
@@ -252,7 +257,14 @@ export default function RequestDetailsPage() {
             <EventLogList events={events} />
           )}
         </div>
-      </div>
+          </div>
+
+          <RespondModal
+              isOpen={respondModalOpen}
+              onClose={() => setRespondModalOpen(false)}
+              helpRequestId={hr.id}
+              onSuccess={() => { }}
+          />
     </div>
   )
 }

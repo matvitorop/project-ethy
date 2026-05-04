@@ -395,14 +395,23 @@ namespace server.Infrastructure.Repositories
             using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
 
             const string sql = """
-                SELECT Id, UserId, Message, Status, CreatedAtUtc
-                FROM HelpRequestResponses
-                WHERE HelpRequestId = @HelpRequestId
-                ORDER BY CreatedAtUtc ASC;
+                SELECT 
+                    hrr.Id,
+                    hrr.UserId,
+                    u.Username,
+                    hrr.Message,
+                    hrr.Status,
+                    hrr.CreatedAtUtc
+                FROM HelpRequestResponses hrr
+                INNER JOIN Users u ON u.Id = hrr.UserId
+                WHERE hrr.HelpRequestId = @HelpRequestId
+                ORDER BY hrr.CreatedAtUtc ASC;
                 """;
 
             var result = await connection.QueryAsync<HelpRequestResponseDto>(
-                new CommandDefinition(sql, new { HelpRequestId = helpRequestId }, cancellationToken: ct));
+                new CommandDefinition(sql,
+                    new { HelpRequestId = helpRequestId },
+                    cancellationToken: ct));
 
             return result.AsList();
         }

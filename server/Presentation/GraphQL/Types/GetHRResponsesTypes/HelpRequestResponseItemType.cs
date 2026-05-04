@@ -10,6 +10,7 @@ namespace server.Presentation.GraphQL.Types.GetHRResponsesTypes
         {
             Field(x => x.Id, type: typeof(IdGraphType));
             Field(x => x.UserId, type: typeof(GuidGraphType));
+            Field(x => x.Username);
             Field(x => x.Message);
             Field(x => x.Status);
             Field(x => x.CreatedAtUtc);
