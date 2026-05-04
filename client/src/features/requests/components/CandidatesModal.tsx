@@ -1,9 +1,11 @@
-import { useQuery } from '@apollo/client/react'
+import { useQuery, useMutation } from '@apollo/client/react'
 import { UserCircle, Clock } from 'lucide-react'
 import Modal from '../../../components/Modal'
-import { GET_HELP_REQUEST_RESPONSES } from '../../../api/queries'
-import type { HelpRequestResponsesData, HelpRequestResponse } from '../../../api/types'
+import { GET_HELP_REQUEST_RESPONSES, ASSIGN_EXECUTOR } from '../../../api/queries'
+import type { HelpRequestResponsesData, HelpRequestResponse, AssignExecutorData } from '../../../api/types'
 import { PageSpinner } from '../../../components/Spinner'
+import { useAppDispatch } from '../../../store/hooks'
+import { addToast } from '../../../store/uiSlice'
 
 const RESPONSE_STATUS = {
     0: { label: 'Очікує', color: 'text-warning' },
@@ -25,9 +27,10 @@ interface CandidateCardProps {
     response: HelpRequestResponse
     onAssign: (responseId: string) => void
     canAssign: boolean
+    assigning: boolean
 }
 
-function CandidateCard({ response, onAssign, canAssign }: CandidateCardProps) {
+function CandidateCard({ response, onAssign, canAssign, assigning }: CandidateCardProps) {
     const statusConfig = RESPONSE_STATUS[response.status as keyof typeof RESPONSE_STATUS]
 
     return (
@@ -53,9 +56,10 @@ function CandidateCard({ response, onAssign, canAssign }: CandidateCardProps) {
                 {canAssign && response.status === 0 && (
                     <button
                         onClick={() => onAssign(response.id)}
-                        className="px-3 py-1.5 text-xs font-semibold bg-primary text-white rounded-lg hover:bg-primary-light transition-colors"
+                        disabled={assigning}
+                        className="px-3 py-1.5 text-xs font-semibold bg-primary text-white rounded-lg hover:bg-primary-light disabled:opacity-60 transition-colors"
                     >
-                        Призначити
+                        {assigning ? 'Призначення...' : 'Призначити'}
                     </button>
                 )}
             </div>
@@ -68,7 +72,7 @@ interface CandidatesModalProps {
     onClose: () => void
     helpRequestId: string
     canAssign: boolean
-    onAssign: (responseId: string) => void
+    onAssign: () => void
 }
 
 export default function CandidatesModal({
@@ -78,6 +82,8 @@ export default function CandidatesModal({
     canAssign,
     onAssign,
 }: CandidatesModalProps) {
+    const dispatch = useAppDispatch()
+
     const { data, loading } = useQuery<HelpRequestResponsesData>(
         GET_HELP_REQUEST_RESPONSES,
         {
@@ -86,6 +92,30 @@ export default function CandidatesModal({
             fetchPolicy: 'network-only',
         }
     )
+
+    const [assignExecutor, { loading: assigning }] = useMutation<AssignExecutorData>(
+        ASSIGN_EXECUTOR,
+        {
+            onCompleted: (data) => {
+                const result = data.helpRequest.assignExecutor
+                if (result.error) {
+                    dispatch(addToast({ type: 'error', message: result.error.message }))
+                } else {
+                    dispatch(addToast({ type: 'success', message: 'Виконавця призначено!' }))
+                    onClose()
+                    onAssign()
+                }
+            },
+            onError: () => dispatch(addToast({
+                type: 'error',
+                message: 'Не вдалося призначити виконавця',
+            })),
+        }
+    )
+
+    const handleAssign = (responseId: string) => {
+        assignExecutor({ variables: { helpRequestId, responseId } })
+    }
 
     const items = data?.helpRequestQuer.helpRequestResponses.items ?? []
 
@@ -105,7 +135,8 @@ export default function CandidatesModal({
                         key={response.id}
                         response={response}
                         canAssign={canAssign}
-                        onAssign={onAssign}
+                        onAssign={handleAssign}
+                        assigning={assigning}
                     />
                 ))}
             </div>

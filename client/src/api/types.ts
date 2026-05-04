@@ -166,3 +166,15 @@ export interface HelpRequestResponsesData {
         }
     }
 }
+
+export interface AssignExecutorData {
+    helpRequest: {
+        assignExecutor: {
+            data: {
+                helpRequestId: string
+                assignedUserId: string
+            } | null
+            error: ApiError | null
+        }
+    }
+}

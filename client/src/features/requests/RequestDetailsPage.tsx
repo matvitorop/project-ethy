@@ -80,7 +80,8 @@ export default function RequestDetailsPage() {
   const statusConfig = STATUS_CONFIG[hr.status as keyof typeof STATUS_CONFIG]
   const stages = stagesData?.helpRequestQuer.stages.items ?? []
   const events = logData?.helpRequestQuer.eventLog.items ?? []
-  const hasLocation = hr.latitude !== null && hr.longitude !== null
+    const hasLocation = hr.latitude !== null && hr.longitude !== null
+
   return (
     <div className="max-w-4xl mx-auto">
       {/* Назад */}
@@ -269,11 +270,7 @@ export default function RequestDetailsPage() {
               onClose={() => setCandidatesModalOpen(false)}
               helpRequestId={hr.id}
               canAssign={isOwner && hr.status === 1}
-              onAssign={(responseId) => {
-                  // Тут буде призначення виконавця — наступний крок
-                  console.log('Assign:', responseId)
-                  setCandidatesModalOpen(false)
-              }}
+              onAssign={() => setCandidatesModalOpen(false)}
           />
 
 
