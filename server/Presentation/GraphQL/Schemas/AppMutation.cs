@@ -23,6 +23,17 @@ namespace server.Presentation.GraphQL.Schemas
                 ResolvedType = provider.GetRequiredService<HelpRequestMutation>(),
                 Resolver = new FuncFieldResolver<object>(_ => new object())
             });
+
+            // Trust module
+            AddField(new FieldType
+            {
+                Name = "user",
+                Description = "User profile and trust mutations",
+                ResolvedType = provider.GetRequiredService<UserMutation>(),
+                Resolver = new FuncFieldResolver<object>(_ => new object())
+            });
+            // ---
+
         }
     }
 }

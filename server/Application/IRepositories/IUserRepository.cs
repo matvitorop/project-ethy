@@ -13,5 +13,10 @@ namespace server.Application.IRepositories
         Task UpdatePasswordAsync(Guid id, string passwordHash, string passwordSalt, CancellationToken ct);
         Task<bool> IsAdminAsync(Guid userId, CancellationToken ct);
         Task SoftDeleteAsync(User user, CancellationToken ct);
+        
+        // +++ Trust module
+        Task UpdateProfileAsync(Guid id, string? phoneNumber, string? socialLinks, CancellationToken ct);
+        // ---
+
     }
 }
