@@ -76,10 +76,14 @@ namespace server.Domain
         public void UpdateProfile(string? phoneNumber, string? socialLinks)
         {
             if (phoneNumber is not null && phoneNumber.Length > 20)
-                throw new DomainException("Phone number is too long", "User.PHONE_TOO_LONG");
+                throw new DomainException(
+                    "Phone number is too long", 
+                    "User.PHONE_TOO_LONG");
 
             if (socialLinks is not null && socialLinks.Length > 500)
-                throw new DomainException("Social links value is too long", "User.SOCIAL_LINKS_TOO_LONG");
+                throw new DomainException(
+                    "Social links value is too long", 
+                    "User.SOCIAL_LINKS_TOO_LONG");
 
             PhoneNumber = phoneNumber;
             SocialLinks = socialLinks;
