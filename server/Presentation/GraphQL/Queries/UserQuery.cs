@@ -3,9 +3,11 @@ using GraphQL.Types;
 using MediatR;
 using server.Application.Handlers.GetUserStatistics;
 using server.Application.Handlers.UserHandlers.GetProfile;
+using server.Application.Handlers.UserHandlers.GetUserReviews;
 using server.Presentation.GraphQL.Extensions;
 using server.Presentation.GraphQL.Types.GetUserStatistic;
 using server.Presentation.GraphQL.Types.ProfileTypes;
+using server.Presentation.GraphQL.Types.ReviewTypes;
 
 namespace server.Presentation.GraphQL.Queries
 {
@@ -40,6 +42,23 @@ namespace server.Presentation.GraphQL.Queries
                 return result.ToPayload(
                     (value, error) => new ProfilePayload(value, error));
             });
+
+            // +++ Trust module
+            Field<UserReviewsPayloadType>("getUserReviews")
+            .Authorize()
+            .Arguments(
+                new QueryArgument<NonNullGraphType<IdGraphType>> { Name = "targetUserId" }
+            )
+            .ResolveAsync(async context =>
+            {
+                var result = await mediator.Send(
+                    new GetUserReviewsQuery(context.GetArgument<Guid>("targetUserId")));
+
+                return result.ToPayload(
+                    (value, error) => new UserReviewsPayload(value, error));
+            });
+            // ---
+
         }
 
 

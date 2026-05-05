@@ -46,7 +46,6 @@ namespace server.Infrastructure.Repositories
             """;
 
             var newUser = await connection.QuerySingleAsync<User>(sql, user);
-            
             return newUser;
         }
 
@@ -69,37 +68,64 @@ namespace server.Infrastructure.Repositories
                 """;
 
             return await connection.QuerySingleOrDefaultAsync<User>(
-                sql,
+                sql, 
                 new { Email = email });
         }
 
-        public async Task<UserStatisticsDto?> GetUserStatisticsAsync(Guid userId, CancellationToken ct)
+        public async Task<User?> GetByIdAsync(Guid id, CancellationToken ct)
         {
-            using var connection =
-                await _connectionFactory.CreateOpenConnectionAsync(ct);
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
 
             const string sql = """
-                SELECT 
+                SELECT
+                    Id, Username, Email, PasswordHash, PasswordSalt,
+                    Role, RegisteredAtUtc,
+                    PhoneNumber, SocialLinks, IsEmailVerified
+                FROM Users
+                WHERE Id = @Id;
+                """;
+
+            return await connection.QuerySingleOrDefaultAsync<User>(
+                new CommandDefinition(sql, new { Id = id }, cancellationToken: ct));
+        }
+
+        // +++ Trust module: оновлений запит з лічильниками відгуків
+        public async Task<UserStatisticsDto?> GetUserStatisticsAsync(Guid userId, CancellationToken ct)
+        {
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
+
+            const string sql = """
+                SELECT
                     u.RegisteredAtUtc,
-
-                    COUNT(hr.Id) AS TotalRequests,
-
-                    SUM(CASE 
-                            WHEN hr.Status IN (1, 2) THEN 1 
-                            ELSE 0 
+ 
+                    COUNT(DISTINCT hr.Id) AS TotalRequests,
+ 
+                    SUM(CASE
+                            WHEN hr.Status IN (1, 2) THEN 1
+                            ELSE 0
                         END) AS ActiveRequests,
-
-                    SUM(CASE 
-                            WHEN hr.Status IN (3) THEN 1 
-                            ELSE 0 
-                        END) AS CompletedRequests
-
+ 
+                    SUM(CASE
+                            WHEN hr.Status = 3 THEN 1
+                            ELSE 0
+                        END) AS CompletedRequests,
+ 
+                    SUM(CASE
+                            WHEN rv.IsPositive = 1 THEN 1
+                            ELSE 0
+                        END) AS PositiveReviews,
+ 
+                    SUM(CASE
+                            WHEN rv.IsPositive = 0 THEN 1
+                            ELSE 0
+                        END) AS NegativeReviews
+ 
                 FROM Users u
-                LEFT JOIN HelpRequests hr 
-                    ON hr.CreatorId = u.Id
-
+                LEFT JOIN HelpRequests hr ON hr.CreatorId = u.Id
+                LEFT JOIN UserReviews rv ON rv.TargetUserId = u.Id
+ 
                 WHERE u.Id = @UserId
-
+ 
                 GROUP BY u.RegisteredAtUtc;
                 """;
 
@@ -110,52 +136,28 @@ namespace server.Infrastructure.Repositories
                     cancellationToken: ct));
         }
 
-        public async Task<User?> GetByIdAsync(Guid id, CancellationToken ct)
+        public async Task UpdateUsernameAsync(Guid id, string username, CancellationToken ct)
         {
             using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
 
             const string sql = """
-                SELECT Id, Username, Email, PasswordHash, PasswordSalt, 
-                       Role, RegisteredAtUtc
-                FROM Users
-                WHERE Id = @Id;
-                """;
-
-            return await connection.QuerySingleOrDefaultAsync<User>(
-                new CommandDefinition(sql, new { Id = id }, cancellationToken: ct));
-        }
-
-        public async Task UpdateUsernameAsync(
-            Guid id, string username, CancellationToken ct)
-        {
-            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
-
-            const string sql = """
-                UPDATE Users
-                SET Username = @Username
-                WHERE Id = @Id;
+                UPDATE Users SET Username = @Username WHERE Id = @Id;
                 """;
 
             var affectedRows = await connection.ExecuteAsync(
-                new CommandDefinition(
-                    sql,
-                    new { Id = id, Username = username },
-                    cancellationToken: ct));
+                new CommandDefinition(sql, new { Id = id, Username = username }, cancellationToken: ct));
 
             if (affectedRows == 0)
-                throw new InvalidOperationException(
-                    $"User with id '{id}' not found.");
+                throw new InvalidOperationException($"User with id '{id}' not found.");
         }
 
-        public async Task UpdatePasswordAsync(
-            Guid id, string passwordHash, string passwordSalt, CancellationToken ct)
+        public async Task UpdatePasswordAsync(Guid id, string passwordHash, string passwordSalt, CancellationToken ct)
         {
             using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
 
             const string sql = """
                 UPDATE Users
-                SET PasswordHash = @PasswordHash,
-                    PasswordSalt = @PasswordSalt
+                SET PasswordHash = @PasswordHash, PasswordSalt = @PasswordSalt
                 WHERE Id = @Id;
                 """;
 
@@ -166,16 +168,40 @@ namespace server.Infrastructure.Repositories
                     cancellationToken: ct));
 
             if (affectedRows == 0)
+                throw new InvalidOperationException($"User with id '{id}' not found.");
+        }
+
+        // +++ Trust module
+        public async Task UpdateProfileAsync(
+            Guid id, string? phoneNumber, string? socialLinks, CancellationToken ct)
+        {
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
+
+            const string sql = """
+                UPDATE Users
+                SET PhoneNumber = @PhoneNumber,
+                    SocialLinks = @SocialLinks
+                WHERE Id = @Id;
+                """;
+
+            var affectedRows = await connection.ExecuteAsync(
+                new CommandDefinition(
+                    sql,
+                    new { Id = id, PhoneNumber = phoneNumber, SocialLinks = socialLinks },
+                    cancellationToken: ct));
+
+            if (affectedRows == 0)
                 throw new InvalidOperationException(
                     $"User with id '{id}' not found.");
         }
+        // ---
 
         public async Task<bool> IsAdminAsync(Guid userId, CancellationToken ct)
         {
             using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
 
             const string sql = """
-                SELECT COUNT(1) FROM Users
+                SELECT COUNT(1) FROM Users 
                 WHERE Id = @Id AND Role = 'Admin';
                 """;
 
@@ -202,9 +228,9 @@ namespace server.Infrastructure.Repositories
                     sql,
                     new
                     {
-                        Id = user.Id,
-                        user.DeletedAtUtc,
-                        user.DeletedById
+                        Id = user.Id, 
+                        user.DeletedAtUtc, 
+                        user.DeletedById 
                     },
                     cancellationToken: ct));
 
