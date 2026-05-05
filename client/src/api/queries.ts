@@ -382,3 +382,50 @@ export const CREATE_REPORT = gql`
     }
   }
 `
+
+export const CHANGE_HELP_REQUEST_STATUS = gql`
+  mutation ChangeHelpRequestStatus($helpRequestId: ID!, $status: HelpRequestStatus!) {
+    helpRequest {
+      changeHelpRequestStatus(helpRequestId: $helpRequestId, status: $status) {
+        data {
+          id
+          status
+        }
+        error { code message }
+      }
+    }
+  }
+`
+
+export const SOFT_DELETE_HELP_REQUEST = gql`
+  mutation SoftDeleteHelpRequest($helpRequestId: ID!) {
+    helpRequest {
+      softDeleteHelpRequest(helpRequestId: $helpRequestId) {
+        success
+        error { code message }
+      }
+    }
+  }
+`
+
+export const CANCEL_HELP_REQUEST = gql`
+  mutation CancelHelpRequest($helpRequestId: ID!, $reason: String!) {
+    helpRequest {
+      cancelHelpRequest(helpRequestId: $helpRequestId, reason: $reason) {
+        success
+        error { code message }
+      }
+    }
+  }
+`
+
+export const RESTORE_HELP_REQUEST = gql`
+  mutation RestoreHelpRequest($helpRequestId: ID!) {
+    helpRequest {
+      restoreHelpRequest(helpRequestId: $helpRequestId) {
+        success
+        error { code message }
+      }
+    }
+  }
+`

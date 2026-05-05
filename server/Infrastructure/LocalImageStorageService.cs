@@ -96,7 +96,25 @@ namespace server.Infrastructure
             await using var fileStream = new FileStream(filePath, FileMode.Create);
             await file.CopyToAsync(fileStream, ct);
 
-            return $"/uploads/reports/{fileName}";
+            return fileName;
         }
+
+        public async Task<string> MoveReportImageFromTempAsync(string fileName, CancellationToken ct)
+        {
+            var tempPath = Path.Combine(_env.WebRootPath, "uploads", "temp", fileName);
+            var reportsDir = Path.Combine(_env.WebRootPath, "uploads", "reports");
+
+            Directory.CreateDirectory(reportsDir);
+
+            var destPath = Path.Combine(reportsDir, fileName);
+
+            if (!File.Exists(tempPath))
+                throw new FileNotFoundException($"Temp file not found: {fileName}");
+
+            File.Move(tempPath, destPath, overwrite: true);
+
+            return fileName;
+        }
+
     }
 }

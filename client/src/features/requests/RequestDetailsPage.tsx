@@ -1,18 +1,25 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, lazy, Suspense } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation } from '@apollo/client/react'
 import { ArrowLeft, MapPin, Calendar, AlertCircle, Upload } from 'lucide-react'
-import { GET_HELP_REQUEST_BY_ID, GET_STAGES, GET_EVENT_LOG, GET_REPORTS, CREATE_REPORT } from '../../api/queries'
+import {
+    GET_HELP_REQUEST_BY_ID, GET_STAGES, GET_EVENT_LOG, GET_REPORTS,
+    CREATE_REPORT, CHANGE_HELP_REQUEST_STATUS,
+    SOFT_DELETE_HELP_REQUEST, CANCEL_HELP_REQUEST, RESTORE_HELP_REQUEST
+} from '../../api/queries'
 import type {
   HelpRequestDetailData,
   StagesData,
   EventLogData,
     ReportsData,
-    CreateReportData
+    CreateReportData,
+    ChangeHelpRequestStatusData
 } from '../../api/types'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { addToast } from '../../store/uiSlice'
 import { PageSpinner } from '../../components/Spinner'
+import Modal from '../../components/Modal'
 import StagesTimeline from './components/StagesTimeline'
 import EventLogList from './components/EventLogList'
 import RespondModal from './components/RespondModal'
@@ -42,19 +49,69 @@ function formatDate(dateStr: string) {
 }
 
 export default function RequestDetailsPage() {
-  const { id } = useParams<{ id: string }>()
-  const navigate = useNavigate()
-  const userId = useAppSelector(s => s.auth.userId)
-  const [activeTab, setActiveTab] = useState<DetailTab>('stages')
-  const [activeImage, setActiveImage] = useState(0)
-  const [respondModalOpen, setRespondModalOpen] = useState(false)
-  const [candidatesModalOpen, setCandidatesModalOpen] = useState(false)
+    const { id } = useParams<{ id: string }>()
+    const navigate = useNavigate()
+    const userId = useAppSelector(s => s.auth.userId)
+    const [activeTab, setActiveTab] = useState<DetailTab>('stages')
+    const [activeImage, setActiveImage] = useState(0)
+    const [respondModalOpen, setRespondModalOpen] = useState(false)
+    const [candidatesModalOpen, setCandidatesModalOpen] = useState(false)
+    const [cancelModalOpen, setCancelModalOpen] = useState(false)
+    const [cancelReason, setCancelReason] = useState('')
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false)
 
-  const dispatch = useAppDispatch()
-  const { data, loading, error } = useQuery<HelpRequestDetailData>(
-    GET_HELP_REQUEST_BY_ID,
-    { variables: { id }, fetchPolicy: 'cache-and-network' }
-  )
+    const dispatch = useAppDispatch()
+
+    const { data, loading, error } = useQuery<HelpRequestDetailData>(
+        GET_HELP_REQUEST_BY_ID,
+        { variables: { id }, fetchPolicy: 'cache-and-network' }
+    )
+
+    const [changeStatus, { loading: changingStatus }] = useMutation<ChangeHelpRequestStatusData>(
+        CHANGE_HELP_REQUEST_STATUS,
+        {
+            onCompleted: (data) => {
+                const result = data.helpRequest.changeHelpRequestStatus
+                if (result.error) {
+                    dispatch(addToast({ type: 'error', message: result.error.message }))
+                } else {
+                    dispatch(addToast({ type: 'success', message: 'Статус змінено!' }))
+                    window.location.reload()
+                }
+            },
+            onError: () => dispatch(addToast({ type: 'error', message: 'Помилка зміни статусу' })),
+        }
+    )
+
+    const [restoreRequest, { loading: restoring }] = useMutation(RESTORE_HELP_REQUEST, {
+        onCompleted: () => {
+            dispatch(addToast({ type: 'success', message: 'Заявку відновлено' }))
+            window.location.reload()
+        },
+        onError: () => dispatch(addToast({ type: 'error', message: 'Помилка відновлення' })),
+    })
+
+    const [softDelete, { loading: deleting }] = useMutation(SOFT_DELETE_HELP_REQUEST, {
+        onCompleted: () => {
+            dispatch(addToast({ type: 'success', message: 'Заявку видалено' }))
+            navigate('/requests')
+        },
+        onError: () => dispatch(addToast({ type: 'error', message: 'Помилка видалення' })),
+    })
+
+    const [cancelRequest, { loading: cancelling }] = useMutation(CANCEL_HELP_REQUEST, {
+        onCompleted: (data: any) => {
+            const result = data.helpRequest.cancelHelpRequest
+            if (result.error) {
+                dispatch(addToast({ type: 'error', message: result.error.message }))
+            } else {
+                dispatch(addToast({ type: 'success', message: 'Заявку скасовано' }))
+                setCancelModalOpen(false)
+                window.location.reload()
+            }
+        },
+        onError: () => dispatch(addToast({ type: 'error', message: 'Помилка скасування' })),
+    })
 
   const { data: stagesData } = useQuery<StagesData>(
     GET_STAGES,
@@ -104,15 +161,16 @@ export default function RequestDetailsPage() {
         setReportUploading(true)
         try {
             const formData = new FormData()
-            formData.append('file', file, file.name)
-            const res = await fetch(`${API_BASE_URL}/api/files/help-requests/reports`, {
+            formData.append('files', file, file.name)  // ← 'files' множина
+
+            const res = await fetch(`${API_BASE_URL}/api/files/help-requests`, {  // ← temp endpoint
                 method: 'POST',
                 credentials: 'include',
                 body: formData,
             })
             if (!res.ok) throw new Error('Upload failed')
             const data = await res.json()
-            setReportImage(`/uploads/reports/${data.imageUrl}`)
+            setReportImage(data.imageUrls[0])  // ← повертає масив, беремо перший
         } catch {
             dispatch(addToast({ type: 'error', message: 'Помилка завантаження фото' }))
         } finally {
@@ -248,33 +306,58 @@ export default function RequestDetailsPage() {
       {/* Кнопки дій */}
       <div className="flex flex-wrap gap-3 mb-8">
           {isOwner && hr.status === 1 && (
-              <>
-                  <Link
-                      to={`/requests/${hr.id}/edit`}
-                      className="px-4 py-2 text-sm font-medium border border-border rounded-lg hover:border-primary text-ink transition-colors"
-                  >
-                      Редагувати
-                  </Link>
-                  <button className="px-4 py-2 text-sm font-medium border border-error/30 rounded-lg hover:border-error text-error transition-colors">
-                      Скасувати
-                  </button>
-                  <button className="px-4 py-2 text-sm font-medium border border-error/30 rounded-lg hover:border-error text-error transition-colors">
-                      Видалити
-                  </button>
-                  <button
-                      onClick={() => setCandidatesModalOpen(true)}
-                      className="px-4 py-2 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary-light transition-colors"
-                  >
-                      Кандидати
-                  </button>
-              </>
+                  <>
+                      <Link
+                          to={`/requests/${hr.id}/edit`}
+                          className="px-4 py-2 text-sm font-medium border border-border rounded-lg hover:border-primary text-ink transition-colors"
+                      >
+                          Редагувати
+                      </Link>
+                      <button
+                          onClick={() => setCancelModalOpen(true)}
+                          className="px-4 py-2 text-sm font-medium border border-error/30 rounded-lg hover:border-error text-error transition-colors"
+                      >
+                          Скасувати
+                      </button>
+                      <button
+                          onClick={() => setDeleteModalOpen(true)}
+                          className="px-4 py-2 text-sm font-medium border border-error/30 rounded-lg hover:border-error text-error transition-colors"
+                      >
+                          Видалити
+                      </button>
+                      <button
+                          onClick={() => setCandidatesModalOpen(true)}
+                          className="px-4 py-2 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary-light transition-colors"
+                      >
+                          Кандидати
+                      </button>
+                      <button
+                          onClick={() => changeStatus({
+                              variables: { helpRequestId: hr.id, status: 'RESOLVED' }
+                          })}
+                          disabled={changingStatus}
+                          className="px-4 py-2 text-sm font-medium bg-success text-white rounded-lg hover:opacity-90 disabled:opacity-60 transition-colors"
+                      >
+                          Позначити як виконану
+                      </button>
+                      <button
+                          onClick={() => setCancelModalOpen(true)}
+                          className="px-4 py-2 text-sm font-medium border border-error/30 rounded-lg hover:border-error text-error transition-colors"
+                      >
+                          Скасувати
+                      </button>
+                  </>
           )}
 
-          {isOwner && hr.status === 4 && (
-              <button className="px-4 py-2 text-sm font-medium border border-border rounded-lg hover:border-primary text-ink transition-colors">
-                  Відновити
-              </button>
-          )}
+              {isOwner && hr.status === 4 && (
+                  <button
+                      onClick={() => restoreRequest({ variables: { helpRequestId: hr.id } })}
+                      disabled={restoring}
+                      className="px-4 py-2 text-sm font-medium border border-border rounded-lg hover:border-primary text-ink transition-colors"
+                  >
+                      Відновити
+                  </button>
+              )}
 
           {!isOwner && hr.status === 1 && (
               <button
@@ -323,7 +406,7 @@ export default function RequestDetailsPage() {
                                   <p className="text-sm text-ink leading-relaxed">{report.comment}</p>
                                   {report.imageUrl && (
                                       <img
-                                          src={`${API_BASE_URL}${report.imageUrl}`}
+                                          src={`${API_BASE_URL}/uploads/reports/${report.imageUrl}`}
                                           alt="Звіт"
                                           className="w-full max-h-48 object-cover rounded-lg"
                                       />
@@ -415,6 +498,66 @@ export default function RequestDetailsPage() {
               onAssign={() => setCandidatesModalOpen(false)}
           />
 
+          <Modal
+              isOpen={cancelModalOpen}
+              onClose={() => setCancelModalOpen(false)}
+              title="Скасувати заявку"
+          >
+              <div className="space-y-4">
+                  <textarea
+                      value={cancelReason}
+                      onChange={e => setCancelReason(e.target.value)}
+                      placeholder="Вкажіть причину скасування..."
+                      rows={3}
+                      className="w-full px-4 py-3 bg-surface-muted border border-border rounded-lg text-sm text-ink placeholder-ink-soft focus:outline-none focus:border-primary transition-colors resize-none"
+                  />
+                  <div className="flex gap-3">
+                      <button
+                          onClick={() => setCancelModalOpen(false)}
+                          className="flex-1 py-2.5 border border-border rounded-lg text-sm font-medium text-ink hover:border-primary transition-colors"
+                      >
+                          Назад
+                      </button>
+                      <button
+                          onClick={() => cancelRequest({
+                              variables: { helpRequestId: hr.id, reason: cancelReason.trim() }
+                          })}
+                          disabled={cancelling || !cancelReason.trim()}
+                          className="flex-1 py-2.5 bg-error text-white rounded-lg text-sm font-semibold hover:opacity-90 disabled:opacity-60 transition-colors"
+                      >
+                          {cancelling ? 'Скасування...' : 'Скасувати заявку'}
+                      </button>
+                  </div>
+              </div>
+          </Modal>
+
+          {/* Модал видалення */}
+          <Modal
+              isOpen={deleteModalOpen}
+              onClose={() => setDeleteModalOpen(false)}
+              title="Видалити заявку"
+          >
+              <div className="space-y-4">
+                  <p className="text-sm text-ink-muted">
+                      Ви впевнені що хочете видалити заявку? Цю дію неможливо скасувати.
+                  </p>
+                  <div className="flex gap-3">
+                      <button
+                          onClick={() => setDeleteModalOpen(false)}
+                          className="flex-1 py-2.5 border border-border rounded-lg text-sm font-medium text-ink hover:border-primary transition-colors"
+                      >
+                          Назад
+                      </button>
+                      <button
+                          onClick={() => softDelete({ variables: { helpRequestId: hr.id } })}
+                          disabled={deleting}
+                          className="flex-1 py-2.5 bg-error text-white rounded-lg text-sm font-semibold hover:opacity-90 disabled:opacity-60 transition-colors"
+                      >
+                          {deleting ? 'Видалення...' : 'Видалити'}
+                      </button>
+                  </div>
+              </div>
+          </Modal>
 
     </div>
   )
