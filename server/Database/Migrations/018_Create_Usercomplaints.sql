@@ -1,0 +1,7 @@
+﻿CREATE TABLE UserComplaints (
+    Id             UNIQUEIDENTIFIER NOT NULL CONSTRAINT PK_UserComplaints PRIMARY KEY,
+    ReporterUserId UNIQUEIDENTIFIER NOT NULL REFERENCES Users(Id),
+    TargetUserId   UNIQUEIDENTIFIER NOT NULL REFERENCES Users(Id),
+    Reason         NVARCHAR(1000)   NOT NULL,
+    CreatedAtUtc   DATETIME2        NOT NULL
+);
