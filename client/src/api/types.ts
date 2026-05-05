@@ -287,3 +287,15 @@ export interface PendingReportsData {
         }
     }
 }
+
+export interface ChangeHelpRequestStatusData {
+    helpRequest: {
+        changeHelpRequestStatus: {
+            data: {
+                id: string
+                status: string
+            } | null
+            error: ApiError | null
+        }
+    }
+}

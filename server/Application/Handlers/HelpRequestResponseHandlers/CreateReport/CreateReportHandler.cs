@@ -1,8 +1,10 @@
 ﻿using MediatR;
 using server.Application.IRepositories;
+using server.Application.IServices;
 using server.Domain.Exceptions;
 using server.Domain.HelpRequest;
 using server.Domain.Primitives;
+using server.Infrastructure;
 
 namespace server.Application.Handlers.HelpRequestResponseHandlers.CreateReport
 {
@@ -11,13 +13,16 @@ namespace server.Application.Handlers.HelpRequestResponseHandlers.CreateReport
     {
         private readonly IHelpRequestRepository _repository;
         private readonly IReportRepository _reportRepository;
+        private readonly IImageStorageService _storage;
 
         public CreateReportHandler(
             IHelpRequestRepository repository,
-            IReportRepository reportRepository)
+            IReportRepository reportRepository,
+            IImageStorageService storage)
         {
             _repository = repository;
             _reportRepository = reportRepository;
+            _storage = storage;
         }
 
         public async Task<Result<Guid>> Handle(
@@ -25,7 +30,7 @@ namespace server.Application.Handlers.HelpRequestResponseHandlers.CreateReport
             CancellationToken ct)
         {
             var helpRequest = await _repository
-                .GetAggregateByIdAsync(ct, request.HelpRequestId);
+            .GetAggregateByIdAsync(ct, request.HelpRequestId);
 
             if (helpRequest is null)
                 return Result<Guid>.Failure(
@@ -43,11 +48,18 @@ namespace server.Application.Handlers.HelpRequestResponseHandlers.CreateReport
 
             try
             {
+                string? imageUrl = null;
+                if (!string.IsNullOrEmpty(request.ImageUrl))
+                {
+                    imageUrl = await _storage
+                        .MoveReportImageFromTempAsync(request.ImageUrl, ct);
+                }
+
                 var report = new HelpRequestReport(
                     request.HelpRequestId,
                     request.CurrentUserId,
                     request.Comment,
-                    request.ImageUrl);
+                    imageUrl);
 
                 await _reportRepository.AddAsync(report, ct);
 
