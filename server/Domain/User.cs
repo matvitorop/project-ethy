@@ -28,6 +28,16 @@ namespace server.Domain
         public bool IsEmailVerified { get; private set; }
         // ---
 
+        // Ad/Vol module
+        public DateTime? BlockedUntilUtc { get; private set; }
+        public string? BlockReason { get; private set; }
+        public DateTime? LastVolunteerApplicationAtUtc { get; private set; }
+
+        public bool IsBlocked =>
+            BlockedUntilUtc.HasValue &&
+            (BlockedUntilUtc.Value > DateTime.UtcNow || BlockedUntilUtc == DateTime.MaxValue);
+        // ---
+
 
         private User() { }
 
@@ -60,7 +70,6 @@ namespace server.Domain
 
             Username = username;
         }
-
         public void UpdatePassword(string passwordHash, string passwordSalt)
         {
             if (string.IsNullOrWhiteSpace(passwordHash))
@@ -107,7 +116,43 @@ namespace server.Domain
             DeletedById = deletedById;
         }
 
+        // Ad/Vol module
+        public void Block(DateTime? blockedUntilUtc, string reason)
+        {
+            if (string.IsNullOrWhiteSpace(reason))
+                throw new DomainException("Block reason is required", "User.BLOCK_REASON_REQUIRED");
 
+            BlockedUntilUtc = blockedUntilUtc ?? DateTime.MaxValue; // null = permanent
+            BlockReason = reason;
+        }
+
+        public void Unblock()
+        {
+            BlockedUntilUtc = null;
+            BlockReason = null;
+        }
+
+        public void PromoteToVolunteer()
+        {
+            if (Role == UserRole.Admin)
+                throw new DomainException("Cannot change admin role", "User.CANNOT_CHANGE_ADMIN_ROLE");
+
+            Role = UserRole.Volunteer;
+        }
+
+        public void DemoteToUser()
+        {
+            if (Role == UserRole.Admin)
+                throw new DomainException("Cannot change admin role", "User.CANNOT_CHANGE_ADMIN_ROLE");
+
+            Role = UserRole.User;
+        }
+
+        public void SetLastVolunteerApplicationDate()
+        {
+            LastVolunteerApplicationAtUtc = DateTime.UtcNow;
+        }
+        // ---
 
     }
 }
