@@ -1,4 +1,5 @@
-﻿using server.Domain.UserAndVolunteer;
+﻿using server.Application.Handlers.UserHandlers.GetBlockHistory;
+using server.Domain.UserAndVolunteer;
 
 namespace server.Application.IRepositories
 {
