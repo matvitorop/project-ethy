@@ -47,6 +47,13 @@ namespace server.Application.Handlers.LoginUser
                     "Login.INVALID_CREDENTIALS"));
             }
 
+            if (!user.IsEmailVerified)
+            {
+                return Result<string>.Failure(new Error(
+                    "Please verify your email before logging in",
+                    "Login.EMAIL_NOT_VERIFIED"));
+            }
+
             if (user.IsBlocked)
             {
                 var until = user.BlockedUntilUtc == DateTime.MaxValue

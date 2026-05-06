@@ -39,7 +39,7 @@ namespace server.Presentation.GraphQL.Mutations
                     )
                     );
 
-                    if (result.IsSuccess &&
+                    if (result.IsSuccess && !string.IsNullOrEmpty(result.Value) &&
                         context.UserContext is GraphQLUserContext userContext &&
                         userContext.HttpContext != null)
                     {

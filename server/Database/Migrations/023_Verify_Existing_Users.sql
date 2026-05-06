@@ -1,0 +1,1 @@
+﻿UPDATE Users SET IsEmailVerified = 1 WHERE IsEmailVerified = 0;
