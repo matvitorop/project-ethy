@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using Microsoft.Data.SqlClient;
+using server.Application.Handlers.AdminHandlers.AdminGetHelpRequests;
 using server.Application.Handlers.GetActiveRequests;
 using server.Application.Handlers.GetFullHelpRequest;
 using server.Application.Handlers.GetHelpRequestResponses;
@@ -799,6 +800,43 @@ namespace server.Infrastructure.Repositories
             }
         }
 
+        public async Task SetHiddenAsync(Guid helpRequestId, bool isHidden, CancellationToken ct)
+        {
+            using var conn = await _connectionFactory.CreateOpenConnectionAsync(ct);
+            await conn.ExecuteAsync(
+                "UPDATE HelpRequests SET IsHidden = @IsHidden WHERE Id = @Id",
+                new { Id = helpRequestId, IsHidden = isHidden });
+        }
 
+        public async Task<List<AdminHelpRequestDto>> GetAllForAdminAsync(
+            int page, int pageSize, bool? isHidden, bool? isDeleted, CancellationToken ct)
+        {
+            using var conn = await _connectionFactory.CreateOpenConnectionAsync(ct);
+
+            var conditions = new List<string>();
+            if (isHidden.HasValue) conditions.Add("hr.IsHidden = @IsHidden");
+            if (isDeleted.HasValue) conditions.Add("hr.IsDeleted = @IsDeleted");
+
+            var where = conditions.Count > 0 ? "WHERE " + string.Join(" AND ", conditions) : "";
+
+            var sql = $"""
+                SELECT hr.Id, hr.Title, hr.Status, hr.IsHidden, hr.IsDeleted,
+                       u.Username AS CreatorUsername, hr.CreatedAtUtc
+                FROM HelpRequests hr
+                INNER JOIN Users u ON u.Id = hr.CreatorId
+                {where}
+                ORDER BY hr.CreatedAtUtc DESC
+                OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY
+                """;
+
+            var rows = await conn.QueryAsync<AdminHelpRequestDto>(sql, new
+            {
+                IsHidden = isHidden,
+                IsDeleted = isDeleted,
+                Offset = (page - 1) * pageSize,
+                PageSize = pageSize
+            });
+            return rows.AsList();
+        }
     }
 }
