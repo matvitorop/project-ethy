@@ -14,8 +14,16 @@ namespace server.Application.IRepositories
         Task<bool> IsAdminAsync(Guid userId, CancellationToken ct);
         Task SoftDeleteAsync(User user, CancellationToken ct);
         
-        // +++ Trust module
+        // Trust module
         Task UpdateProfileAsync(Guid id, string? phoneNumber, string? socialLinks, CancellationToken ct);
+        // ---
+
+        // Admin module
+        Task VerifyEmailAsync(Guid userId, CancellationToken ct);
+        Task UpdateLastVolunteerApplicationDateAsync(Guid userId, CancellationToken ct);
+        Task UpdateRoleAsync(Guid userId, UserRole role, CancellationToken ct);
+        Task BlockAsync(Guid userId, DateTime? blockedUntilUtc, string reason, CancellationToken ct);
+        Task UnblockAsync(Guid userId, CancellationToken ct);
         // ---
 
     }
