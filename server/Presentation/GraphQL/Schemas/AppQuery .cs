@@ -33,6 +33,16 @@ namespace server.Presentation.GraphQL.Schemas
                 ResolvedType = provider.GetRequiredService<UserQuery>(),
                 Resolver = new FuncFieldResolver<object>(_ => new object())
             });
+
+            // Admin module
+            AddField(new FieldType
+            {
+                Name = "adminQuery",
+                Description = "Admin queries",
+                ResolvedType = provider.GetRequiredService<AdminQuery>(),
+                Resolver = new FuncFieldResolver<object>(_ => new object())
+            });
+            // ---
         }
     }
 }

@@ -10,7 +10,7 @@
         bool HasSocialLinks,
         int PositiveReviews,
         int NegativeReviews,
-        int CreatedRequestsCount,
-        int AssignedRequestsCount
+        int TotalRequests,
+        int CompletedRequests
     );
 }

@@ -3,11 +3,16 @@ using GraphQL.Types;
 using MediatR;
 using server.Application.Handlers.UserHandlers.LeaveComplaint;
 using server.Application.Handlers.UserHandlers.LeaveReview;
+using server.Application.Handlers.UserHandlers.SendVerificationEmail;
+using server.Application.Handlers.UserHandlers.SubmitVolunteerApplication;
 using server.Application.Handlers.UserHandlers.UpdateProfile;
+using server.Application.Handlers.UserHandlers.VerifyEmail;
 using server.Presentation.GraphQL.Extensions;
+using server.Presentation.GraphQL.Types.AdminTypes;
 using server.Presentation.GraphQL.Types.ComplaintTypes;
 using server.Presentation.GraphQL.Types.ProfileTypes;
 using server.Presentation.GraphQL.Types.ReviewTypes;
+using server.Presentation.GraphQL.Types.SubmitVolunteerApplicationTypes;
 
 namespace server.Presentation.GraphQL.Mutations
 {
@@ -82,7 +87,48 @@ namespace server.Presentation.GraphQL.Mutations
                 return result.ToPayload(
                     error => new UpdateProfilePayload(error == null, error));
             });
+
+            Field<BooleanGraphType>("sendVerificationEmail")
+            .Authorize()
+            .ResolveAsync(async ctx =>
+            {
+                var userId = ctx.GetUserId();
+                var cmd = new SendVerificationEmailCommand(userId);
+                var r = await mediator.Send(cmd);
+                return r.ToPayload((val, err) => new AdminActionPayload(val, err));
+            });
+
+            Field<BooleanGraphType>("verifyEmail")
+            .Argument<NonNullGraphType<StringGraphType>>("token")
+            .ResolveAsync(async ctx =>
+            {
+                var cmd = new VerifyEmailCommand(ctx.GetArgument<string>("token"));
+                var r = await mediator.Send(cmd);
+                return r.ToPayload((val, err) => new AdminActionPayload(val, err));
+            });
+
+            // +++ Admin module: Volunteer application
+            Field<IdGraphType>("submitVolunteerApplication")
+            .Authorize()
+            .Argument<NonNullGraphType<StringGraphType>>("organizationName")
+            .Argument<NonNullGraphType<StringGraphType>>("activityDescription")
+            .Argument<StringGraphType>("documentImageUrl")
+            .ResolveAsync(async ctx =>
+            {
+                var userId = ctx.GetUserId();
+                var cmd = new SubmitVolunteerApplicationCommand(
+                    userId,
+                    ctx.GetArgument<string>("organizationName"),
+                    ctx.GetArgument<string>("activityDescription"),
+                    ctx.GetArgument<string?>("documentImageUrl"));
+                var r = await mediator.Send(cmd);
+                return r.ToPayload((val, err) => new SubmitVolunteerApplicationPayload(val, err));
+            });
+
+
+
         }
+
     }
 
 }
