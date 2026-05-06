@@ -85,7 +85,7 @@ builder.Services.AddSingleton<ISqlConnectionFactory>(new SqlConnectionFactory(co
 builder.Services.AddHostedService<TemporaryFileCleanupService>();
 
 // --- Email (SendGrid) ---
-builder.Services.AddScoped<IEmailSender, SendGridEmailSender>();
+builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 
 // --- New repositories ---
 builder.Services.AddScoped<IEmailVerificationTokenRepository, EmailVerificationTokenRepository>();
