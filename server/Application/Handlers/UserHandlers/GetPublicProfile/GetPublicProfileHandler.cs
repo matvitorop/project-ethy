@@ -32,8 +32,8 @@ namespace server.Application.Handlers.UserHandlers.GetPublicProfile
                 HasSocialLinks: !string.IsNullOrEmpty(user.SocialLinks),
                 PositiveReviews: stats?.PositiveReviews ?? 0,
                 NegativeReviews: stats?.NegativeReviews ?? 0,
-                CreatedRequestsCount: stats?.CreatedRequestsCount ?? 0,
-                AssignedRequestsCount: stats?.AssignedRequestsCount ?? 0
+                TotalRequests: stats?.TotalRequests ?? 0,
+                CompletedRequests: stats?.CompletedRequests ?? 0
             ));
         }
     }

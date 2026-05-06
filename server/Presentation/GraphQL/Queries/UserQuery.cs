@@ -3,10 +3,12 @@ using GraphQL.Types;
 using MediatR;
 using server.Application.Handlers.GetUserStatistics;
 using server.Application.Handlers.UserHandlers.GetProfile;
+using server.Application.Handlers.UserHandlers.GetPublicProfile;
 using server.Application.Handlers.UserHandlers.GetUserReviews;
 using server.Presentation.GraphQL.Extensions;
 using server.Presentation.GraphQL.Types.GetUserStatistic;
 using server.Presentation.GraphQL.Types.ProfileTypes;
+using server.Presentation.GraphQL.Types.PublicProfileTypes;
 using server.Presentation.GraphQL.Types.ReviewTypes;
 
 namespace server.Presentation.GraphQL.Queries
@@ -43,7 +45,7 @@ namespace server.Presentation.GraphQL.Queries
                     (value, error) => new ProfilePayload(value, error));
             });
 
-            // +++ Trust module
+            // Trust module
             Field<UserReviewsPayloadType>("getUserReviews")
             .Authorize()
             .Arguments(
@@ -58,6 +60,15 @@ namespace server.Presentation.GraphQL.Queries
                     (value, error) => new UserReviewsPayload(value, error));
             });
             // ---
+
+            Field<PublicProfilePayloadType>("getPublicProfile")
+            .Argument<NonNullGraphType<IdGraphType>>("userId")
+            .ResolveAsync(async ctx =>
+            {
+                var q = new GetPublicProfileQuery(ctx.GetArgument<Guid>("userId"));
+                var result = await mediator.Send(q);
+                return result.ToPayload((value, error) => new PublicProfilePayload(value, error));
+            });
 
         }
 
