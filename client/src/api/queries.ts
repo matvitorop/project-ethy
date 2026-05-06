@@ -31,6 +31,9 @@ export const GET_PROFILE = gql`
           username
           email
           registeredAtUtc
+          phoneNumber
+          socialLinks
+          isEmailVerified
         }
         error { code message }
       }
@@ -87,6 +90,7 @@ export const GET_HELP_REQUEST_BY_ID = gql`
           description
           status
           creatorId
+          assignedUserId
           latitude
           longitude
           createdAtUtc
@@ -423,6 +427,57 @@ export const RESTORE_HELP_REQUEST = gql`
   mutation RestoreHelpRequest($helpRequestId: ID!) {
     helpRequest {
       restoreHelpRequest(helpRequestId: $helpRequestId) {
+        success
+        error { code message }
+      }
+    }
+  }
+`
+export const GET_USER_REVIEWS = gql`
+  query GetUserReviews($targetUserId: ID!) {
+    userQuery {
+      getUserReviews(targetUserId: $targetUserId) {
+        reviews {
+          id
+          helpRequestId
+          reviewerUserId
+          reviewerUsername
+          isPositive
+          comment
+          createdAtUtc
+        }
+        error { code message }
+      }
+    }
+  }
+`
+
+export const LEAVE_REVIEW = gql`
+  mutation LeaveReview($helpRequestId: ID!, $isPositive: Boolean!, $comment: String) {
+    user {
+      leaveReview(helpRequestId: $helpRequestId, isPositive: $isPositive, comment: $comment) {
+        reviewId
+        error { code message }
+      }
+    }
+  }
+`
+
+export const LEAVE_COMPLAINT = gql`
+  mutation LeaveComplaint($targetUserId: ID!, $reason: String!) {
+    user {
+      leaveComplaint(targetUserId: $targetUserId, reason: $reason) {
+        complaintId
+        error { code message }
+      }
+    }
+  }
+`
+
+export const UPDATE_PROFILE = gql`
+  mutation UpdateProfile($phoneNumber: String, $socialLinks: String) {
+    user {
+      updateProfile(phoneNumber: $phoneNumber, socialLinks: $socialLinks) {
         success
         error { code message }
       }

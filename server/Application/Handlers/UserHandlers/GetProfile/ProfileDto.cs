@@ -4,6 +4,13 @@
         Guid Id,
         string Username,
         string Email,
-        DateTime RegisteredAtUtc
+        DateTime RegisteredAtUtc,
+        
+        // Trust module
+        string? PhoneNumber,
+        string? SocialLinks,
+        bool IsEmailVerified
+        // ---
+
     );
 }

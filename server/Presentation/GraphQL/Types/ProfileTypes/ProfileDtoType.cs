@@ -11,6 +11,12 @@ namespace server.Presentation.GraphQL.Types.ProfileTypes
             Field(x => x.Username);
             Field(x => x.Email);
             Field(x => x.RegisteredAtUtc);
+            // Trust module
+            Field(x => x.PhoneNumber, nullable: true);
+            Field(x => x.SocialLinks, nullable: true);
+            Field(x => x.IsEmailVerified);
+            // ---
+
         }
     }
 }
