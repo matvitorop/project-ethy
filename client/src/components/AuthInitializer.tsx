@@ -10,7 +10,8 @@ export default function AuthInitializer({ children }: { children: React.ReactNod
     const dispatch = useAppDispatch()
 
     const { data, loading, error } = useQuery<ProfileData>(GET_PROFILE, {
-        fetchPolicy: 'network-only',
+        fetchPolicy: 'cache-and-network',
+        notifyOnNetworkStatusChange: false,
     })
 
     useEffect(() => {

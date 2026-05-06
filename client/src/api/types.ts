@@ -44,6 +44,9 @@ export interface ProfileData {
                 username: string
                 email: string
                 registeredAtUtc: string
+                phoneNumber: string | null
+                socialLinks: string | null
+                isEmailVerified: boolean
             } | null
             error: ApiError | null
         }
@@ -80,6 +83,7 @@ export interface HelpRequestDetail {
     description: string
     status: number
     creatorId: string
+    assignedUserId: string | null
     latitude: number | null
     longitude: number | null
     createdAtUtc: string
@@ -295,6 +299,51 @@ export interface ChangeHelpRequestStatusData {
                 id: string
                 status: string
             } | null
+            error: ApiError | null
+        }
+    }
+}
+export interface UserReviewItem {
+    id: string
+    helpRequestId: string
+    reviewerUserId: string
+    reviewerUsername: string
+    isPositive: boolean
+    comment: string | null
+    createdAtUtc: string
+}
+
+export interface GetUserReviewsData {
+    userQuery: {
+        getUserReviews: {
+            reviews: UserReviewItem[] | null
+            error: ApiError | null
+        }
+    }
+}
+
+export interface LeaveReviewData {
+    user: {
+        leaveReview: {
+            reviewId: string | null
+            error: ApiError | null
+        }
+    }
+}
+
+export interface LeaveComplaintData {
+    user: {
+        leaveComplaint: {
+            complaintId: string | null
+            error: ApiError | null
+        }
+    }
+}
+
+export interface UpdateProfileData {
+    user: {
+        updateProfile: {
+            success: boolean
             error: ApiError | null
         }
     }

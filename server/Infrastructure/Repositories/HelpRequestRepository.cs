@@ -211,6 +211,7 @@ namespace server.Infrastructure.Repositories
                 SELECT 
                     Id,
                     CreatorId,
+                    AssignedUserId,
                     Title,
                     Description,
                     Status,

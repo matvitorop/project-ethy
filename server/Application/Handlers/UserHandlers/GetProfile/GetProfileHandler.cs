@@ -29,7 +29,10 @@ namespace server.Application.Handlers.UserHandlers.GetProfile
                     user.Id,
                     user.Username,
                     user.Email,
-                    user.RegisteredAtUtc));
+                    user.RegisteredAtUtc,
+                    user.PhoneNumber,
+                    user.SocialLinks,
+                    user.IsEmailVerified));
         }
     }
 }

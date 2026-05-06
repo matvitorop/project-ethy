@@ -9,6 +9,7 @@ namespace server.Presentation.GraphQL.Types.GetHRDetailTypes
 
             Field(x => x.Id, type: typeof(IdGraphType));
             Field(x => x.CreatorId);
+            Field(x => x.AssignedUserId, nullable: true);
             Field(x => x.Title);
             Field(x => x.Description);
             Field(x => x.Status);

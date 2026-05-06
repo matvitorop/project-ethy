@@ -7,6 +7,8 @@ import { toggleTheme } from '../store/themeSlice'
 export default function PublicLayout() {
     const dispatch = useAppDispatch()
     const theme = useAppSelector(s => s.theme.current)
+    const userId = useAppSelector(s => s.auth.userId)      
+    const username = useAppSelector(s => s.auth.username)
 
     return (
         <div className="min-h-screen flex flex-col">
@@ -22,18 +24,30 @@ export default function PublicLayout() {
                         >
                             {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
                         </button>
-                        <Link
-                            to="/login"
-                            className="px-4 py-2 text-sm font-medium text-ink hover:text-primary transition-colors"
-                        >
-                            Увійти
-                        </Link>
-                        <Link
-                            to="/register"
-                            className="px-5 py-2 text-sm font-semibold bg-primary text-white rounded-lg hover:bg-primary-light transition-colors"
-                        >
-                            Зареєструватись
-                        </Link>
+
+                        {userId ? (  // ← замінити статичні кнопки
+                            <Link
+                                to="/profile"
+                                className="px-4 py-2 text-sm font-medium text-ink hover:text-primary transition-colors"
+                            >
+                                {username}
+                            </Link>
+                        ) : (
+                            <>
+                                <Link
+                                    to="/login"
+                                    className="px-4 py-2 text-sm font-medium text-ink hover:text-primary transition-colors"
+                                >
+                                    Увійти
+                                </Link>
+                                <Link
+                                    to="/register"
+                                    className="px-5 py-2 text-sm font-semibold bg-primary text-white rounded-lg hover:bg-primary-light transition-colors"
+                                >
+                                    Зареєструватись
+                                </Link>
+                            </>
+                        )}
                     </nav>
                 </div>
             </header>

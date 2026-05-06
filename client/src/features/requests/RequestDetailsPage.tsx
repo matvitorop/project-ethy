@@ -9,9 +9,9 @@ import {
     SOFT_DELETE_HELP_REQUEST, CANCEL_HELP_REQUEST, RESTORE_HELP_REQUEST
 } from '../../api/queries'
 import type {
-  HelpRequestDetailData,
-  StagesData,
-  EventLogData,
+    HelpRequestDetailData,
+    StagesData,
+    EventLogData,
     ReportsData,
     CreateReportData,
     ChangeHelpRequestStatusData
@@ -24,6 +24,8 @@ import StagesTimeline from './components/StagesTimeline'
 import EventLogList from './components/EventLogList'
 import RespondModal from './components/RespondModal'
 import CandidatesModal from './components/CandidatesModal'
+import LeaveReviewModal from './components/LeaveReviewModal'
+import LeaveComplaintModal from './components/LeaveComplaintModal'
 
 const API_BASE_URL = 'http://localhost:5274'
 
@@ -31,21 +33,21 @@ const API_BASE_URL = 'http://localhost:5274'
 const RequestMap = lazy(() => import('./components/RequestMap'))
 
 const STATUS_CONFIG = {
-  0: { label: 'Чернетка',  color: 'bg-ink-soft/20 text-ink-muted' },
-  1: { label: 'Відкрита',  color: 'bg-success/15 text-success' },
-  2: { label: 'В процесі', color: 'bg-info/15 text-info' },
-  3: { label: 'Виконана',  color: 'bg-purple-100 text-purple-600' },
-  4: { label: 'Скасована', color: 'bg-error/15 text-error' },
+    0: { label: 'Чернетка', color: 'bg-ink-soft/20 text-ink-muted' },
+    1: { label: 'Відкрита', color: 'bg-success/15 text-success' },
+    2: { label: 'В процесі', color: 'bg-info/15 text-info' },
+    3: { label: 'Виконана', color: 'bg-purple-100 text-purple-600' },
+    4: { label: 'Скасована', color: 'bg-error/15 text-error' },
 } as const
 
 type DetailTab = 'stages' | 'log' | 'report'
 
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString('uk-UA', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  })
+    return new Date(dateStr).toLocaleDateString('uk-UA', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+    })
 }
 
 export default function RequestDetailsPage() {
@@ -59,6 +61,8 @@ export default function RequestDetailsPage() {
     const [cancelModalOpen, setCancelModalOpen] = useState(false)
     const [cancelReason, setCancelReason] = useState('')
     const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+    const [reviewModalOpen, setReviewModalOpen] = useState(false)
+    const [complaintModalOpen, setComplaintModalOpen] = useState(false)
 
     const dispatch = useAppDispatch()
 
@@ -113,23 +117,23 @@ export default function RequestDetailsPage() {
         onError: () => dispatch(addToast({ type: 'error', message: 'Помилка скасування' })),
     })
 
-  const { data: stagesData } = useQuery<StagesData>(
-    GET_STAGES,
-    { variables: { helpRequestId: id }, fetchPolicy: 'cache-and-network' }
-  )
-
-  const { data: logData } = useQuery<EventLogData>(
-    GET_EVENT_LOG,
-    { variables: { helpRequestId: id }, fetchPolicy: 'cache-and-network' }
+    const { data: stagesData } = useQuery<StagesData>(
+        GET_STAGES,
+        { variables: { helpRequestId: id }, fetchPolicy: 'cache-and-network' }
     )
 
-  const { data: reportsData, refetch: refetchReports } = useQuery<ReportsData>(GET_REPORTS, {
+    const { data: logData } = useQuery<EventLogData>(
+        GET_EVENT_LOG,
+        { variables: { helpRequestId: id }, fetchPolicy: 'cache-and-network' }
+    )
+
+    const { data: reportsData, refetch: refetchReports } = useQuery<ReportsData>(GET_REPORTS, {
         variables: { helpRequestId: id },
         fetchPolicy: 'cache-and-network',
         skip: !id,
-  })
+    })
 
-  const reports = reportsData?.helpRequestQuer.reports.items ?? []
+    const reports = reportsData?.helpRequestQuer.reports.items ?? []
 
     // Mutation створення звіту:
     const [reportComment, setReportComment] = useState('')
@@ -178,387 +182,422 @@ export default function RequestDetailsPage() {
         }
     }
 
-  if (loading) return <PageSpinner />
+    if (loading) return <PageSpinner />
 
-  if (error || !data?.helpRequestQuer.helpRequestById.item) {
-    return (
-      <div className="text-center py-16">
-        <AlertCircle size={40} className="text-error mx-auto mb-4" />
-        <p className="text-ink-muted">Заявку не знайдено</p>
-        <Link to="/requests" className="text-primary text-sm mt-2 inline-block hover:underline">
-          ← Повернутись до списку
-        </Link>
-      </div>
-    )
-  }
+    if (error || !data?.helpRequestQuer.helpRequestById.item) {
+        return (
+            <div className="text-center py-16">
+                <AlertCircle size={40} className="text-error mx-auto mb-4" />
+                <p className="text-ink-muted">Заявку не знайдено</p>
+                <Link to="/requests" className="text-primary text-sm mt-2 inline-block hover:underline">
+                    ← Повернутись до списку
+                </Link>
+            </div>
+        )
+    }
 
-  const hr = data.helpRequestQuer.helpRequestById.item
-  const isOwner = userId === hr.creatorId
-  const statusConfig = STATUS_CONFIG[hr.status as keyof typeof STATUS_CONFIG]
-  const stages = stagesData?.helpRequestQuer.stages.items ?? []
-  const events = logData?.helpRequestQuer.eventLog.items ?? []
+    const hr = data.helpRequestQuer.helpRequestById.item
+    const isOwner = userId === hr.creatorId
+    const isAssignee = !!hr.assignedUserId && userId === hr.assignedUserId
+    const statusConfig = STATUS_CONFIG[hr.status as keyof typeof STATUS_CONFIG]
+    const stages = stagesData?.helpRequestQuer.stages.items ?? []
+    const events = logData?.helpRequestQuer.eventLog.items ?? []
     const hasLocation = hr.latitude !== null && hr.longitude !== null
 
-  return (
-    <div className="max-w-4xl mx-auto">
-      {/* Назад */}
-      <button
-        onClick={() => navigate(-1)}
-        className="flex items-center gap-2 text-sm text-ink-muted hover:text-ink mb-6 transition-colors"
-      >
-        <ArrowLeft size={16} />
-        Назад до списку
-      </button>
+    return (
+        <div className="max-w-4xl mx-auto">
+            {/* Назад */}
+            <button
+                onClick={() => navigate(-1)}
+                className="flex items-center gap-2 text-sm text-ink-muted hover:text-ink mb-6 transition-colors"
+            >
+                <ArrowLeft size={16} />
+                Назад до списку
+            </button>
 
-      {/* Зображення */}
-      {hr.imageUrls.length > 0 && (
-        <div className="mb-6">
-          <div className="h-64 rounded-xl overflow-hidden border border-border bg-surface-muted">
-            <img
-              src={`${API_BASE_URL}${hr.imageUrls[activeImage]}`}
-              alt={hr.title}
-              className="w-full h-full object-cover"
-            />
-          </div>
-          {hr.imageUrls.length > 1 && (
-            <div className="flex gap-2 mt-2">
-              {hr.imageUrls.map((url, i) => (
-                <button
-                  key={url}
-                  onClick={() => setActiveImage(i)}
-                  className={`w-12 h-12 rounded-lg overflow-hidden border-2 transition-colors ${
-                    i === activeImage ? 'border-primary' : 'border-border'
-                  }`}
-                >
-                  <img
-                    src={`${API_BASE_URL}${url}`}
-                    alt=""
-                    className="w-full h-full object-cover"
-                  />
-                </button>
-              ))}
+            {/* Зображення */}
+            {hr.imageUrls.length > 0 && (
+                <div className="mb-6">
+                    <div className="h-64 rounded-xl overflow-hidden border border-border bg-surface-muted">
+                        <img
+                            src={`${API_BASE_URL}${hr.imageUrls[activeImage]}`}
+                            alt={hr.title}
+                            className="w-full h-full object-cover"
+                        />
+                    </div>
+                    {hr.imageUrls.length > 1 && (
+                        <div className="flex gap-2 mt-2">
+                            {hr.imageUrls.map((url, i) => (
+                                <button
+                                    key={url}
+                                    onClick={() => setActiveImage(i)}
+                                    className={`w-12 h-12 rounded-lg overflow-hidden border-2 transition-colors ${i === activeImage ? 'border-primary' : 'border-border'
+                                        }`}
+                                >
+                                    <img
+                                        src={`${API_BASE_URL}${url}`}
+                                        alt=""
+                                        className="w-full h-full object-cover"
+                                    />
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Заголовок + статус */}
+            <div className="flex items-start justify-between gap-4 mb-4">
+                <h1 className="text-2xl font-bold text-ink"
+                    style={{ fontFamily: 'Jua, sans-serif' }}>
+                    {hr.title}
+                </h1>
+                {statusConfig && (
+                    <span className={`flex-shrink-0 px-3 py-1 text-sm font-medium rounded-full ${statusConfig.color}`}>
+                        {statusConfig.label}
+                    </span>
+                )}
             </div>
-          )}
-        </div>
-      )}
 
-      {/* Заголовок + статус */}
-      <div className="flex items-start justify-between gap-4 mb-4">
-        <h1 className="text-2xl font-bold text-ink"
-            style={{ fontFamily: 'Jua, sans-serif' }}>
-          {hr.title}
-        </h1>
-        {statusConfig && (
-          <span className={`flex-shrink-0 px-3 py-1 text-sm font-medium rounded-full ${statusConfig.color}`}>
-            {statusConfig.label}
-          </span>
-        )}
-      </div>
+            {/* Мета */}
+            <div className="flex items-center gap-4 text-sm text-ink-muted mb-6">
+                <span className="flex items-center gap-1">
+                    <Calendar size={14} />
+                    {formatDate(hr.createdAtUtc)}
+                </span>
+                {hasLocation && (
+                    <span className="flex items-center gap-1">
+                        <MapPin size={14} />
+                        Є геолокація
+                    </span>
+                )}
+            </div>
 
-      {/* Мета */}
-      <div className="flex items-center gap-4 text-sm text-ink-muted mb-6">
-        <span className="flex items-center gap-1">
-          <Calendar size={14} />
-          {formatDate(hr.createdAtUtc)}
-        </span>
-        {hasLocation && (
-          <span className="flex items-center gap-1">
-            <MapPin size={14} />
-            Є геолокація
-          </span>
-        )}
-      </div>
+            {/* Основний контент */}
+            <div className={`grid gap-6 mb-6 ${hasLocation ? 'md:grid-cols-2' : 'grid-cols-1'}`}>
+                {/* Опис */}
+                <div className="bg-surface rounded-xl border border-border p-6">
+                    <h2 className="text-sm font-semibold text-ink-muted uppercase tracking-wider mb-3">
+                        Опис
+                    </h2>
+                    <p className="text-ink leading-relaxed whitespace-pre-wrap">
+                        {hr.description}
+                    </p>
 
-      {/* Основний контент */}
-      <div className={`grid gap-6 mb-6 ${hasLocation ? 'md:grid-cols-2' : 'grid-cols-1'}`}>
-        {/* Опис */}
-        <div className="bg-surface rounded-xl border border-border p-6">
-          <h2 className="text-sm font-semibold text-ink-muted uppercase tracking-wider mb-3">
-            Опис
-          </h2>
-          <p className="text-ink leading-relaxed whitespace-pre-wrap">
-            {hr.description}
-          </p>
-
-          {/*hr.cancellationReason && (
+                    {/*hr.cancellationReason && (
             <div className="mt-4 p-3 bg-error/10 border border-error/20 rounded-lg">
               <p className="text-sm text-error font-medium mb-1">Причина скасування</p>
               {/* <p className="text-sm text-ink-muted">{hr.cancellationReason}</p>}
             </div>
           )*/}
-        </div>
+                </div>
 
-        {/* Карта */}
-        {hasLocation && (
-          <Suspense fallback={
-            <div className="h-64 rounded-xl border border-border bg-surface-muted flex items-center justify-center">
-              <p className="text-ink-muted text-sm">Завантаження карти...</p>
+                {/* Карта */}
+                {hasLocation && (
+                    <Suspense fallback={
+                        <div className="h-64 rounded-xl border border-border bg-surface-muted flex items-center justify-center">
+                            <p className="text-ink-muted text-sm">Завантаження карти...</p>
+                        </div>
+                    }>
+                        <RequestMap
+                            latitude={hr.latitude!}
+                            longitude={hr.longitude!}
+                        />
+                    </Suspense>
+                )}
             </div>
-          }>
-            <RequestMap
-              latitude={hr.latitude!}
-              longitude={hr.longitude!}
+
+            {/* Кнопки дій */}
+            <div className="flex flex-wrap gap-3 mb-8">
+                {isOwner && hr.status === 1 && (
+                    <>
+                        <Link
+                            to={`/requests/${hr.id}/edit`}
+                            className="px-4 py-2 text-sm font-medium border border-border rounded-lg hover:border-primary text-ink transition-colors"
+                        >
+                            Редагувати
+                        </Link>
+                        <button
+                            onClick={() => setCancelModalOpen(true)}
+                            className="px-4 py-2 text-sm font-medium border border-error/30 rounded-lg hover:border-error text-error transition-colors"
+                        >
+                            Скасувати
+                        </button>
+                        <button
+                            onClick={() => setDeleteModalOpen(true)}
+                            className="px-4 py-2 text-sm font-medium border border-error/30 rounded-lg hover:border-error text-error transition-colors"
+                        >
+                            Видалити
+                        </button>
+                        <button
+                            onClick={() => setCandidatesModalOpen(true)}
+                            className="px-4 py-2 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary-light transition-colors"
+                        >
+                            Кандидати
+                        </button>
+                        <button
+                            onClick={() => changeStatus({
+                                variables: { helpRequestId: hr.id, status: 'RESOLVED' }
+                            })}
+                            disabled={changingStatus}
+                            className="px-4 py-2 text-sm font-medium bg-success text-white rounded-lg hover:opacity-90 disabled:opacity-60 transition-colors"
+                        >
+                            Позначити як виконану
+                        </button>
+                        <button
+                            onClick={() => setCancelModalOpen(true)}
+                            className="px-4 py-2 text-sm font-medium border border-error/30 rounded-lg hover:border-error text-error transition-colors"
+                        >
+                            Скасувати
+                        </button>
+                    </>
+                )}
+
+                {isOwner && hr.status === 4 && (
+                    <button
+                        onClick={() => restoreRequest({ variables: { helpRequestId: hr.id } })}
+                        disabled={restoring}
+                        className="px-4 py-2 text-sm font-medium border border-border rounded-lg hover:border-primary text-ink transition-colors"
+                    >
+                        Відновити
+                    </button>
+                )}
+
+                {!isOwner && hr.status === 1 && (
+                    <button
+                        onClick={() => setRespondModalOpen(true)}
+                        className="px-4 py-2 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary-light transition-colors"
+                    >
+                        Відгукнутись
+                    </button>
+                )}
+
+                {/* Залишити відгук — помічник після завершення */}
+                {isAssignee && hr.status === 3 && (
+                    <button
+                        onClick={() => setReviewModalOpen(true)}
+                        className="px-4 py-2 text-sm font-medium bg-success text-white rounded-lg hover:opacity-90 transition-colors"
+                    >
+                        Залишити відгук
+                    </button>
+                )}
+
+                {/* Поскаржитись — будь-який учасник (не на себе) */}
+                {!isOwner && hr.assignedUserId && (
+                    <button
+                        onClick={() => setComplaintModalOpen(true)}
+                        className="px-4 py-2 text-sm font-medium border border-border rounded-lg text-ink-muted hover:border-error hover:text-error transition-colors"
+                    >
+                        Поскаржитись
+                    </button>
+                )}
+            </div>
+
+            {/* Вкладки — Етапи і Лог */}
+            <div className="bg-surface rounded-xl border border-border overflow-hidden">
+                <div className="flex border-b border-border">
+                    {([
+                        { key: 'stages', label: `Етапи (${stages.length})` },
+                        { key: 'log', label: `Історія подій (${events.length})` },
+                        { key: 'report', label: `Звіт (${reports.length})` },
+                    ] as const).map(tab => (
+                        <button
+                            key={tab.key}
+                            onClick={() => setActiveTab(tab.key)}
+                            className={`flex-1 px-6 py-3 text-sm font-medium transition-colors ${activeTab === tab.key
+                                    ? 'text-primary border-b-2 border-primary bg-primary/5'
+                                    : 'text-ink-muted hover:text-ink'
+                                }`}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
+
+                <div className="p-6">
+                    {activeTab === 'stages' && (
+                        <StagesTimeline stages={stages} />
+                    )}
+                    {activeTab === 'log' && (
+                        <EventLogList events={events} />
+                    )}
+                    {activeTab === 'report' && (
+                        <div className="space-y-4">
+                            {/* Існуючі звіти */}
+                            {reports.map(report => (
+                                <div key={report.id} className="p-4 bg-surface-muted rounded-xl border border-border space-y-2">
+                                    <p className="text-sm text-ink leading-relaxed">{report.comment}</p>
+                                    {report.imageUrl && (
+                                        <img
+                                            src={`${API_BASE_URL}/uploads/reports/${report.imageUrl}`}
+                                            alt="Звіт"
+                                            className="w-full max-h-48 object-cover rounded-lg"
+                                        />
+                                    )}
+                                    <p className="text-xs text-ink-muted">
+                                        {new Date(report.createdAtUtc).toLocaleDateString('uk-UA', {
+                                            day: 'numeric', month: 'long', year: 'numeric'
+                                        })}
+                                    </p>
+                                </div>
+                            ))}
+
+                            {/* Форма створення звіту */}
+                            {isOwner && hr.status === 3 && (
+                                <div className="space-y-3 pt-2 border-t border-border">
+                                    <p className="text-sm font-medium text-ink">Додати звіт</p>
+                                    <textarea
+                                        value={reportComment}
+                                        onChange={e => setReportComment(e.target.value)}
+                                        placeholder="Опишіть як пройшло отримання допомоги..."
+                                        rows={3}
+                                        className="w-full px-4 py-3 bg-surface-muted border border-border rounded-lg text-sm text-ink placeholder-ink-soft focus:outline-none focus:border-primary transition-colors resize-none"
+                                    />
+
+                                    {/* Фото */}
+                                    <div className="flex items-center gap-3">
+                                        <label className="flex items-center gap-2 px-3 py-2 border border-border rounded-lg text-xs text-ink-muted hover:border-primary hover:text-primary cursor-pointer transition-colors">
+                                            <Upload size={14} />
+                                            {reportUploading ? 'Завантаження...' : 'Додати фото'}
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                className="hidden"
+                                                onChange={handleReportImageUpload}
+                                                disabled={reportUploading}
+                                            />
+                                        </label>
+                                        {reportImage && (
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs text-success">✓ Фото додано</span>
+                                                <button
+                                                    onClick={() => setReportImage(null)}
+                                                    className="text-xs text-error hover:underline"
+                                                >
+                                                    Видалити
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <button
+                                        onClick={() => createReport({
+                                            variables: {
+                                                helpRequestId: hr.id,
+                                                comment: reportComment.trim(),
+                                                imageUrl: reportImage,
+                                            }
+                                        })}
+                                        disabled={creatingReport || !reportComment.trim()}
+                                        className="w-full py-2.5 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary-light disabled:opacity-60 transition-colors"
+                                    >
+                                        {creatingReport ? 'Збереження...' : 'Опублікувати звіт'}
+                                    </button>
+                                </div>
+                            )}
+
+                            {reports.length === 0 && !(isOwner && hr.status === 3) && (
+                                <div className="text-center py-8 text-ink-muted text-sm">
+                                    Звітів поки немає
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            <RespondModal
+                isOpen={respondModalOpen}
+                onClose={() => setRespondModalOpen(false)}
+                helpRequestId={hr.id}
+                onSuccess={() => { }}
             />
-          </Suspense>
-        )}
-      </div>
 
-      {/* Кнопки дій */}
-      <div className="flex flex-wrap gap-3 mb-8">
-          {isOwner && hr.status === 1 && (
-                  <>
-                      <Link
-                          to={`/requests/${hr.id}/edit`}
-                          className="px-4 py-2 text-sm font-medium border border-border rounded-lg hover:border-primary text-ink transition-colors"
-                      >
-                          Редагувати
-                      </Link>
-                      <button
-                          onClick={() => setCancelModalOpen(true)}
-                          className="px-4 py-2 text-sm font-medium border border-error/30 rounded-lg hover:border-error text-error transition-colors"
-                      >
-                          Скасувати
-                      </button>
-                      <button
-                          onClick={() => setDeleteModalOpen(true)}
-                          className="px-4 py-2 text-sm font-medium border border-error/30 rounded-lg hover:border-error text-error transition-colors"
-                      >
-                          Видалити
-                      </button>
-                      <button
-                          onClick={() => setCandidatesModalOpen(true)}
-                          className="px-4 py-2 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary-light transition-colors"
-                      >
-                          Кандидати
-                      </button>
-                      <button
-                          onClick={() => changeStatus({
-                              variables: { helpRequestId: hr.id, status: 'RESOLVED' }
-                          })}
-                          disabled={changingStatus}
-                          className="px-4 py-2 text-sm font-medium bg-success text-white rounded-lg hover:opacity-90 disabled:opacity-60 transition-colors"
-                      >
-                          Позначити як виконану
-                      </button>
-                      <button
-                          onClick={() => setCancelModalOpen(true)}
-                          className="px-4 py-2 text-sm font-medium border border-error/30 rounded-lg hover:border-error text-error transition-colors"
-                      >
-                          Скасувати
-                      </button>
-                  </>
-          )}
+            <CandidatesModal
+                isOpen={candidatesModalOpen}
+                onClose={() => setCandidatesModalOpen(false)}
+                helpRequestId={hr.id}
+                canAssign={isOwner && hr.status === 1}
+                onAssign={() => setCandidatesModalOpen(false)}
+            />
 
-              {isOwner && hr.status === 4 && (
-                  <button
-                      onClick={() => restoreRequest({ variables: { helpRequestId: hr.id } })}
-                      disabled={restoring}
-                      className="px-4 py-2 text-sm font-medium border border-border rounded-lg hover:border-primary text-ink transition-colors"
-                  >
-                      Відновити
-                  </button>
-              )}
-
-          {!isOwner && hr.status === 1 && (
-              <button
-                  onClick={() => setRespondModalOpen(true)}
-                  className="px-4 py-2 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary-light transition-colors"
-              >
-                  Відгукнутись
-              </button>
-          )}
-      </div>
-
-      {/* Вкладки — Етапи і Лог */}
-      <div className="bg-surface rounded-xl border border-border overflow-hidden">
-        <div className="flex border-b border-border">
-          {([
-            { key: 'stages', label: `Етапи (${stages.length})` },
-            { key: 'log', label: `Історія подій (${events.length})` },
-            { key: 'report', label: `Звіт (${reports.length})` },
-          ] as const).map(tab => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`flex-1 px-6 py-3 text-sm font-medium transition-colors ${
-                activeTab === tab.key
-                  ? 'text-primary border-b-2 border-primary bg-primary/5'
-                  : 'text-ink-muted hover:text-ink'
-              }`}
+            <Modal
+                isOpen={cancelModalOpen}
+                onClose={() => setCancelModalOpen(false)}
+                title="Скасувати заявку"
             >
-              {tab.label}
-            </button>
-          ))}
+                <div className="space-y-4">
+                    <textarea
+                        value={cancelReason}
+                        onChange={e => setCancelReason(e.target.value)}
+                        placeholder="Вкажіть причину скасування..."
+                        rows={3}
+                        className="w-full px-4 py-3 bg-surface-muted border border-border rounded-lg text-sm text-ink placeholder-ink-soft focus:outline-none focus:border-primary transition-colors resize-none"
+                    />
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => setCancelModalOpen(false)}
+                            className="flex-1 py-2.5 border border-border rounded-lg text-sm font-medium text-ink hover:border-primary transition-colors"
+                        >
+                            Назад
+                        </button>
+                        <button
+                            onClick={() => cancelRequest({
+                                variables: { helpRequestId: hr.id, reason: cancelReason.trim() }
+                            })}
+                            disabled={cancelling || !cancelReason.trim()}
+                            className="flex-1 py-2.5 bg-error text-white rounded-lg text-sm font-semibold hover:opacity-90 disabled:opacity-60 transition-colors"
+                        >
+                            {cancelling ? 'Скасування...' : 'Скасувати заявку'}
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* Модал видалення */}
+            <Modal
+                isOpen={deleteModalOpen}
+                onClose={() => setDeleteModalOpen(false)}
+                title="Видалити заявку"
+            >
+                <div className="space-y-4">
+                    <p className="text-sm text-ink-muted">
+                        Ви впевнені що хочете видалити заявку? Цю дію неможливо скасувати.
+                    </p>
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => setDeleteModalOpen(false)}
+                            className="flex-1 py-2.5 border border-border rounded-lg text-sm font-medium text-ink hover:border-primary transition-colors"
+                        >
+                            Назад
+                        </button>
+                        <button
+                            onClick={() => softDelete({ variables: { helpRequestId: hr.id } })}
+                            disabled={deleting}
+                            className="flex-1 py-2.5 bg-error text-white rounded-lg text-sm font-semibold hover:opacity-90 disabled:opacity-60 transition-colors"
+                        >
+                            {deleting ? 'Видалення...' : 'Видалити'}
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+
+            <LeaveReviewModal
+                isOpen={reviewModalOpen}
+                onClose={() => setReviewModalOpen(false)}
+                helpRequestId={hr.id}
+                onSuccess={() => window.location.reload()}
+            />
+
+            {hr.assignedUserId && (
+                <LeaveComplaintModal
+                    isOpen={complaintModalOpen}
+                    onClose={() => setComplaintModalOpen(false)}
+                    targetUserId={isOwner ? hr.assignedUserId : hr.creatorId}
+                    targetUsername={isOwner ? 'виконавця' : 'власника заявки'}
+                />
+            )}
+
         </div>
-
-        <div className="p-6">
-          {activeTab === 'stages' && (
-            <StagesTimeline stages={stages} />
-          )}
-          {activeTab === 'log' && (
-            <EventLogList events={events} />
-                  )}
-                  {activeTab === 'report' && (
-                      <div className="space-y-4">
-                          {/* Існуючі звіти */}
-                          {reports.map(report => (
-                              <div key={report.id} className="p-4 bg-surface-muted rounded-xl border border-border space-y-2">
-                                  <p className="text-sm text-ink leading-relaxed">{report.comment}</p>
-                                  {report.imageUrl && (
-                                      <img
-                                          src={`${API_BASE_URL}/uploads/reports/${report.imageUrl}`}
-                                          alt="Звіт"
-                                          className="w-full max-h-48 object-cover rounded-lg"
-                                      />
-                                  )}
-                                  <p className="text-xs text-ink-muted">
-                                      {new Date(report.createdAtUtc).toLocaleDateString('uk-UA', {
-                                          day: 'numeric', month: 'long', year: 'numeric'
-                                      })}
-                                  </p>
-                              </div>
-                          ))}
-
-                          {/* Форма створення звіту */}
-                          {isOwner && hr.status === 3 && (
-                              <div className="space-y-3 pt-2 border-t border-border">
-                                  <p className="text-sm font-medium text-ink">Додати звіт</p>
-                                  <textarea
-                                      value={reportComment}
-                                      onChange={e => setReportComment(e.target.value)}
-                                      placeholder="Опишіть як пройшло отримання допомоги..."
-                                      rows={3}
-                                      className="w-full px-4 py-3 bg-surface-muted border border-border rounded-lg text-sm text-ink placeholder-ink-soft focus:outline-none focus:border-primary transition-colors resize-none"
-                                  />
-
-                                  {/* Фото */}
-                                  <div className="flex items-center gap-3">
-                                      <label className="flex items-center gap-2 px-3 py-2 border border-border rounded-lg text-xs text-ink-muted hover:border-primary hover:text-primary cursor-pointer transition-colors">
-                                          <Upload size={14} />
-                                          {reportUploading ? 'Завантаження...' : 'Додати фото'}
-                                          <input
-                                              type="file"
-                                              accept="image/*"
-                                              className="hidden"
-                                              onChange={handleReportImageUpload}
-                                              disabled={reportUploading}
-                                          />
-                                      </label>
-                                      {reportImage && (
-                                          <div className="flex items-center gap-2">
-                                              <span className="text-xs text-success">✓ Фото додано</span>
-                                              <button
-                                                  onClick={() => setReportImage(null)}
-                                                  className="text-xs text-error hover:underline"
-                                              >
-                                                  Видалити
-                                              </button>
-                                          </div>
-                                      )}
-                                  </div>
-
-                                  <button
-                                      onClick={() => createReport({
-                                          variables: {
-                                              helpRequestId: hr.id,
-                                              comment: reportComment.trim(),
-                                              imageUrl: reportImage,
-                                          }
-                                      })}
-                                      disabled={creatingReport || !reportComment.trim()}
-                                      className="w-full py-2.5 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary-light disabled:opacity-60 transition-colors"
-                                  >
-                                      {creatingReport ? 'Збереження...' : 'Опублікувати звіт'}
-                                  </button>
-                              </div>
-                          )}
-
-                          {reports.length === 0 && !(isOwner && hr.status === 3) && (
-                              <div className="text-center py-8 text-ink-muted text-sm">
-                                  Звітів поки немає
-                              </div>
-                          )}
-                      </div>
-                  )}
-        </div>
-          </div>
-
-          <RespondModal
-              isOpen={respondModalOpen}
-              onClose={() => setRespondModalOpen(false)}
-              helpRequestId={hr.id}
-              onSuccess={() => { }}
-          />
-
-          <CandidatesModal
-              isOpen={candidatesModalOpen}
-              onClose={() => setCandidatesModalOpen(false)}
-              helpRequestId={hr.id}
-              canAssign={isOwner && hr.status === 1}
-              onAssign={() => setCandidatesModalOpen(false)}
-          />
-
-          <Modal
-              isOpen={cancelModalOpen}
-              onClose={() => setCancelModalOpen(false)}
-              title="Скасувати заявку"
-          >
-              <div className="space-y-4">
-                  <textarea
-                      value={cancelReason}
-                      onChange={e => setCancelReason(e.target.value)}
-                      placeholder="Вкажіть причину скасування..."
-                      rows={3}
-                      className="w-full px-4 py-3 bg-surface-muted border border-border rounded-lg text-sm text-ink placeholder-ink-soft focus:outline-none focus:border-primary transition-colors resize-none"
-                  />
-                  <div className="flex gap-3">
-                      <button
-                          onClick={() => setCancelModalOpen(false)}
-                          className="flex-1 py-2.5 border border-border rounded-lg text-sm font-medium text-ink hover:border-primary transition-colors"
-                      >
-                          Назад
-                      </button>
-                      <button
-                          onClick={() => cancelRequest({
-                              variables: { helpRequestId: hr.id, reason: cancelReason.trim() }
-                          })}
-                          disabled={cancelling || !cancelReason.trim()}
-                          className="flex-1 py-2.5 bg-error text-white rounded-lg text-sm font-semibold hover:opacity-90 disabled:opacity-60 transition-colors"
-                      >
-                          {cancelling ? 'Скасування...' : 'Скасувати заявку'}
-                      </button>
-                  </div>
-              </div>
-          </Modal>
-
-          {/* Модал видалення */}
-          <Modal
-              isOpen={deleteModalOpen}
-              onClose={() => setDeleteModalOpen(false)}
-              title="Видалити заявку"
-          >
-              <div className="space-y-4">
-                  <p className="text-sm text-ink-muted">
-                      Ви впевнені що хочете видалити заявку? Цю дію неможливо скасувати.
-                  </p>
-                  <div className="flex gap-3">
-                      <button
-                          onClick={() => setDeleteModalOpen(false)}
-                          className="flex-1 py-2.5 border border-border rounded-lg text-sm font-medium text-ink hover:border-primary transition-colors"
-                      >
-                          Назад
-                      </button>
-                      <button
-                          onClick={() => softDelete({ variables: { helpRequestId: hr.id } })}
-                          disabled={deleting}
-                          className="flex-1 py-2.5 bg-error text-white rounded-lg text-sm font-semibold hover:opacity-90 disabled:opacity-60 transition-colors"
-                      >
-                          {deleting ? 'Видалення...' : 'Видалити'}
-                      </button>
-                  </div>
-              </div>
-          </Modal>
-
-    </div>
-  )
+    )
 }
