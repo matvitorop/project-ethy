@@ -1,6 +1,8 @@
 ﻿using MediatR;
 using server.Application.IRepositories;
+using server.Application.IServices;
 using server.Domain.Primitives;
+using server.Domain.UserAndVolunteer;
 
 namespace server.Application.Handlers.UserHandlers.BlockUser
 {
@@ -34,7 +36,7 @@ namespace server.Application.Handlers.UserHandlers.BlockUser
             user.Block(request.BlockedUntilUtc, request.Reason);
             await _users.BlockAsync(user.Id, user.BlockedUntilUtc, user.BlockReason!, ct);
 
-            await _blockHistory.AddAsync(new Domain.UserBlockRecord(
+            await _blockHistory.AddAsync(new UserBlockRecord(
                 userId: user.Id,
                 adminId: request.AdminId,
                 reason: request.Reason,
