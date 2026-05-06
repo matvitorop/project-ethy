@@ -1,14 +1,20 @@
 import { useState } from 'react'
 import { useQuery, useMutation } from '@apollo/client/react'
 import { useNavigate } from 'react-router-dom'
-import { Pencil, Check, X, Eye, EyeOff } from 'lucide-react'
-import { GET_PROFILE, UPDATE_USERNAME, CHANGE_PASSWORD, DELETE_ACCOUNT, GET_MY_REQUESTS, GET_ASSIGNEE_REQUESTS } from '../../api/queries'
+import { Pencil, Check, X, Eye, EyeOff, ThumbsUp, ThumbsDown, Phone, Link as LinkIcon } from 'lucide-react'
+import {
+    GET_PROFILE, UPDATE_USERNAME, CHANGE_PASSWORD, DELETE_ACCOUNT,
+    GET_MY_REQUESTS, GET_ASSIGNEE_REQUESTS,
+    UPDATE_PROFILE, GET_USER_REVIEWS,
+} from '../../api/queries'
 import type {
     ProfileData,
     UpdateUsernameData,
     ChangePasswordData,
     DeleteAccountData,
     HelpRequestsPageData,
+    UpdateProfileData,
+    GetUserReviewsData,
 } from '../../api/types'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { addToast } from '../../store/uiSlice'
@@ -42,6 +48,10 @@ export default function ProfilePage() {
     // Стан для видалення
     const [deleteModalOpen, setDeleteModalOpen] = useState(false)
 
+    // Стан для контактної інформації
+    const [editingContacts, setEditingContacts] = useState(false)
+    const [contactForm, setContactForm] = useState({ phoneNumber: '', socialLinks: '' })
+
     // Вкладки заявок
     const [activeTab, setActiveTab] = useState<ProfileTab>('owner')
     const [ownerPage, setOwnerPage] = useState(1)
@@ -49,7 +59,14 @@ export default function ProfilePage() {
 
     // GET_PROFILE
     const { data: profileData, loading: profileLoading } = useQuery<ProfileData>(GET_PROFILE, {
-        fetchPolicy: 'network-only',
+        fetchPolicy: 'cache-first',
+    })
+
+    // Відгуки про поточного користувача
+    const { data: reviewsData } = useQuery<GetUserReviewsData>(GET_USER_REVIEWS, {
+        variables: { targetUserId: userId },
+        skip: !userId,
+        fetchPolicy: 'cache-first',
     })
 
     // Заявки як власник
@@ -58,7 +75,7 @@ export default function ProfilePage() {
         {
             variables: { page: ownerPage, pageSize: PAGE_SIZE, creatorId: userId },
             skip: !userId || activeTab !== 'owner',
-            fetchPolicy: 'no-cache',  // ← змінити
+            fetchPolicy: 'cache-and-network',
         }
     )
 
@@ -69,7 +86,7 @@ export default function ProfilePage() {
         {
             variables: { page: assigneePage, pageSize: PAGE_SIZE, assignedUserId: userId },
             skip: !userId || activeTab !== 'assignee',
-            fetchPolicy: 'no-cache',  // ← змінити
+            fetchPolicy: 'cache-and-network',
         }
     )
 
@@ -130,6 +147,23 @@ export default function ProfilePage() {
         }
     )
 
+    const [updateProfile, { loading: updatingProfile }] = useMutation<UpdateProfileData>(
+        UPDATE_PROFILE,
+        {
+            refetchQueries: [{ query: GET_PROFILE }],
+            onCompleted: (data) => {
+                const result = data.user.updateProfile
+                if (result.error) {
+                    dispatch(addToast({ type: 'error', message: result.error.message }))
+                } else {
+                    dispatch(addToast({ type: 'success', message: 'Контакти збережено!' }))
+                    setEditingContacts(false)
+                }
+            },
+            onError: () => dispatch(addToast({ type: 'error', message: 'Помилка збереження' })),
+        }
+    )
+
     if (profileLoading) return <PageSpinner />
 
     const profile = profileData?.userQuery.profile.profile
@@ -139,6 +173,10 @@ export default function ProfilePage() {
             Профіль не знайдено
         </div>
     )
+
+    const reviews = reviewsData?.userQuery.getUserReviews.reviews ?? []
+    const positiveCount = reviews.filter(r => r.isPositive).length
+    const negativeCount = reviews.filter(r => !r.isPositive).length
 
     const ownerItems = ownerData?.helpRequestQuer.helpRequestQuery.items ?? []
     const assigneeItems = assigneeData?.helpRequestQuer.helpRequestQuery.items ?? []
@@ -299,7 +337,7 @@ export default function ProfilePage() {
                     )}
                 </div>
 
-                {/* Дата реєстрації */}
+                {/* Дата реєстрації + верифікація */}
                 <div className="pt-2 border-t border-border">
                     <p className="text-xs text-ink-muted">
                         Зареєстрований:{' '}
@@ -310,7 +348,102 @@ export default function ProfilePage() {
                                 year: 'numeric',
                             })}
                         </span>
+                        {profile.isEmailVerified && (
+                            <span className="ml-2 inline-flex items-center gap-1 text-success font-medium">
+                                ✓ Email підтверджено
+                            </span>
+                        )}
                     </p>
+                </div>
+
+                {/* Контактна інформація */}
+                <div className="pt-2 border-t border-border space-y-3">
+                    <div className="flex items-center justify-between">
+                        <label className="text-xs font-semibold text-ink-muted uppercase tracking-wider">
+                            Контакти
+                        </label>
+                        {!editingContacts && (
+                            <button
+                                onClick={() => {
+                                    setEditingContacts(true)
+                                    setContactForm({
+                                        phoneNumber: profile.phoneNumber ?? '',
+                                        socialLinks: profile.socialLinks ?? '',
+                                    })
+                                }}
+                                className="flex items-center gap-1 text-xs text-primary hover:underline"
+                            >
+                                <Pencil size={12} />
+                                Редагувати
+                            </button>
+                        )}
+                    </div>
+
+                    {editingContacts ? (
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                                <Phone size={14} className="text-ink-muted shrink-0" />
+                                <input
+                                    type="tel"
+                                    value={contactForm.phoneNumber}
+                                    onChange={e => setContactForm(f => ({ ...f, phoneNumber: e.target.value }))}
+                                    placeholder="+380..."
+                                    className="flex-1 px-3 py-2 bg-surface-muted border border-border rounded-lg text-ink text-sm focus:outline-none focus:border-primary transition-colors"
+                                />
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <LinkIcon size={14} className="text-ink-muted shrink-0" />
+                                <input
+                                    type="text"
+                                    value={contactForm.socialLinks}
+                                    onChange={e => setContactForm(f => ({ ...f, socialLinks: e.target.value }))}
+                                    placeholder="Посилання на соціальну мережу..."
+                                    className="flex-1 px-3 py-2 bg-surface-muted border border-border rounded-lg text-ink text-sm focus:outline-none focus:border-primary transition-colors"
+                                />
+                            </div>
+                            <div className="flex gap-2 pt-1">
+                                <button
+                                    onClick={() => updateProfile({ variables: contactForm })}
+                                    disabled={updatingProfile}
+                                    className="flex-1 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-light disabled:opacity-60 transition-colors"
+                                >
+                                    {updatingProfile ? 'Збереження...' : 'Зберегти'}
+                                </button>
+                                <button
+                                    onClick={() => setEditingContacts(false)}
+                                    className="flex-1 py-2 border border-border text-ink text-sm rounded-lg hover:border-primary transition-colors"
+                                >
+                                    Скасувати
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="space-y-1.5">
+                            {profile.phoneNumber ? (
+                                <div className="flex items-center gap-2 text-sm text-ink">
+                                    <Phone size={13} className="text-ink-muted" />
+                                    {profile.phoneNumber}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-ink-soft">Телефон не вказано</p>
+                            )}
+                            {profile.socialLinks ? (
+                                <div className="flex items-center gap-2 text-sm">
+                                    <LinkIcon size={13} className="text-ink-muted" />
+                                    <a
+                                        href={profile.socialLinks}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-primary hover:underline truncate"
+                                    >
+                                        {profile.socialLinks}
+                                    </a>
+                                </div>
+                            ) : (
+                                <p className="text-sm text-ink-soft">Соціальна мережа не вказана</p>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 {/* Видалення акаунту */}
@@ -324,6 +457,61 @@ export default function ProfilePage() {
                 </div>
             </div>
 
+            {/* Репутація */}
+            <div className="bg-surface rounded-xl border border-border p-6">
+                <h2 className="text-base font-semibold text-ink mb-4"
+                    style={{ fontFamily: 'Jua, sans-serif' }}>
+                    Репутація
+                </h2>
+                <div className="flex gap-4 mb-4">
+                    <div className="flex-1 flex items-center gap-3 p-3 bg-success/10 rounded-xl border border-success/20">
+                        <ThumbsUp size={20} className="text-success" />
+                        <div>
+                            <p className="text-xl font-bold text-success">{positiveCount}</p>
+                            <p className="text-xs text-ink-muted">Позитивних</p>
+                        </div>
+                    </div>
+                    <div className="flex-1 flex items-center gap-3 p-3 bg-error/10 rounded-xl border border-error/20">
+                        <ThumbsDown size={20} className="text-error" />
+                        <div>
+                            <p className="text-xl font-bold text-error">{negativeCount}</p>
+                            <p className="text-xs text-ink-muted">Негативних</p>
+                        </div>
+                    </div>
+                </div>
+
+                {reviews.length > 0 ? (
+                    <div className="space-y-3">
+                        {reviews.map(review => (
+                            <div key={review.id} className="flex gap-3 p-3 bg-surface-muted rounded-lg border border-border">
+                                <div className={`mt-0.5 shrink-0 ${review.isPositive ? 'text-success' : 'text-error'}`}>
+                                    {review.isPositive
+                                        ? <ThumbsUp size={14} />
+                                        : <ThumbsDown size={14} />}
+                                </div>
+                                <div className="min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <span className="text-sm font-medium text-ink">
+                                            {review.reviewerUsername}
+                                        </span>
+                                        <span className="text-xs text-ink-soft">
+                                            {new Date(review.createdAtUtc).toLocaleDateString('uk-UA')}
+                                        </span>
+                                    </div>
+                                    {review.comment && (
+                                        <p className="text-sm text-ink-muted">{review.comment}</p>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-sm text-ink-soft text-center py-4">
+                        Відгуків ще немає
+                    </p>
+                )}
+            </div>
+
             {/* Заявки */}
             <div className="bg-surface rounded-xl border border-border overflow-hidden">
                 <div className="flex border-b border-border">
@@ -335,8 +523,8 @@ export default function ProfilePage() {
                             key={tab.key}
                             onClick={() => setActiveTab(tab.key)}
                             className={`flex-1 px-6 py-3 text-sm font-medium transition-colors ${activeTab === tab.key
-                                    ? 'text-primary border-b-2 border-primary bg-primary/5'
-                                    : 'text-ink-muted hover:text-ink'
+                                ? 'text-primary border-b-2 border-primary bg-primary/5'
+                                : 'text-ink-muted hover:text-ink'
                                 }`}
                         >
                             {tab.label}
