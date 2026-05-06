@@ -27,5 +27,10 @@ namespace server.Application.IRepositories
         Task CancelResponseAsync(Guid helpRequestId, Guid userId, CancellationToken ct);
         Task ResignAsExecutorAsync(HelpRequest request, Chat chat, HelpRequestEvent logEvent, CancellationToken ct);
         Task RemoveExecutorAsync(HelpRequest request, Chat chat, HelpRequestEvent logEvent, CancellationToken ct);
+        
+        // +++ Admin module
+        Task SetHiddenAsync(Guid helpRequestId, bool isHidden, CancellationToken ct);
+        Task<List<AdminHelpRequestDto>> GetAllForAdminAsync(int page, int pageSize, bool? isHidden, bool? isDeleted, CancellationToken ct);
+        // ---
     }
 }
