@@ -1,4 +1,5 @@
-﻿using server.Application.Handlers.GetActiveRequests;
+﻿using server.Application.Handlers.AdminHandlers.AdminGetHelpRequests;
+using server.Application.Handlers.GetActiveRequests;
 using server.Application.Handlers.GetFullHelpRequest;
 using server.Application.Handlers.GetHelpRequestResponses;
 using server.Domain.Chat;
