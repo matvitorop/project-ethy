@@ -11,7 +11,7 @@
         public double? Latitude { get; init; }
         public double? Longitude { get; init; }
         public DateTime CreatedAtUtc { get; init; }
-
+        public string? CreatorUsername { get; init; } = null!;
         public IReadOnlyList<string> ImageUrls { get; init; } = [];
     }
 }

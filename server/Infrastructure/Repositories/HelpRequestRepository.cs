@@ -209,18 +209,21 @@ namespace server.Infrastructure.Repositories
             using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
 
             const string requestSql = """
-                SELECT 
-                    Id,
-                    CreatorId,
-                    AssignedUserId,
-                    Title,
-                    Description,
-                    Status,
-                    Latitude,
-                    Longitude,
-                    CreatedAtUtc
-                FROM HelpRequests
-                WHERE Id = @Id;
+                SELECT
+                hr.Id,
+                hr.CreatorId,
+                hr.AssignedUserId,
+                u.Username AS CreatorUsername,   -- ← додати
+                hr.Title,
+                hr.Description,
+                hr.Status,
+                hr.Latitude,
+                hr.Longitude,
+                hr.CreatedAtUtc,
+                hr.IsHidden
+            FROM HelpRequests hr
+            INNER JOIN Users u ON u.Id = hr.CreatorId  -- ← додати
+            WHERE hr.Id = @Id;
             """;
 
             var request = await connection

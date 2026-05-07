@@ -16,6 +16,7 @@ namespace server.Presentation.GraphQL.Types.GetHRDetailTypes
             Field(x => x.Latitude, nullable: true);
             Field(x => x.Longitude, nullable: true);
             Field(x => x.CreatedAtUtc);
+            Field(x => x.CreatorUsername);
             Field<ListGraphType<StringGraphType>>("imageUrls")
                 .Resolve(context => context.Source.ImageUrls);
         } 

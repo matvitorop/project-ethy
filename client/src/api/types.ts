@@ -88,6 +88,7 @@ export interface HelpRequestDetail {
     latitude: number | null
     longitude: number | null
     createdAtUtc: string
+    creatorUsername: string
     imageUrls: string[]
 }
 
