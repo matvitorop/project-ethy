@@ -1,0 +1,1 @@
+﻿ALTER TABLE UserComplaints ADD AdminComment NVARCHAR(500) NULL;

@@ -52,12 +52,17 @@ namespace server.Infrastructure.Repositories
             return rows.AsList();
         }
 
-        public async Task<bool> MarkAsResolvedAsync(Guid complaintId, CancellationToken ct)
+        public async Task<bool> MarkAsResolvedAsync(
+            Guid complaintId, string? adminComment, CancellationToken ct)
         {
             using var conn = await _connectionFactory.CreateOpenConnectionAsync(ct);
-            var affected = await conn.ExecuteAsync(
-                "UPDATE UserComplaints SET IsResolved = 1 WHERE Id = @Id",
-                new { Id = complaintId });
+            
+            var affected = await conn.ExecuteAsync("""
+                UPDATE UserComplaints 
+                SET IsResolved = 1, AdminComment = @AdminComment 
+                WHERE Id = @Id
+                """,
+                new { Id = complaintId, AdminComment = adminComment });
             return affected > 0;
         }
     }
