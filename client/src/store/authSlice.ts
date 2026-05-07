@@ -6,6 +6,7 @@ interface AuthState {
     userId: string | null
     username: string | null
     email: string | null
+    role: string | null
 }
 
 const initialState: AuthState = {
@@ -14,6 +15,7 @@ const initialState: AuthState = {
     userId: null,
     username: null,
     email: null,
+    role: null,
 }
 
 const authSlice = createSlice({
@@ -24,17 +26,20 @@ const authSlice = createSlice({
             userId: string
             username: string
             email: string
+            role?: string
         }>) => {
             state.isAuthenticated = true
             state.userId = action.payload.userId
             state.username = action.payload.username
             state.email = action.payload.email
+            state.role = action.payload.role ?? null
         },
         clearAuth: (state) => {
             state.isAuthenticated = false
             state.userId = null
             state.username = null
             state.email = null
+            state.role = null
         },
         setInitialized: (state, action: PayloadAction<boolean>) => {
             state.isInitialized = action.payload

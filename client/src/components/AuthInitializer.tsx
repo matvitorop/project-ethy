@@ -29,6 +29,7 @@ export default function AuthInitializer({ children }: { children: React.ReactNod
                 userId: profile.id,
                 username: profile.username,
                 email: profile.email,
+                role: profile.role,
             }))
         } else {
             dispatch(clearAuth())

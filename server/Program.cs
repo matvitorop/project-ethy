@@ -84,6 +84,16 @@ builder.Services.AddSingleton<ISqlConnectionFactory>(new SqlConnectionFactory(co
 
 builder.Services.AddHostedService<TemporaryFileCleanupService>();
 
+// --- Email (SendGrid) ---
+builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
+
+// --- New repositories ---
+builder.Services.AddScoped<IEmailVerificationTokenRepository, EmailVerificationTokenRepository>();
+builder.Services.AddScoped<IVolunteerApplicationRepository, VolunteerApplicationRepository>();
+builder.Services.AddScoped<IBlockHistoryRepository, BlockHistoryRepository>();
+
+// --- Admin seeder ---
+builder.Services.AddHostedService<AdminSeeder>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IHelpRequestRepository, HelpRequestRepository>();
 builder.Services.AddScoped<IChatRepository, ChatRepository>();
