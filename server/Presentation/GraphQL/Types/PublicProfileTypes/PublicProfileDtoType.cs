@@ -14,6 +14,8 @@ namespace server.Presentation.GraphQL.Types.PublicProfileTypes
             Field(x => x.IsEmailVerified);
             Field(x => x.HasPhone);
             Field(x => x.HasSocialLinks);
+            Field(x => x.PhoneNumber, nullable: true);
+            Field(x => x.SocialLinks, nullable: true);
             Field(x => x.PositiveReviews);
             Field(x => x.NegativeReviews);
             Field(x => x.TotalRequests);

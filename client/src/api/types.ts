@@ -89,6 +89,7 @@ export interface HelpRequestDetail {
     longitude: number | null
     createdAtUtc: string
     creatorUsername: string
+    assignedUsername: string | null
     imageUrls: string[]
 }
 
@@ -368,6 +369,8 @@ export interface PublicProfileDto {
     negativeReviews: number
     totalRequests: number
     completedRequests: number
+    phoneNumber: string | null
+    socialLinks: string | null
 }
 
 export interface PublicProfileData {

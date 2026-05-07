@@ -93,6 +93,7 @@ export const GET_HELP_REQUEST_BY_ID = gql`
           creatorId
           creatorUsername
           assignedUserId
+          assignedUsername
           latitude
           longitude
           createdAtUtc
@@ -547,6 +548,8 @@ export const GET_PUBLIC_PROFILE = gql`
           negativeReviews
           totalRequests
           completedRequests
+          phoneNumber
+          socialLinks
         }
         error { code message }
       }

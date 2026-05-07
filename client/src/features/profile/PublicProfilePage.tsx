@@ -98,11 +98,20 @@ export default function PublicProfilePage() {
                     {profile.role === 2 && (
                         <Badge icon={<Shield size={12} />} label="Волонтер" color="text-info" />
                     )}
-                    {profile.hasPhone && (
-                        <Badge icon={<Phone size={12} />} label="Є телефон" color="text-ink-muted" />
+                    {profile.phoneNumber && (
+                        <div className="flex items-center gap-2 text-sm text-ink">
+                            <Phone size={13} className="text-ink-muted" />
+                            {profile.phoneNumber}
+                        </div>
                     )}
-                    {profile.hasSocialLinks && (
-                        <Badge icon={<LinkIcon size={12} />} label="Є соцмережа" color="text-ink-muted" />
+                    {profile.socialLinks && (
+                        <div className="flex items-center gap-2 text-sm">
+                            <LinkIcon size={13} className="text-ink-muted" />
+                            <a href={profile.socialLinks} target="_blank" rel="noopener noreferrer"
+                                className="text-primary hover:underline truncate">
+                                {profile.socialLinks}
+                            </a>
+                        </div>
                     )}
                 </div>
             </div>
