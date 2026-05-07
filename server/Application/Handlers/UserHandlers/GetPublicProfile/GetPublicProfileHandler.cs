@@ -30,6 +30,8 @@ namespace server.Application.Handlers.UserHandlers.GetPublicProfile
                 IsEmailVerified: user.IsEmailVerified,
                 HasPhone: !string.IsNullOrEmpty(user.PhoneNumber),
                 HasSocialLinks: !string.IsNullOrEmpty(user.SocialLinks),
+                PhoneNumber: user.PhoneNumber,
+                SocialLinks: user.SocialLinks,
                 PositiveReviews: stats?.PositiveReviews ?? 0,
                 NegativeReviews: stats?.NegativeReviews ?? 0,
                 TotalRequests: stats?.TotalRequests ?? 0,

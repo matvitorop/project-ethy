@@ -8,6 +8,8 @@
         bool IsEmailVerified,
         bool HasPhone,
         bool HasSocialLinks,
+        string? PhoneNumber, 
+        string? SocialLinks,
         int PositiveReviews,
         int NegativeReviews,
         int TotalRequests,

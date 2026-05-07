@@ -213,7 +213,8 @@ namespace server.Infrastructure.Repositories
                 hr.Id,
                 hr.CreatorId,
                 hr.AssignedUserId,
-                u.Username AS CreatorUsername,   -- ← додати
+                u.Username AS CreatorUsername,
+                au.Username AS AssignedUsername,
                 hr.Title,
                 hr.Description,
                 hr.Status,
@@ -222,7 +223,8 @@ namespace server.Infrastructure.Repositories
                 hr.CreatedAtUtc,
                 hr.IsHidden
             FROM HelpRequests hr
-            INNER JOIN Users u ON u.Id = hr.CreatorId  -- ← додати
+            INNER JOIN Users u ON u.Id = hr.CreatorId
+            LEFT JOIN Users au ON au.Id = hr.AssignedUserId
             WHERE hr.Id = @Id;
             """;
 
