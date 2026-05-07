@@ -3,6 +3,7 @@ using GraphQL.Types;
 using MediatR;
 using server.Application.Handlers.UserHandlers.LeaveComplaint;
 using server.Application.Handlers.UserHandlers.LeaveReview;
+using server.Application.Handlers.UserHandlers.ResendVerificationByEmail;
 using server.Application.Handlers.UserHandlers.SendVerificationEmail;
 using server.Application.Handlers.UserHandlers.SubmitVolunteerApplication;
 using server.Application.Handlers.UserHandlers.UpdateProfile;
@@ -98,7 +99,7 @@ namespace server.Presentation.GraphQL.Mutations
                 return r.ToPayload((val, err) => new AdminActionPayload(val, err));
             });
 
-            Field<BooleanGraphType>("verifyEmail")
+            Field<AdminActionPayloadType>("verifyEmail")
             .Argument<NonNullGraphType<StringGraphType>>("token")
             .ResolveAsync(async ctx =>
             {
@@ -125,7 +126,14 @@ namespace server.Presentation.GraphQL.Mutations
                 return r.ToPayload((val, err) => new SubmitVolunteerApplicationPayload(val, err));
             });
 
-
+            Field<AdminActionPayloadType>("resendVerificationEmail")
+            .Argument<NonNullGraphType<StringGraphType>>("email")
+            .ResolveAsync(async ctx =>
+            {
+                var r = await mediator.Send(new ResendVerificationByEmailCommand(
+                    ctx.GetArgument<string>("email")));
+                return r.ToPayload((val, err) => new AdminActionPayload(val, err));
+            });
 
         }
 

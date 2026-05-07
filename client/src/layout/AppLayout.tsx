@@ -1,5 +1,5 @@
 import { Link, Outlet } from 'react-router-dom'
-import { Sun, Moon, LogOut, MessageCircle, ClipboardList } from 'lucide-react'
+import { Sun, Moon, LogOut, MessageCircle, ClipboardList, Shield } from 'lucide-react'
 import ChatPanel from '../features/chat/ChatPanel'
 import { toggleChatPanel, toggleReportsPanel } from '../store/uiSlice'
 import Logo from '../components/Logo'
@@ -13,6 +13,7 @@ export default function AppLayout() {
     const dispatch = useAppDispatch()
     const theme = useAppSelector(s => s.theme.current)
     const username = useAppSelector(s => s.auth.username)
+    const role = useAppSelector(s => s.auth.role)
     const { logout, loading: logoutLoading } = useLogout()
 
     return (
@@ -31,6 +32,14 @@ export default function AppLayout() {
                             className="text-sm font-medium text-ink hover:text-primary transition-colors">
                             {username || 'Профіль'}
                         </Link>
+                        {role === 'Admin' && (
+                            <Link to="/admin"
+                                className="p-2 rounded-lg border border-border hover:border-primary text-ink-muted hover:text-primary transition-colors"
+                                title="Адмін-панель"
+                            >
+                                <Shield size={16} />
+                            </Link>
+                        )}
                         <button
                             onClick={() => dispatch(toggleChatPanel())}
                             className="p-2 rounded-lg border border-border hover:border-primary text-ink-muted hover:text-primary transition-colors"

@@ -5,15 +5,15 @@ using server.Presentation.GraphQL.Types.ErrorTypes;
 
 namespace server.Presentation.GraphQL.Types.AdminTypes
 {
-    public class ComplaintsPayloadType : ObjectGraphType<Result<List<AdminComplaintDto>>>
+    public class ComplaintsPayloadType : ObjectGraphType<ComplaintsPayload>
     {
         public ComplaintsPayloadType()
         {
+            IsTypeOf = obj => obj is ComplaintsPayload;
             Field<ListGraphType<AdminComplaintDtoType>>("items")
-                .Resolve(ctx => ctx.Source.IsSuccess ? ctx.Source.Value : null);
+                .Resolve(ctx => ctx.Source.Items);
             Field<ErrorPayloadType>("error")
-                .Resolve(ctx => ctx.Source.IsSuccess ? null
-                    : new ErrorPayload(ctx.Source.Error!.Message, ctx.Source.Error.Code));
+                .Resolve(ctx => ctx.Source.Error);
         }
     }
 }
