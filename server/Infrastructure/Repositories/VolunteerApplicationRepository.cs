@@ -69,5 +69,19 @@ namespace server.Infrastructure.Repositories
                 WHERE Id = @Id
                 """, app);
         }
+
+        public async Task<VolunteerApplicationDto?> GetLatestByUserIdAsync(Guid userId, CancellationToken ct)
+        {
+            using var conn = await _cf.CreateOpenConnectionAsync(ct);
+            return await conn.QueryFirstOrDefaultAsync<VolunteerApplicationDto>("""
+                SELECT TOP 1 va.Id, va.UserId, u.Username, va.OrganizationName,
+                       va.ActivityDescription, va.DocumentImageUrl, va.Status,
+                       va.AdminComment, va.SubmittedAtUtc, va.ReviewedAtUtc
+                FROM VolunteerApplications va
+                INNER JOIN Users u ON u.Id = va.UserId
+                WHERE va.UserId = @UserId
+                ORDER BY va.SubmittedAtUtc DESC
+        """, new { UserId = userId });
+        }
     }
 }

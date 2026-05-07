@@ -10,5 +10,6 @@ namespace server.Application.IRepositories
         Task<VolunteerApplication?> GetPendingByUserIdAsync(Guid userId, CancellationToken ct);
         Task<List<VolunteerApplicationDto>> GetAllAsync(int? status, CancellationToken ct);
         Task UpdateAsync(VolunteerApplication application, CancellationToken ct);
+        Task<VolunteerApplicationDto?> GetLatestByUserIdAsync(Guid userId, CancellationToken ct);
     }
 }
