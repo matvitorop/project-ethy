@@ -271,6 +271,21 @@ export default function RequestDetailsPage() {
                         Є геолокація
                     </span>
                 )}
+                {/* ← додати */}
+                <Link
+                    to={`/profile/${hr.creatorId}`}
+                    className="flex items-center gap-1 hover:text-primary transition-colors"
+                >
+                    👤 {hr.creatorUsername}
+                </Link>
+                {hr.assignedUsername && (hr.status === 2 || hr.status === 3) && (
+                    <Link
+                        to={`/profile/${hr.assignedUserId}`}
+                        className="flex items-center gap-1 hover:text-primary transition-colors"
+                    >
+                        🤝 {hr.assignedUsername}
+                    </Link>
+                )}
             </div>
 
             {/* Основний контент */}

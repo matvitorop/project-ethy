@@ -34,6 +34,17 @@ namespace server.Presentation.GraphQL.Schemas
             });
             // ---
 
+
+            // Admin module
+            AddField(new FieldType
+            {
+                Name = "admin",
+                Description = "Admin mutations",
+                ResolvedType = provider.GetRequiredService<AdminMutation>(),
+                Resolver = new FuncFieldResolver<object>(_ => new object())
+            });
+            // ---
+
         }
     }
 }

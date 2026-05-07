@@ -1,4 +1,5 @@
-﻿using server.Application.Handlers.GetActiveRequests;
+﻿using server.Application.Handlers.AdminHandlers.AdminGetHelpRequests;
+using server.Application.Handlers.GetActiveRequests;
 using server.Application.Handlers.GetFullHelpRequest;
 using server.Application.Handlers.GetHelpRequestResponses;
 using server.Domain.Chat;
@@ -27,5 +28,10 @@ namespace server.Application.IRepositories
         Task CancelResponseAsync(Guid helpRequestId, Guid userId, CancellationToken ct);
         Task ResignAsExecutorAsync(HelpRequest request, Chat chat, HelpRequestEvent logEvent, CancellationToken ct);
         Task RemoveExecutorAsync(HelpRequest request, Chat chat, HelpRequestEvent logEvent, CancellationToken ct);
+        
+        // +++ Admin module
+        Task SetHiddenAsync(Guid helpRequestId, bool isHidden, CancellationToken ct);
+        Task<List<AdminHelpRequestDto>> GetAllForAdminAsync(int page, int pageSize, bool? isHidden, bool? isDeleted, CancellationToken ct);
+        // ---
     }
 }

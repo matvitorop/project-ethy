@@ -62,7 +62,10 @@ namespace server.Infrastructure.Repositories
                     PasswordSalt,
                     Role,
                     RegisteredAtUtc,
-                    HasActiveRequestLimit
+                    HasActiveRequestLimit,
+                    IsEmailVerified,
+                    BlockedUntilUtc,
+                    BlockReason
                 FROM Users
                 WHERE Email = @Email
                 """;
@@ -237,6 +240,49 @@ namespace server.Infrastructure.Repositories
             if (affectedRows == 0)
                 throw new InvalidOperationException(
                     $"User with id '{user.Id}' not found.");
+        }
+
+        public async Task VerifyEmailAsync(Guid userId, CancellationToken ct)
+        {
+            using var conn = await _connectionFactory.CreateOpenConnectionAsync(ct);
+            await conn.ExecuteAsync(
+                "UPDATE Users SET IsEmailVerified = 1 WHERE Id = @Id",
+                new { Id = userId });
+        }
+
+        public async Task UpdateLastVolunteerApplicationDateAsync(Guid userId, CancellationToken ct)
+        {
+            using var conn = await _connectionFactory.CreateOpenConnectionAsync(ct);
+            await conn.ExecuteAsync(
+                "UPDATE Users SET LastVolunteerApplicationAtUtc = @Now WHERE Id = @Id",
+                new { Id = userId, Now = DateTime.UtcNow });
+        }
+
+        public async Task UpdateRoleAsync(Guid userId, UserRole role, CancellationToken ct)
+        {
+            using var conn = await _connectionFactory.CreateOpenConnectionAsync(ct);
+            await conn.ExecuteAsync(
+                "UPDATE Users SET Role = @Role WHERE Id = @Id",
+                new { Id = userId, Role = (int)role });
+        }
+
+        public async Task BlockAsync(
+            Guid userId, DateTime? blockedUntilUtc, string reason, CancellationToken ct)
+        {
+            using var conn = await _connectionFactory.CreateOpenConnectionAsync(ct);
+            await conn.ExecuteAsync("""
+                UPDATE Users
+                SET BlockedUntilUtc = @BlockedUntilUtc, BlockReason = @BlockReason
+                WHERE Id = @Id
+        """, new { Id = userId, BlockedUntilUtc = blockedUntilUtc, BlockReason = reason });
+        }
+
+        public async Task UnblockAsync(Guid userId, CancellationToken ct)
+        {
+            using var conn = await _connectionFactory.CreateOpenConnectionAsync(ct);
+            await conn.ExecuteAsync(
+                "UPDATE Users SET BlockedUntilUtc = NULL, BlockReason = NULL WHERE Id = @Id",
+                new { Id = userId });
         }
     }
 }
