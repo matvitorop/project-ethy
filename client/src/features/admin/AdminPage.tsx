@@ -16,7 +16,7 @@ import Modal from '../../components/Modal'
 import { PageSpinner } from '../../components/Spinner'
 
 type Tab = 'volunteers' | 'complaints' | 'requests'
-
+const API_BASE_URL = 'http://localhost:5274'
 interface AdminActionResult { success: boolean | null; error: ApiError | null }
 interface ReviewVolunteerData { admin: { reviewVolunteerApplication: AdminActionResult } }
 interface ResolveComplaintData { admin: { resolveComplaint: AdminActionResult } }
@@ -35,7 +35,6 @@ const REQUEST_STATUS: Record<number, string> = {
 
 export default function AdminPage() {
     const [tab, setTab] = useState<Tab>('volunteers')
-
     const { data: appData, loading: appLoading, refetch: refetchApps } =
         useQuery<VolunteerApplicationsData>(GET_VOLUNTEER_APPLICATIONS, {
             variables: { status: 0 }, fetchPolicy: 'cache-and-network',
@@ -138,10 +137,19 @@ function VolunteersTab({ items, loading, onRefresh }: VolunteersTabProps) {
                             </div>
                             {app.documentImageUrl && (
                                 <div>
-                                    <p className="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-1">Документ</p>
-                                    <a href={app.documentImageUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
-                                        Переглянути документ
+                                    <p className="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Документ</p>
+                                    <a                                          
+                                        href={`${API_BASE_URL}/uploads/volunteer-documents/${app.documentImageUrl}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        <img
+                                            src={`${API_BASE_URL}/uploads/volunteer-documents/${app.documentImageUrl}`}
+                                            alt="Документ волонтера"
+                                            className="max-h-48 rounded-lg border border-border object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                                        />
                                     </a>
+                                    <p className="text-xs text-ink-muted mt-1">Натисніть для перегляду у повному розмірі</p>
                                 </div>
                             )}
                             {app.status === 0 && (

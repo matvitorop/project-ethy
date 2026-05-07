@@ -8,6 +8,7 @@ using server.Application.Handlers.UserHandlers.GetPublicProfile;
 using server.Application.Handlers.UserHandlers.GetUserReviews;
 using server.Presentation.GraphQL.Extensions;
 using server.Presentation.GraphQL.Types.GetUserStatistic;
+using server.Presentation.GraphQL.Types.MyVolunteerApplication;
 using server.Presentation.GraphQL.Types.ProfileTypes;
 using server.Presentation.GraphQL.Types.PublicProfileTypes;
 using server.Presentation.GraphQL.Types.ReviewTypes;

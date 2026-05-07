@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using server.Application.IRepositories;
+using server.Application.IServices;
 using server.Domain;
 using server.Domain.Primitives;
 using server.Domain.UserAndVolunteer;
@@ -11,13 +12,16 @@ namespace server.Application.Handlers.UserHandlers.SubmitVolunteerApplication
     {
         private readonly IUserRepository _users;
         private readonly IVolunteerApplicationRepository _applications;
+        private readonly IImageStorageService _imageStorage;
 
         public SubmitVolunteerApplicationHandler(
             IUserRepository users,
-            IVolunteerApplicationRepository applications)
+            IVolunteerApplicationRepository applications,
+            IImageStorageService imageStorage)
         {
             _users = users;
             _applications = applications;
+            _imageStorage = imageStorage;
         }
 
         public async Task<Result<Guid>> Handle(
@@ -55,6 +59,13 @@ namespace server.Application.Handlers.UserHandlers.SubmitVolunteerApplication
                     "You already have a pending application",
                     "Volunteer.PENDING_EXISTS"));
 
+            if (!string.IsNullOrEmpty(request.DocumentImageUrl))
+            {
+                await _imageStorage.MoveVolunteerDocumentFromTempAsync(
+                    request.DocumentImageUrl, ct);
+            }
+
+            // Потім створюємо заявку
             var application = new VolunteerApplication(
                 request.UserId,
                 request.OrganizationName,
