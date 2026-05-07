@@ -49,6 +49,8 @@ export default function PublicProfilePage() {
     const profile = data.userQuery.getPublicProfile.profile
     const reviews = reviewsData?.userQuery.getUserReviews.reviews ?? []
     const isOwn = currentUserId === profile.id
+    const positiveCount = reviews.filter(r => r.isPositive).length  
+    const negativeCount = reviews.filter(r => !r.isPositive).length
 
     return (
         <div className="max-w-2xl mx-auto space-y-5">
@@ -121,14 +123,14 @@ export default function PublicProfilePage() {
                     <div className="flex-1 flex items-center gap-3 p-3 bg-success/10 rounded-xl border border-success/20">
                         <ThumbsUp size={20} className="text-success" />
                         <div>
-                            <p className="text-xl font-bold text-success">{profile.positiveReviews}</p>
+                            <p className="text-xl font-bold text-success">{positiveCount}</p>
                             <p className="text-xs text-ink-muted">Позитивних</p>
                         </div>
                     </div>
                     <div className="flex-1 flex items-center gap-3 p-3 bg-error/10 rounded-xl border border-error/20">
                         <ThumbsDown size={20} className="text-error" />
                         <div>
-                            <p className="text-xl font-bold text-error">{profile.negativeReviews}</p>
+                            <p className="text-xl font-bold text-error">{negativeCount}</p>
                             <p className="text-xs text-ink-muted">Негативних</p>
                         </div>
                     </div>

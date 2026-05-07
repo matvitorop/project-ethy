@@ -271,6 +271,13 @@ export default function RequestDetailsPage() {
                         Є геолокація
                     </span>
                 )}
+                {/* ← додати */}
+                <Link
+                    to={`/profile/${hr.creatorId}`}
+                    className="flex items-center gap-1 hover:text-primary transition-colors"
+                >
+                    👤 {hr.creatorUsername}
+                </Link>
             </div>
 
             {/* Основний контент */}

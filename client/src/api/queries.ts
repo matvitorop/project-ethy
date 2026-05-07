@@ -91,6 +91,7 @@ export const GET_HELP_REQUEST_BY_ID = gql`
           description
           status
           creatorId
+          creatorUsername
           assignedUserId
           latitude
           longitude
