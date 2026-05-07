@@ -34,6 +34,7 @@ export const GET_PROFILE = gql`
           phoneNumber
           socialLinks
           isEmailVerified
+          role
         }
         error { code message }
       }
@@ -478,6 +479,238 @@ export const UPDATE_PROFILE = gql`
   mutation UpdateProfile($phoneNumber: String, $socialLinks: String) {
     user {
       updateProfile(phoneNumber: $phoneNumber, socialLinks: $socialLinks) {
+        success
+        error { code message }
+      }
+    }
+  }
+`
+// ========================
+// Admin module queries
+// ========================
+
+export const VERIFY_EMAIL = gql`
+  mutation VerifyEmail($token: String!) {
+    user {
+      verifyEmail(token: $token) {
+        success
+        error { code message }
+      }
+    }
+  }
+`
+
+export const SEND_VERIFICATION_EMAIL = gql`
+  mutation SendVerificationEmail {
+    user {
+      sendVerificationEmail {
+        success
+        error { code message }
+      }
+    }
+  }
+`
+
+export const SUBMIT_VOLUNTEER_APPLICATION = gql`
+  mutation SubmitVolunteerApplication(
+    $organizationName: String!
+    $activityDescription: String!
+    $documentImageUrl: String
+  ) {
+    user {
+      submitVolunteerApplication(
+        organizationName: $organizationName
+        activityDescription: $activityDescription
+        documentImageUrl: $documentImageUrl
+      ) {
+        applicationId
+        error { code message }
+      }
+    }
+  }
+`
+
+export const GET_PUBLIC_PROFILE = gql`
+  query GetPublicProfile($userId: ID!) {
+    userQuery {
+      getPublicProfile(userId: $userId) {
+        profile {
+          id
+          username
+          role
+          registeredAtUtc
+          isEmailVerified
+          hasPhone
+          hasSocialLinks
+          positiveReviews
+          negativeReviews
+          totalRequests
+          completedRequests
+        }
+        error { code message }
+      }
+    }
+  }
+`
+
+export const GET_USER_REVIEWS_PUBLIC = gql`
+  query GetUserReviewsPublic($targetUserId: ID!) {
+    userQuery {
+      getUserReviews(targetUserId: $targetUserId) {
+        reviews {
+          id
+          reviewerUsername
+          isPositive
+          comment
+          createdAtUtc
+        }
+        error { code message }
+      }
+    }
+  }
+`
+
+export const GET_ADMIN_HELP_REQUESTS = gql`
+  query GetAdminHelpRequests($page: Int, $pageSize: Int, $isHidden: Boolean, $isDeleted: Boolean) {
+    adminQuery {
+      helpRequests(page: $page, pageSize: $pageSize, isHidden: $isHidden, isDeleted: $isDeleted) {
+        items {
+          id
+          title
+          status
+          isHidden
+          isDeleted
+          creatorUsername
+          createdAtUtc
+        }
+        error { code message }
+      }
+    }
+  }
+`
+
+export const GET_COMPLAINTS = gql`
+  query GetComplaints($isResolved: Boolean) {
+    adminQuery {
+      complaints(isResolved: $isResolved) {
+        items {
+          id
+          reporterUserId
+          reporterUsername
+          targetUserId
+          targetUsername
+          reason
+          isResolved
+          createdAtUtc
+        }
+        error { code message }
+      }
+    }
+  }
+`
+
+export const GET_VOLUNTEER_APPLICATIONS = gql`
+  query GetVolunteerApplications($status: Int) {
+    adminQuery {
+      volunteerApplications(status: $status) {
+        items {
+          id
+          userId
+          username
+          organizationName
+          activityDescription
+          documentImageUrl
+          status
+          adminComment
+          submittedAtUtc
+          reviewedAtUtc
+        }
+        error { code message }
+      }
+    }
+  }
+`
+
+export const GET_BLOCK_HISTORY = gql`
+  query GetBlockHistory($userId: ID!) {
+    adminQuery {
+      blockHistory(userId: $userId) {
+        items {
+          id
+          adminUsername
+          reason
+          blockedUntilUtc
+          createdAtUtc
+        }
+        error { code message }
+      }
+    }
+  }
+`
+
+export const BLOCK_USER = gql`
+  mutation BlockUser($targetUserId: ID!, $reason: String!, $blockedUntilUtc: DateTime) {
+    admin {
+      blockUser(targetUserId: $targetUserId, reason: $reason, blockedUntilUtc: $blockedUntilUtc) {
+        success
+        error { code message }
+      }
+    }
+  }
+`
+
+export const UNBLOCK_USER = gql`
+  mutation UnblockUser($targetUserId: ID!) {
+    admin {
+      unblockUser(targetUserId: $targetUserId) {
+        success
+        error { code message }
+      }
+    }
+  }
+`
+
+export const HIDE_HELP_REQUEST = gql`
+  mutation HideHelpRequest($helpRequestId: ID!, $hide: Boolean!) {
+    admin {
+      hideHelpRequest(helpRequestId: $helpRequestId, hide: $hide) {
+        success
+        error { code message }
+      }
+    }
+  }
+`
+
+export const RESOLVE_COMPLAINT = gql`
+  mutation ResolveComplaint($complaintId: ID!) {
+    admin {
+      resolveComplaint(complaintId: $complaintId) {
+        success
+        error { code message }
+      }
+    }
+  }
+`
+
+export const REVIEW_VOLUNTEER_APPLICATION = gql`
+  mutation ReviewVolunteerApplication($applicationId: ID!, $approve: Boolean!, $comment: String) {
+    admin {
+      reviewVolunteerApplication(
+        applicationId: $applicationId
+        approve: $approve
+        comment: $comment
+      ) {
+        success
+        error { code message }
+      }
+    }
+  }
+`
+
+export const RESEND_VERIFICATION_EMAIL = gql`
+  mutation ResendVerificationEmail($email: String!) {
+    user {
+      resendVerificationEmail(email: $email) {
         success
         error { code message }
       }

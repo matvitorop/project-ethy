@@ -9,8 +9,9 @@
         // Trust module
         string? PhoneNumber,
         string? SocialLinks,
-        bool IsEmailVerified
-        // ---
+        bool IsEmailVerified,
+        string Role
+    // ---
 
     );
 }

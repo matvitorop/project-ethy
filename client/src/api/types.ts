@@ -47,6 +47,7 @@ export interface ProfileData {
                 phoneNumber: string | null
                 socialLinks: string | null
                 isEmailVerified: boolean
+                role: string
             } | null
             error: ApiError | null
         }
@@ -344,6 +345,157 @@ export interface UpdateProfileData {
     user: {
         updateProfile: {
             success: boolean
+            error: ApiError | null
+        }
+    }
+}
+
+
+// ========================
+// Admin module types
+// ========================
+
+export interface PublicProfileDto {
+    id: string
+    username: string
+    role: number
+    registeredAtUtc: string
+    isEmailVerified: boolean
+    hasPhone: boolean
+    hasSocialLinks: boolean
+    positiveReviews: number
+    negativeReviews: number
+    totalRequests: number
+    completedRequests: number
+}
+
+export interface PublicProfileData {
+    userQuery: {
+        getPublicProfile: {
+            profile: PublicProfileDto | null
+            error: ApiError | null
+        }
+    }
+}
+
+export interface AdminHelpRequestItem {
+    id: string
+    title: string
+    status: number
+    isHidden: boolean
+    isDeleted: boolean
+    creatorUsername: string
+    createdAtUtc: string
+}
+
+export interface AdminHelpRequestsData {
+    adminQuery: {
+        helpRequests: {
+            items: AdminHelpRequestItem[] | null
+            error: ApiError | null
+        }
+    }
+}
+
+export interface AdminComplaintItem {
+    id: string
+    reporterUserId: string
+    reporterUsername: string
+    targetUserId: string
+    targetUsername: string
+    reason: string
+    isResolved: boolean
+    createdAtUtc: string
+}
+
+export interface ComplaintsData {
+    adminQuery: {
+        complaints: {
+            items: AdminComplaintItem[] | null
+            error: ApiError | null
+        }
+    }
+}
+
+export interface VolunteerApplicationItem {
+    id: string
+    userId: string
+    username: string
+    organizationName: string
+    activityDescription: string
+    documentImageUrl: string | null
+    status: number
+    adminComment: string | null
+    submittedAtUtc: string
+    reviewedAtUtc: string | null
+}
+
+export interface VolunteerApplicationsData {
+    adminQuery: {
+        volunteerApplications: {
+            items: VolunteerApplicationItem[] | null
+            error: ApiError | null
+        }
+    }
+}
+
+export interface BlockHistoryItem {
+    id: string
+    adminUsername: string
+    reason: string
+    blockedUntilUtc: string | null
+    createdAtUtc: string
+}
+
+export interface BlockHistoryData {
+    adminQuery: {
+        blockHistory: {
+            items: BlockHistoryItem[] | null
+            error: ApiError | null
+        }
+    }
+}
+
+export interface AdminActionData {
+    admin: {
+        [key: string]: {
+            success: boolean | null
+            error: ApiError | null
+        }
+    }
+}
+
+export interface SubmitVolunteerApplicationData {
+    user: {
+        submitVolunteerApplication: {
+            applicationId: string | null
+            error: ApiError | null
+        }
+    }
+}
+
+export interface VerifyEmailData {
+    user: {
+        verifyEmail: {
+            success: boolean | null
+            error: ApiError | null
+        }
+    }
+}
+
+export interface SendVerificationEmailData {
+    user: {
+        sendVerificationEmail: {
+            success: boolean | null
+            error: ApiError | null
+        }
+    }
+}
+
+export interface ResendVerificationEmailData {
+    user: {
+        resendVerificationEmail: {
+            success: boolean | null
             error: ApiError | null
         }
     }

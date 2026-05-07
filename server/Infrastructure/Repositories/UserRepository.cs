@@ -62,7 +62,10 @@ namespace server.Infrastructure.Repositories
                     PasswordSalt,
                     Role,
                     RegisteredAtUtc,
-                    HasActiveRequestLimit
+                    HasActiveRequestLimit,
+                    IsEmailVerified,
+                    BlockedUntilUtc,
+                    BlockReason
                 FROM Users
                 WHERE Email = @Email
                 """;

@@ -32,7 +32,8 @@ namespace server.Application.Handlers.UserHandlers.GetProfile
                     user.RegisteredAtUtc,
                     user.PhoneNumber,
                     user.SocialLinks,
-                    user.IsEmailVerified));
+                    user.IsEmailVerified,
+                    user.Role.ToString()));
         }
     }
 }

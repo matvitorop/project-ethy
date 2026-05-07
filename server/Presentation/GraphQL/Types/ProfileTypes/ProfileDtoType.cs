@@ -15,6 +15,7 @@ namespace server.Presentation.GraphQL.Types.ProfileTypes
             Field(x => x.PhoneNumber, nullable: true);
             Field(x => x.SocialLinks, nullable: true);
             Field(x => x.IsEmailVerified);
+            Field(x => x.Role);
             // ---
 
         }

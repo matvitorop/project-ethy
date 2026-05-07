@@ -51,14 +51,15 @@ namespace server.Application.Handlers.RegisterUser
             var frontendUrl = _config["Smtp:FrontendBaseUrl"] ?? "http://localhost:5173";
             var link = $"{frontendUrl}/verify-email?token={verificationToken.Token}";
 
-            try
-            {
-                await _emailSender.SendEmailVerificationAsync(user.Email, user.Username, link);
-            }
-            catch
-            {
-                // Email failure не блокує реєстрацію
-            }
+            await _emailSender.SendEmailVerificationAsync(user.Email, user.Username, link);
+            //try
+            //{
+            //    await _emailSender.SendEmailVerificationAsync(user.Email, user.Username, link);
+            //}
+            //catch
+            //{
+            //    // Email failure не блокує реєстрацію
+            //}
 
             // Повертаємо порожній рядок — JWT не видається до верифікації
             return Result<string>.Success(string.Empty);
