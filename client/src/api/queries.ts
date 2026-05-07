@@ -682,9 +682,9 @@ export const HIDE_HELP_REQUEST = gql`
 `
 
 export const RESOLVE_COMPLAINT = gql`
-  mutation ResolveComplaint($complaintId: ID!) {
+  mutation ResolveComplaint($complaintId: ID!, $adminComment: String) {
     admin {
-      resolveComplaint(complaintId: $complaintId) {
+      resolveComplaint(complaintId: $complaintId, adminComment: $adminComment) {
         success
         error { code message }
       }

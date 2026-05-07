@@ -58,10 +58,13 @@ namespace server.Presentation.GraphQL.Mutations
             Field<AdminActionPayloadType>("resolveComplaint")
             .Authorize().AuthorizeWithRoles("Admin")
             .Argument<NonNullGraphType<IdGraphType>>("complaintId")
+            .Argument<StringGraphType>("adminComment")
             .ResolveAsync(async ctx =>
             {
-                var r = await mediator.Send(
-                    new ResolveComplaintCommand(ctx.GetArgument<Guid>("complaintId")));
+                var cmd = new ResolveComplaintCommand(
+                    ctx.GetArgument<Guid>("complaintId"),
+                    ctx.GetArgument<string?>("adminComment"));
+                var r = await mediator.Send(cmd);
                 return r.ToPayload((val, err) => new AdminActionPayload(val, err));
             });
 

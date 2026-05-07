@@ -7,7 +7,7 @@ namespace server.Application.IRepositories
     {
         Task AddAsync(UserComplaint complaint, CancellationToken ct);
         Task<List<AdminComplaintDto>> GetAllForAdminAsync(bool? isResolved, CancellationToken ct);
-        Task<bool> MarkAsResolvedAsync(Guid complaintId, CancellationToken ct);
+        Task<bool> MarkAsResolvedAsync(Guid complaintId, string? adminComment, CancellationToken ct)
     }
 
 }

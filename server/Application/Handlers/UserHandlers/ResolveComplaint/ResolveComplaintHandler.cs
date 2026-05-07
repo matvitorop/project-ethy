@@ -13,7 +13,8 @@ namespace server.Application.Handlers.UserHandlers.ResolveComplaint
         public async Task<Result<bool>> Handle(
             ResolveComplaintCommand request, CancellationToken ct)
         {
-            var ok = await _complaints.MarkAsResolvedAsync(request.ComplaintId, ct);
+            var ok = await _complaints.MarkAsResolvedAsync(
+                request.ComplaintId, request.AdminComment, ct);
             return ok
                 ? Result<bool>.Success(true)
                 : Result<bool>.Failure(new Error("Complaint not found", "Complaint.NOT_FOUND"));

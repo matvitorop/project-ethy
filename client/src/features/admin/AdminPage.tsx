@@ -196,8 +196,11 @@ interface ComplaintsTabProps { items: AdminComplaintItem[]; loading: boolean; on
 
 function ComplaintsTab({ items, loading, onRefresh }: ComplaintsTabProps) {
     const dispatch = useAppDispatch()
-    const [blockModal, setBlockModal] = useState<{ userId: string; username: string } | null>(null)
-    const [blockForm, setBlockForm] = useState({ reason: '', hours: '24' })
+    const [blockModal, setBlockModal] = useState<{
+        userId: string; username: string; complaintId: string} | null>(null)
+    const [blockForm, setBlockForm] = useState({ reason: '', hours: '24', adminComment: '' })
+    const [resolveModal, setResolveModal] = useState<{ complaintId: string } | null>(null)
+    const [resolveComment, setResolveComment] = useState('')
 
     const BLOCK_PRESETS = [
         { label: '1 день', hours: 24 }, { label: '3 дні', hours: 72 },
@@ -214,10 +217,23 @@ function ComplaintsTab({ items, loading, onRefresh }: ComplaintsTabProps) {
     })
 
     const [blockUser, { loading: blocking }] = useMutation<BlockUserData>(BLOCK_USER, {
-        onCompleted: (data) => {
+        onCompleted: async (data) => {
             const r = data.admin.blockUser
-            if (r.error) dispatch(addToast({ type: 'error', message: r.error.message }))
-            else { dispatch(addToast({ type: 'success', message: 'Користувача заблоковано' })); setBlockModal(null); onRefresh() }
+            if (r.error) {
+                dispatch(addToast({ type: 'error', message: r.error.message }))
+            } else {
+                // Автоматично закриваємо скаргу
+                await resolve({
+                    variables: {
+                        complaintId: blockModal!.complaintId,
+                        adminComment: blockForm.adminComment || null
+                    }
+                })
+                dispatch(addToast({ type: 'success', message: 'Користувача заблоковано, скаргу закрито' }))
+                setBlockModal(null)
+                setBlockForm({ reason: '', hours: '24', adminComment: '' })
+                onRefresh()
+            }
         },
     })
 
@@ -245,11 +261,15 @@ function ComplaintsTab({ items, loading, onRefresh }: ComplaintsTabProps) {
                         <p className="text-xs text-ink-soft">{new Date(c.createdAtUtc).toLocaleDateString('uk-UA')}</p>
                     </div>
                     <div className="flex gap-2 pt-1 border-t border-border">
-                        <button onClick={() => setBlockModal({ userId: c.targetUserId, username: c.targetUsername })}
+                        <button onClick={() => setBlockModal({
+                            userId: c.targetUserId,
+                            username: c.targetUsername,
+                            complaintId: c.id
+                        })}
                             className="px-3 py-1.5 text-xs font-medium bg-error/10 text-error rounded-lg hover:bg-error/20 transition-colors">
                             Заблокувати {c.targetUsername}
                         </button>
-                        <button onClick={() => resolve({ variables: { complaintId: c.id } })}
+                        <button onClick={() => setResolveModal({ complaintId: c.id })}
                             className="px-3 py-1.5 text-xs font-medium bg-surface-muted text-ink-muted rounded-lg hover:text-success transition-colors border border-border">
                             Позначити розглянутою
                         </button>
@@ -275,6 +295,15 @@ function ComplaintsTab({ items, loading, onRefresh }: ComplaintsTabProps) {
                             rows={3} placeholder="Вкажіть причину..."
                             className="w-full px-4 py-3 bg-surface-muted border border-border rounded-lg text-sm text-ink focus:outline-none focus:border-primary resize-none" />
                     </div>
+                    <div>
+                        <label className="block text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">
+                            Відповідь скаржнику <span className="normal-case font-normal">(необов'язково)</span>
+                        </label>
+                        <textarea value={blockForm.adminComment}
+                            onChange={e => setBlockForm(f => ({ ...f, adminComment: e.target.value }))}
+                            rows={2} placeholder="Повідомлення для скаржника..."
+                            className="w-full px-4 py-3 bg-surface-muted border border-border rounded-lg text-sm text-ink focus:outline-none focus:border-primary resize-none" />
+                    </div>
                     <div className="flex gap-3">
                         <button onClick={() => setBlockModal(null)}
                             className="flex-1 py-2.5 border border-border rounded-lg text-sm text-ink hover:border-primary transition-colors">
@@ -283,6 +312,33 @@ function ComplaintsTab({ items, loading, onRefresh }: ComplaintsTabProps) {
                         <button onClick={handleBlock} disabled={blocking || !blockForm.reason.trim()}
                             className="flex-1 py-2.5 bg-error text-white rounded-lg text-sm font-semibold disabled:opacity-60 hover:opacity-90 transition-colors">
                             {blocking ? 'Блокування...' : 'Заблокувати'}
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+            <Modal isOpen={!!resolveModal} onClose={() => { setResolveModal(null); setResolveComment('') }}
+                title="Розглянути скаргу">
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">
+                            Відповідь скаржнику <span className="normal-case font-normal">(необов'язково)</span>
+                        </label>
+                        <textarea value={resolveComment} onChange={e => setResolveComment(e.target.value)}
+                            rows={3} placeholder="Опишіть результат розгляду..."
+                            className="w-full px-4 py-3 bg-surface-muted border border-border rounded-lg text-sm text-ink focus:outline-none focus:border-primary resize-none" />
+                    </div>
+                    <div className="flex gap-3">
+                        <button onClick={() => { setResolveModal(null); setResolveComment('') }}
+                            className="flex-1 py-2.5 border border-border rounded-lg text-sm text-ink hover:border-primary transition-colors">
+                            Скасувати
+                        </button>
+                        <button onClick={() => {
+                            resolve({ variables: { complaintId: resolveModal!.complaintId, adminComment: resolveComment || null } })
+                            setResolveModal(null)
+                            setResolveComment('')
+                        }}
+                            className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-light transition-colors">
+                            Підтвердити
                         </button>
                     </div>
                 </div>
