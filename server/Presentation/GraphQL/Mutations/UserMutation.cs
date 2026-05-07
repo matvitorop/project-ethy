@@ -109,7 +109,7 @@ namespace server.Presentation.GraphQL.Mutations
             });
 
             // +++ Admin module: Volunteer application
-            Field<IdGraphType>("submitVolunteerApplication")
+            Field<SubmitVolunteerApplicationPayloadType>("submitVolunteerApplication")
             .Authorize()
             .Argument<NonNullGraphType<StringGraphType>>("organizationName")
             .Argument<NonNullGraphType<StringGraphType>>("activityDescription")

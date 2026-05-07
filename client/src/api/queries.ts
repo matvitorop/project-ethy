@@ -721,3 +721,19 @@ export const RESEND_VERIFICATION_EMAIL = gql`
     }
   }
 `
+
+export const GET_MY_VOLUNTEER_APPLICATION = gql`
+  query GetMyVolunteerApplication {
+    userQuery {
+      getMyVolunteerApplication {
+        application {
+          id
+          status
+          adminComment
+          submittedAtUtc
+        }
+        error { code message }
+      }
+    }
+  }
+`

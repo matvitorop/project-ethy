@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { useQuery, useMutation } from '@apollo/client/react'
 import { useNavigate } from 'react-router-dom'
-import { Pencil, Check, X, Eye, EyeOff, ThumbsUp, ThumbsDown, Phone, Link as LinkIcon } from 'lucide-react'
+import { Shield, Pencil, Check, X, Eye, EyeOff, ThumbsUp, ThumbsDown, Phone, Link as LinkIcon, Upload } from 'lucide-react'
 import {
     GET_PROFILE, UPDATE_USERNAME, CHANGE_PASSWORD, DELETE_ACCOUNT,
     GET_MY_REQUESTS, GET_ASSIGNEE_REQUESTS,
-    UPDATE_PROFILE, GET_USER_REVIEWS,
+    UPDATE_PROFILE, GET_USER_REVIEWS, GET_MY_VOLUNTEER_APPLICATION, SUBMIT_VOLUNTEER_APPLICATION
 } from '../../api/queries'
 import type {
     ProfileData,
@@ -15,6 +15,8 @@ import type {
     HelpRequestsPageData,
     UpdateProfileData,
     GetUserReviewsData,
+    MyVolunteerApplicationData,
+    SubmitVolunteerApplicationData
 } from '../../api/types'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { addToast } from '../../store/uiSlice'
@@ -24,6 +26,7 @@ import Modal from '../../components/Modal'
 import RequestCard from '../requests/RequestCard'
 
 const PAGE_SIZE = 5
+const API_BASE_URL = 'http://localhost:5274'
 
 type ProfileTab = 'owner' | 'assignee'
 
@@ -31,215 +34,191 @@ export default function ProfilePage() {
     const dispatch = useAppDispatch()
     const navigate = useNavigate()
     const userId = useAppSelector(s => s.auth.userId)
+    const role = useAppSelector(s => s.auth.role)
 
-    // Стан для username
     const [editingUsername, setEditingUsername] = useState(false)
     const [newUsername, setNewUsername] = useState('')
-
-    // Стан для паролю
     const [editingPassword, setEditingPassword] = useState(false)
-    const [passwordForm, setPasswordForm] = useState({
-        oldPassword: '',
-        newPassword: '',
-        confirmNewPassword: '',
-    })
+    const [passwordForm, setPasswordForm] = useState({ oldPassword: '', newPassword: '', confirmNewPassword: '' })
     const [showPasswords, setShowPasswords] = useState(false)
-
-    // Стан для видалення
     const [deleteModalOpen, setDeleteModalOpen] = useState(false)
-
-    // Стан для контактної інформації
     const [editingContacts, setEditingContacts] = useState(false)
     const [contactForm, setContactForm] = useState({ phoneNumber: '', socialLinks: '' })
-
-    // Вкладки заявок
     const [activeTab, setActiveTab] = useState<ProfileTab>('owner')
     const [ownerPage, setOwnerPage] = useState(1)
     const [assigneePage, setAssigneePage] = useState(1)
 
-    // GET_PROFILE
+    // Volunteer modal
+    const [volModalOpen, setVolModalOpen] = useState(false)
+    const [volUploading, setVolUploading] = useState(false)
+    const [volForm, setVolForm] = useState({ organizationName: '', activityDescription: '', documentImageUrl: '' })
+
     const { data: profileData, loading: profileLoading } = useQuery<ProfileData>(GET_PROFILE, {
         fetchPolicy: 'cache-first',
     })
 
-    // Відгуки про поточного користувача
     const { data: reviewsData } = useQuery<GetUserReviewsData>(GET_USER_REVIEWS, {
         variables: { targetUserId: userId },
         skip: !userId,
         fetchPolicy: 'cache-first',
     })
 
-    // Заявки як власник
-    const { data: ownerData, loading: ownerLoading } = useQuery<HelpRequestsPageData>(
-        GET_MY_REQUESTS,
-        {
-            variables: { page: ownerPage, pageSize: PAGE_SIZE, creatorId: userId },
-            skip: !userId || activeTab !== 'owner',
-            fetchPolicy: 'cache-and-network',
-        }
-    )
+    const { data: ownerData, loading: ownerLoading } = useQuery<HelpRequestsPageData>(GET_MY_REQUESTS, {
+        variables: { page: ownerPage, pageSize: PAGE_SIZE, creatorId: userId },
+        skip: !userId || activeTab !== 'owner',
+        fetchPolicy: 'cache-and-network',
+        notifyOnNetworkStatusChange: false,
+    })
 
+    const { data: assigneeData, loading: assigneeLoading } = useQuery<HelpRequestsPageData>(GET_ASSIGNEE_REQUESTS, {
+        variables: { page: assigneePage, pageSize: PAGE_SIZE, assignedUserId: userId },
+        skip: !userId || activeTab !== 'assignee',
+        fetchPolicy: 'cache-and-network',
+        notifyOnNetworkStatusChange: false,
+    })
 
-    // Заявки як помічник
-    const { data: assigneeData, loading: assigneeLoading } = useQuery<HelpRequestsPageData>(
-        GET_ASSIGNEE_REQUESTS,
-        {
-            variables: { page: assigneePage, pageSize: PAGE_SIZE, assignedUserId: userId },
-            skip: !userId || activeTab !== 'assignee',
-            fetchPolicy: 'cache-and-network',
-        }
-    )
+    const { data: volAppData, refetch: refetchVolApp } = useQuery<MyVolunteerApplicationData>(GET_MY_VOLUNTEER_APPLICATION, {
+        fetchPolicy: 'cache-and-network',
+        skip: role === 'Volunteer' || role === 'Admin' || !userId,
+    })
 
-    // Mutations
-    const [updateUsername, { loading: updatingUsername }] = useMutation<UpdateUsernameData>(
-        UPDATE_USERNAME,
-        {
-            onCompleted: (data) => {
-                const result = data.auth.updateUsername
-                if (result.error) {
-                    dispatch(addToast({ type: 'error', message: result.error.message }))
-                } else {
-                    dispatch(addToast({ type: 'success', message: 'Ім\'я змінено!' }))
-                    dispatch(setAuth({
-                        userId: userId ?? '',
-                        username: newUsername,
-                        email: profile?.email ?? '',
-                    }))
-                    setEditingUsername(false)
-                }
-            },
-            onError: () => dispatch(addToast({ type: 'error', message: 'Помилка зміни імені' })),
-        }
-    )
+    const [submitApplication, { loading: submitting }] = useMutation<SubmitVolunteerApplicationData>(SUBMIT_VOLUNTEER_APPLICATION, {
+        onCompleted: (data) => {
+            const r = data.user.submitVolunteerApplication
+            if (r.error) {
+                dispatch(addToast({ type: 'error', message: r.error.message }))
+            } else {
+                dispatch(addToast({ type: 'success', message: 'Заявку подано на розгляд!' }))
+                setVolForm({ organizationName: '', activityDescription: '', documentImageUrl: '' })
+                setVolModalOpen(false)
+                refetchVolApp()
+            }
+        },
+        onError: () => dispatch(addToast({ type: 'error', message: 'Помилка подачі заявки' })),
+    })
 
-    const [changePassword, { loading: changingPassword }] = useMutation<ChangePasswordData>(
-        CHANGE_PASSWORD,
-        {
-            onCompleted: (data) => {
-                const result = data.auth.changePassword
-                if (result.error) {
-                    dispatch(addToast({ type: 'error', message: result.error.message }))
-                } else {
-                    dispatch(addToast({ type: 'success', message: 'Пароль змінено!' }))
-                    setEditingPassword(false)
-                    setPasswordForm({ oldPassword: '', newPassword: '', confirmNewPassword: '' })
-                }
-            },
-            onError: () => dispatch(addToast({ type: 'error', message: 'Помилка зміни паролю' })),
-        }
-    )
+    const [updateUsername, { loading: updatingUsername }] = useMutation<UpdateUsernameData>(UPDATE_USERNAME, {
+        onCompleted: (data) => {
+            const result = data.auth.updateUsername
+            if (result.error) {
+                dispatch(addToast({ type: 'error', message: result.error.message }))
+            } else {
+                dispatch(addToast({ type: 'success', message: "Ім'я змінено!" }))
+                dispatch(setAuth({ userId: userId ?? '', username: newUsername, email: profile?.email ?? '' }))
+                setEditingUsername(false)
+            }
+        },
+        onError: () => dispatch(addToast({ type: 'error', message: 'Помилка зміни імені' })),
+    })
 
-    const [deleteAccount, { loading: deletingAccount }] = useMutation<DeleteAccountData>(
-        DELETE_ACCOUNT,
-        {
-            onCompleted: (data) => {
-                const result = data.auth.deleteAccount
-                if (result.error) {
-                    dispatch(addToast({ type: 'error', message: result.error.message }))
-                    setDeleteModalOpen(false)
-                } else {
-                    dispatch(clearAuth())
-                    navigate('/login')
-                    dispatch(addToast({ type: 'success', message: 'Акаунт видалено' }))
-                }
-            },
-            onError: () => dispatch(addToast({ type: 'error', message: 'Помилка видалення акаунту' })),
-        }
-    )
+    const [changePassword, { loading: changingPassword }] = useMutation<ChangePasswordData>(CHANGE_PASSWORD, {
+        onCompleted: (data) => {
+            const result = data.auth.changePassword
+            if (result.error) {
+                dispatch(addToast({ type: 'error', message: result.error.message }))
+            } else {
+                dispatch(addToast({ type: 'success', message: 'Пароль змінено!' }))
+                setEditingPassword(false)
+                setPasswordForm({ oldPassword: '', newPassword: '', confirmNewPassword: '' })
+            }
+        },
+        onError: () => dispatch(addToast({ type: 'error', message: 'Помилка зміни паролю' })),
+    })
 
-    const [updateProfile, { loading: updatingProfile }] = useMutation<UpdateProfileData>(
-        UPDATE_PROFILE,
-        {
-            refetchQueries: [{ query: GET_PROFILE }],
-            onCompleted: (data) => {
-                const result = data.user.updateProfile
-                if (result.error) {
-                    dispatch(addToast({ type: 'error', message: result.error.message }))
-                } else {
-                    dispatch(addToast({ type: 'success', message: 'Контакти збережено!' }))
-                    setEditingContacts(false)
-                }
-            },
-            onError: () => dispatch(addToast({ type: 'error', message: 'Помилка збереження' })),
+    const [deleteAccount, { loading: deletingAccount }] = useMutation<DeleteAccountData>(DELETE_ACCOUNT, {
+        onCompleted: (data) => {
+            const result = data.auth.deleteAccount
+            if (result.error) {
+                dispatch(addToast({ type: 'error', message: result.error.message }))
+                setDeleteModalOpen(false)
+            } else {
+                dispatch(clearAuth())
+                navigate('/login')
+                dispatch(addToast({ type: 'success', message: 'Акаунт видалено' }))
+            }
+        },
+        onError: () => dispatch(addToast({ type: 'error', message: 'Помилка видалення акаунту' })),
+    })
+
+    const [updateProfile, { loading: updatingProfile }] = useMutation<UpdateProfileData>(UPDATE_PROFILE, {
+        refetchQueries: [{ query: GET_PROFILE }],
+        onCompleted: (data) => {
+            const result = data.user.updateProfile
+            if (result.error) {
+                dispatch(addToast({ type: 'error', message: result.error.message }))
+            } else {
+                dispatch(addToast({ type: 'success', message: 'Контакти збережено!' }))
+                setEditingContacts(false)
+            }
+        },
+        onError: () => dispatch(addToast({ type: 'error', message: 'Помилка збереження' })),
+    })
+
+    const handleVolDocUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+        setVolUploading(true)
+        try {
+            const formData = new FormData()
+            formData.append('files', file, file.name)
+            const res = await fetch(`${API_BASE_URL}/api/files/help-requests`, {
+                method: 'POST', credentials: 'include', body: formData,
+            })
+            if (!res.ok) throw new Error()
+            const data = await res.json()
+            setVolForm(f => ({ ...f, documentImageUrl: data.imageUrls[0] }))
+        } catch {
+            dispatch(addToast({ type: 'error', message: 'Помилка завантаження' }))
+        } finally {
+            setVolUploading(false)
         }
-    )
+    }
 
     if (profileLoading) return <PageSpinner />
 
     const profile = profileData?.userQuery.profile.profile
-
-    if (!profile) return (
-        <div className="text-center py-16 text-ink-muted">
-            Профіль не знайдено
-        </div>
-    )
+    if (!profile) return <div className="text-center py-16 text-ink-muted">Профіль не знайдено</div>
 
     const reviews = reviewsData?.userQuery.getUserReviews.reviews ?? []
     const positiveCount = reviews.filter(r => r.isPositive).length
     const negativeCount = reviews.filter(r => !r.isPositive).length
-
     const ownerItems = ownerData?.helpRequestQuer.helpRequestQuery.items ?? []
     const assigneeItems = assigneeData?.helpRequestQuer.helpRequestQuery.items ?? []
-
     const currentItems = activeTab === 'owner' ? ownerItems : assigneeItems
     const currentLoading = activeTab === 'owner' ? ownerLoading : assigneeLoading
     const currentPage = activeTab === 'owner' ? ownerPage : assigneePage
     const setCurrentPage = activeTab === 'owner' ? setOwnerPage : setAssigneePage
+    const volApp = volAppData?.userQuery.getMyVolunteerApplication.application
 
     return (
         <div className="max-w-2xl mx-auto space-y-6">
-            {/* Заголовок */}
-            <h1 className="text-2xl font-bold text-ink"
-                style={{ fontFamily: 'Jua, sans-serif' }}>
-                Профіль
-            </h1>
+            <h1 className="text-2xl font-bold text-ink" style={{ fontFamily: 'Jua, sans-serif' }}>Профіль</h1>
 
             {/* Інформація профілю */}
             <div className="bg-surface rounded-xl border border-border p-6 space-y-5">
 
                 {/* Username */}
                 <div>
-                    <label className="block text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">
-                        Ім'я користувача
-                    </label>
+                    <label className="block text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Ім'я користувача</label>
                     <div className="flex items-center gap-2">
-                        <input
-                            type="text"
-                            value={editingUsername ? newUsername : profile.username}
-                            onChange={e => setNewUsername(e.target.value)}
-                            disabled={!editingUsername}
-                            className="flex-1 px-4 py-2.5 bg-surface-muted border border-border rounded-lg text-ink text-sm disabled:opacity-70 focus:outline-none focus:border-primary transition-colors"
-                        />
+                        <input type="text" value={editingUsername ? newUsername : profile.username}
+                            onChange={e => setNewUsername(e.target.value)} disabled={!editingUsername}
+                            className="flex-1 px-4 py-2.5 bg-surface-muted border border-border rounded-lg text-ink text-sm disabled:opacity-70 focus:outline-none focus:border-primary transition-colors" />
                         {editingUsername ? (
                             <div className="flex gap-1">
-                                <button
-                                    onClick={() => {
-                                        if (!newUsername.trim()) return
-                                        updateUsername({ variables: { newUsername: newUsername.trim() } })
-                                    }}
+                                <button onClick={() => { if (!newUsername.trim()) return; updateUsername({ variables: { newUsername: newUsername.trim() } }) }}
                                     disabled={updatingUsername || !newUsername.trim()}
-                                    className="p-2 bg-success text-white rounded-lg hover:opacity-90 disabled:opacity-50 transition-colors"
-                                >
+                                    className="p-2 bg-success text-white rounded-lg hover:opacity-90 disabled:opacity-50 transition-colors">
                                     <Check size={16} />
                                 </button>
-                                <button
-                                    onClick={() => {
-                                        setEditingUsername(false)
-                                        setNewUsername('')
-                                    }}
-                                    className="p-2 border border-border rounded-lg text-ink-muted hover:text-ink transition-colors"
-                                >
+                                <button onClick={() => { setEditingUsername(false); setNewUsername('') }}
+                                    className="p-2 border border-border rounded-lg text-ink-muted hover:text-ink transition-colors">
                                     <X size={16} />
                                 </button>
                             </div>
                         ) : (
-                            <button
-                                onClick={() => {
-                                    setEditingUsername(true)
-                                    setNewUsername(profile.username)
-                                }}
-                                className="p-2 border border-border rounded-lg text-ink-muted hover:text-primary hover:border-primary transition-colors"
-                            >
+                            <button onClick={() => { setEditingUsername(true); setNewUsername(profile.username) }}
+                                className="p-2 border border-border rounded-lg text-ink-muted hover:text-primary hover:border-primary transition-colors">
                                 <Pencil size={16} />
                             </button>
                         )}
@@ -248,360 +227,292 @@ export default function ProfilePage() {
 
                 {/* Email */}
                 <div>
-                    <label className="block text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">
-                        Email
-                    </label>
-                    <input
-                        type="email"
-                        value={profile.email}
-                        disabled
-                        className="w-full px-4 py-2.5 bg-surface-muted border border-border rounded-lg text-ink text-sm opacity-70"
-                    />
+                    <label className="block text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Email</label>
+                    <input type="email" value={profile.email} disabled
+                        className="w-full px-4 py-2.5 bg-surface-muted border border-border rounded-lg text-ink text-sm opacity-70" />
                 </div>
 
                 {/* Пароль */}
                 <div>
                     <div className="flex items-center justify-between mb-2">
-                        <label className="text-xs font-semibold text-ink-muted uppercase tracking-wider">
-                            Пароль
-                        </label>
+                        <label className="text-xs font-semibold text-ink-muted uppercase tracking-wider">Пароль</label>
                         {!editingPassword && (
-                            <button
-                                onClick={() => setEditingPassword(true)}
-                                className="flex items-center gap-1 text-xs text-primary hover:underline"
-                            >
-                                <Pencil size={12} />
-                                Змінити
+                            <button onClick={() => setEditingPassword(true)}
+                                className="flex items-center gap-1 text-xs text-primary hover:underline">
+                                <Pencil size={12} /> Змінити
                             </button>
                         )}
                     </div>
-
                     {editingPassword ? (
                         <div className="space-y-3">
                             <div className="relative">
-                                <input
-                                    type={showPasswords ? 'text' : 'password'}
-                                    value={passwordForm.oldPassword}
+                                <input type={showPasswords ? 'text' : 'password'} value={passwordForm.oldPassword}
                                     onChange={e => setPasswordForm(f => ({ ...f, oldPassword: e.target.value }))}
                                     placeholder="Поточний пароль"
-                                    className="w-full px-4 py-2.5 bg-surface-muted border border-border rounded-lg text-ink text-sm focus:outline-none focus:border-primary transition-colors pr-10"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPasswords(p => !p)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted"
-                                >
+                                    className="w-full px-4 py-2.5 bg-surface-muted border border-border rounded-lg text-ink text-sm focus:outline-none focus:border-primary transition-colors pr-10" />
+                                <button type="button" onClick={() => setShowPasswords(p => !p)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted">
                                     {showPasswords ? <EyeOff size={14} /> : <Eye size={14} />}
                                 </button>
                             </div>
-                            <input
-                                type={showPasswords ? 'text' : 'password'}
-                                value={passwordForm.newPassword}
+                            <input type={showPasswords ? 'text' : 'password'} value={passwordForm.newPassword}
                                 onChange={e => setPasswordForm(f => ({ ...f, newPassword: e.target.value }))}
                                 placeholder="Новий пароль"
-                                className="w-full px-4 py-2.5 bg-surface-muted border border-border rounded-lg text-ink text-sm focus:outline-none focus:border-primary transition-colors"
-                            />
-                            <input
-                                type={showPasswords ? 'text' : 'password'}
-                                value={passwordForm.confirmNewPassword}
+                                className="w-full px-4 py-2.5 bg-surface-muted border border-border rounded-lg text-ink text-sm focus:outline-none focus:border-primary transition-colors" />
+                            <input type={showPasswords ? 'text' : 'password'} value={passwordForm.confirmNewPassword}
                                 onChange={e => setPasswordForm(f => ({ ...f, confirmNewPassword: e.target.value }))}
                                 placeholder="Підтвердіть новий пароль"
-                                className="w-full px-4 py-2.5 bg-surface-muted border border-border rounded-lg text-ink text-sm focus:outline-none focus:border-primary transition-colors"
-                            />
+                                className="w-full px-4 py-2.5 bg-surface-muted border border-border rounded-lg text-ink text-sm focus:outline-none focus:border-primary transition-colors" />
                             <div className="flex gap-2">
-                                <button
-                                    onClick={() => changePassword({ variables: passwordForm })}
+                                <button onClick={() => changePassword({ variables: passwordForm })}
                                     disabled={changingPassword || !passwordForm.oldPassword || !passwordForm.newPassword}
-                                    className="flex-1 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-light disabled:opacity-60 transition-colors"
-                                >
+                                    className="flex-1 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-light disabled:opacity-60 transition-colors">
                                     {changingPassword ? 'Збереження...' : 'Зберегти'}
                                 </button>
-                                <button
-                                    onClick={() => {
-                                        setEditingPassword(false)
-                                        setPasswordForm({ oldPassword: '', newPassword: '', confirmNewPassword: '' })
-                                    }}
-                                    className="flex-1 py-2 border border-border text-ink text-sm font-medium rounded-lg hover:border-primary transition-colors"
-                                >
+                                <button onClick={() => { setEditingPassword(false); setPasswordForm({ oldPassword: '', newPassword: '', confirmNewPassword: '' }) }}
+                                    className="flex-1 py-2 border border-border text-ink text-sm font-medium rounded-lg hover:border-primary transition-colors">
                                     Скасувати
                                 </button>
                             </div>
                         </div>
                     ) : (
-                        <input
-                            type="password"
-                            value="••••••••"
-                            disabled
-                            className="w-full px-4 py-2.5 bg-surface-muted border border-border rounded-lg text-ink text-sm opacity-70"
-                        />
+                        <input type="password" value="••••••••" disabled
+                            className="w-full px-4 py-2.5 bg-surface-muted border border-border rounded-lg text-ink text-sm opacity-70" />
                     )}
                 </div>
 
-                {/* Дата реєстрації + верифікація */}
+                {/* Дата реєстрації */}
                 <div className="pt-2 border-t border-border">
                     <p className="text-xs text-ink-muted">
                         Зареєстрований:{' '}
                         <span className="font-medium text-ink">
-                            {new Date(profile.registeredAtUtc).toLocaleDateString('uk-UA', {
-                                day: 'numeric',
-                                month: 'long',
-                                year: 'numeric',
-                            })}
+                            {new Date(profile.registeredAtUtc).toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' })}
                         </span>
                         {profile.isEmailVerified && (
-                            <span className="ml-2 inline-flex items-center gap-1 text-success font-medium">
-                                ✓ Email підтверджено
-                            </span>
+                            <span className="ml-2 inline-flex items-center gap-1 text-success font-medium">✓ Email підтверджено</span>
                         )}
                     </p>
                 </div>
 
-                {/* Контактна інформація */}
+                {/* Контакти */}
                 <div className="pt-2 border-t border-border space-y-3">
                     <div className="flex items-center justify-between">
-                        <label className="text-xs font-semibold text-ink-muted uppercase tracking-wider">
-                            Контакти
-                        </label>
+                        <label className="text-xs font-semibold text-ink-muted uppercase tracking-wider">Контакти</label>
                         {!editingContacts && (
-                            <button
-                                onClick={() => {
-                                    setEditingContacts(true)
-                                    setContactForm({
-                                        phoneNumber: profile.phoneNumber ?? '',
-                                        socialLinks: profile.socialLinks ?? '',
-                                    })
-                                }}
-                                className="flex items-center gap-1 text-xs text-primary hover:underline"
-                            >
-                                <Pencil size={12} />
-                                Редагувати
+                            <button onClick={() => { setEditingContacts(true); setContactForm({ phoneNumber: profile.phoneNumber ?? '', socialLinks: profile.socialLinks ?? '' }) }}
+                                className="flex items-center gap-1 text-xs text-primary hover:underline">
+                                <Pencil size={12} /> Редагувати
                             </button>
                         )}
                     </div>
-
                     {editingContacts ? (
                         <div className="space-y-2">
                             <div className="flex items-center gap-2">
                                 <Phone size={14} className="text-ink-muted shrink-0" />
-                                <input
-                                    type="tel"
-                                    value={contactForm.phoneNumber}
+                                <input type="tel" value={contactForm.phoneNumber}
                                     onChange={e => setContactForm(f => ({ ...f, phoneNumber: e.target.value }))}
                                     placeholder="+380..."
-                                    className="flex-1 px-3 py-2 bg-surface-muted border border-border rounded-lg text-ink text-sm focus:outline-none focus:border-primary transition-colors"
-                                />
+                                    className="flex-1 px-3 py-2 bg-surface-muted border border-border rounded-lg text-ink text-sm focus:outline-none focus:border-primary transition-colors" />
                             </div>
                             <div className="flex items-center gap-2">
                                 <LinkIcon size={14} className="text-ink-muted shrink-0" />
-                                <input
-                                    type="text"
-                                    value={contactForm.socialLinks}
+                                <input type="text" value={contactForm.socialLinks}
                                     onChange={e => setContactForm(f => ({ ...f, socialLinks: e.target.value }))}
                                     placeholder="Посилання на соціальну мережу..."
-                                    className="flex-1 px-3 py-2 bg-surface-muted border border-border rounded-lg text-ink text-sm focus:outline-none focus:border-primary transition-colors"
-                                />
+                                    className="flex-1 px-3 py-2 bg-surface-muted border border-border rounded-lg text-ink text-sm focus:outline-none focus:border-primary transition-colors" />
                             </div>
                             <div className="flex gap-2 pt-1">
-                                <button
-                                    onClick={() => updateProfile({ variables: contactForm })}
-                                    disabled={updatingProfile}
-                                    className="flex-1 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-light disabled:opacity-60 transition-colors"
-                                >
+                                <button onClick={() => updateProfile({ variables: contactForm })} disabled={updatingProfile}
+                                    className="flex-1 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-light disabled:opacity-60 transition-colors">
                                     {updatingProfile ? 'Збереження...' : 'Зберегти'}
                                 </button>
-                                <button
-                                    onClick={() => setEditingContacts(false)}
-                                    className="flex-1 py-2 border border-border text-ink text-sm rounded-lg hover:border-primary transition-colors"
-                                >
+                                <button onClick={() => setEditingContacts(false)}
+                                    className="flex-1 py-2 border border-border text-ink text-sm rounded-lg hover:border-primary transition-colors">
                                     Скасувати
                                 </button>
                             </div>
                         </div>
                     ) : (
                         <div className="space-y-1.5">
-                            {profile.phoneNumber ? (
-                                <div className="flex items-center gap-2 text-sm text-ink">
-                                    <Phone size={13} className="text-ink-muted" />
-                                    {profile.phoneNumber}
-                                </div>
-                            ) : (
-                                <p className="text-sm text-ink-soft">Телефон не вказано</p>
-                            )}
-                            {profile.socialLinks ? (
-                                <div className="flex items-center gap-2 text-sm">
-                                    <LinkIcon size={13} className="text-ink-muted" />
-                                    <a
-                                        href={profile.socialLinks}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-primary hover:underline truncate"
-                                    >
-                                        {profile.socialLinks}
-                                    </a>
-                                </div>
-                            ) : (
-                                <p className="text-sm text-ink-soft">Соціальна мережа не вказана</p>
-                            )}
+                            {profile.phoneNumber
+                                ? <div className="flex items-center gap-2 text-sm text-ink"><Phone size={13} className="text-ink-muted" />{profile.phoneNumber}</div>
+                                : <p className="text-sm text-ink-soft">Телефон не вказано</p>}
+                            {profile.socialLinks
+                                ? <div className="flex items-center gap-2 text-sm"><LinkIcon size={13} className="text-ink-muted" /><a href={profile.socialLinks} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate">{profile.socialLinks}</a></div>
+                                : <p className="text-sm text-ink-soft">Соціальна мережа не вказана</p>}
                         </div>
                     )}
                 </div>
 
-                {/* Видалення акаунту */}
+                {/* Видалення */}
                 <div className="pt-2 border-t border-border">
-                    <button
-                        onClick={() => setDeleteModalOpen(true)}
-                        className="text-sm text-error hover:underline"
-                    >
+                    <button onClick={() => setDeleteModalOpen(true)} className="text-sm text-error hover:underline">
                         Видалити акаунт
                     </button>
                 </div>
             </div>
 
+            {/* Волонтерський статус */}
+            {profile.role === 'Volunteer' ? (
+                <div className="bg-success/10 rounded-xl border border-success/20 p-4 flex items-center gap-3">
+                    <Shield size={20} className="text-success" />
+                    <div>
+                        <p className="text-sm font-semibold text-success">Підтверджений волонтер</p>
+                        <p className="text-xs text-ink-muted">Статус підтверджено адміністратором</p>
+                    </div>
+                </div>
+            ) : profile.role !== 'Admin' && (
+                <div className="bg-surface rounded-xl border border-border p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <Shield size={18} className="text-ink-muted" />
+                        <div>
+                            <p className="text-sm font-medium text-ink">Статус волонтера</p>
+                            <p className="text-xs text-ink-muted">
+                                {volApp?.status === 0
+                                    ? `На розгляді з ${new Date(volApp.submittedAtUtc).toLocaleDateString('uk-UA')}`
+                                    : volApp?.status === 2
+                                        ? 'Відхилено — можна подати повторно'
+                                        : 'Підтвердьте свій волонтерський статус'}
+                            </p>
+                        </div>
+                    </div>
+                    {volApp?.status !== 0 && (
+                        <button onClick={() => setVolModalOpen(true)}
+                            className="px-3 py-1.5 text-xs font-medium bg-primary text-white rounded-lg hover:bg-primary-light transition-colors">
+                            Подати заявку
+                        </button>
+                    )}
+                </div>
+            )}
+
             {/* Репутація */}
             <div className="bg-surface rounded-xl border border-border p-6">
-                <h2 className="text-base font-semibold text-ink mb-4"
-                    style={{ fontFamily: 'Jua, sans-serif' }}>
-                    Репутація
-                </h2>
+                <h2 className="text-base font-semibold text-ink mb-4" style={{ fontFamily: 'Jua, sans-serif' }}>Репутація</h2>
                 <div className="flex gap-4 mb-4">
                     <div className="flex-1 flex items-center gap-3 p-3 bg-success/10 rounded-xl border border-success/20">
                         <ThumbsUp size={20} className="text-success" />
-                        <div>
-                            <p className="text-xl font-bold text-success">{positiveCount}</p>
-                            <p className="text-xs text-ink-muted">Позитивних</p>
-                        </div>
+                        <div><p className="text-xl font-bold text-success">{positiveCount}</p><p className="text-xs text-ink-muted">Позитивних</p></div>
                     </div>
                     <div className="flex-1 flex items-center gap-3 p-3 bg-error/10 rounded-xl border border-error/20">
                         <ThumbsDown size={20} className="text-error" />
-                        <div>
-                            <p className="text-xl font-bold text-error">{negativeCount}</p>
-                            <p className="text-xs text-ink-muted">Негативних</p>
-                        </div>
+                        <div><p className="text-xl font-bold text-error">{negativeCount}</p><p className="text-xs text-ink-muted">Негативних</p></div>
                     </div>
                 </div>
-
                 {reviews.length > 0 ? (
                     <div className="space-y-3">
                         {reviews.map(review => (
                             <div key={review.id} className="flex gap-3 p-3 bg-surface-muted rounded-lg border border-border">
                                 <div className={`mt-0.5 shrink-0 ${review.isPositive ? 'text-success' : 'text-error'}`}>
-                                    {review.isPositive
-                                        ? <ThumbsUp size={14} />
-                                        : <ThumbsDown size={14} />}
+                                    {review.isPositive ? <ThumbsUp size={14} /> : <ThumbsDown size={14} />}
                                 </div>
                                 <div className="min-w-0">
                                     <div className="flex items-center gap-2 mb-1">
-                                        <span className="text-sm font-medium text-ink">
-                                            {review.reviewerUsername}
-                                        </span>
-                                        <span className="text-xs text-ink-soft">
-                                            {new Date(review.createdAtUtc).toLocaleDateString('uk-UA')}
-                                        </span>
+                                        <span className="text-sm font-medium text-ink">{review.reviewerUsername}</span>
+                                        <span className="text-xs text-ink-soft">{new Date(review.createdAtUtc).toLocaleDateString('uk-UA')}</span>
                                     </div>
-                                    {review.comment && (
-                                        <p className="text-sm text-ink-muted">{review.comment}</p>
-                                    )}
+                                    {review.comment && <p className="text-sm text-ink-muted">{review.comment}</p>}
                                 </div>
                             </div>
                         ))}
                     </div>
                 ) : (
-                    <p className="text-sm text-ink-soft text-center py-4">
-                        Відгуків ще немає
-                    </p>
+                    <p className="text-sm text-ink-soft text-center py-4">Відгуків ще немає</p>
                 )}
             </div>
 
             {/* Заявки */}
             <div className="bg-surface rounded-xl border border-border overflow-hidden">
                 <div className="flex border-b border-border">
-                    {([
-                        { key: 'owner', label: 'Мої заявки' },
-                        { key: 'assignee', label: 'Допомагаю' },
-                    ] as const).map(tab => (
-                        <button
-                            key={tab.key}
-                            onClick={() => setActiveTab(tab.key)}
-                            className={`flex-1 px-6 py-3 text-sm font-medium transition-colors ${activeTab === tab.key
-                                ? 'text-primary border-b-2 border-primary bg-primary/5'
-                                : 'text-ink-muted hover:text-ink'
-                                }`}
-                        >
+                    {([{ key: 'owner', label: 'Мої заявки' }, { key: 'assignee', label: 'Допомагаю' }] as const).map(tab => (
+                        <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+                            className={`flex-1 px-6 py-3 text-sm font-medium transition-colors ${activeTab === tab.key ? 'text-primary border-b-2 border-primary bg-primary/5' : 'text-ink-muted hover:text-ink'}`}>
                             {tab.label}
                         </button>
                     ))}
                 </div>
-
                 <div className="p-4">
-                    {currentLoading && (
-                        <div className="flex justify-center py-8">
-                            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                        </div>
-                    )}
-
+                    {currentLoading && <div className="flex justify-center py-8"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>}
                     {!currentLoading && currentItems.length === 0 && (
                         <div className="text-center py-8 text-ink-muted text-sm">
-                            {activeTab === 'owner'
-                                ? 'Ви ще не створювали заявок'
-                                : 'Ви ще не допомагали жодній людині'}
+                            {activeTab === 'owner' ? 'Ви ще не створювали заявок' : 'Ви ще не допомагали жодній людині'}
                         </div>
                     )}
-
                     {!currentLoading && currentItems.length > 0 && (
-                        <div className="space-y-3">
-                            {currentItems.map(item => (
-                                <RequestCard key={item.id} item={item} />
-                            ))}
-                        </div>
+                        <div className="space-y-3">{currentItems.map(item => <RequestCard key={item.id} item={item} />)}</div>
                     )}
-
-                    {/* Пагінація */}
                     {!currentLoading && (currentPage > 1 || currentItems.length === PAGE_SIZE) && (
                         <div className="flex items-center justify-between mt-4">
-                            <button
-                                onClick={() => setCurrentPage(p => p - 1)}
-                                disabled={currentPage === 1}
-                                className="px-3 py-1.5 text-sm border border-border rounded-lg hover:border-primary text-ink disabled:opacity-40 transition-colors"
-                            >
-                                ← Попередня
-                            </button>
+                            <button onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1}
+                                className="px-3 py-1.5 text-sm border border-border rounded-lg hover:border-primary text-ink disabled:opacity-40 transition-colors">← Попередня</button>
                             <span className="text-sm text-ink-muted">Сторінка {currentPage}</span>
-                            <button
-                                onClick={() => setCurrentPage(p => p + 1)}
-                                disabled={currentItems.length < PAGE_SIZE}
-                                className="px-3 py-1.5 text-sm border border-border rounded-lg hover:border-primary text-ink disabled:opacity-40 transition-colors"
-                            >
-                                Наступна →
-                            </button>
+                            <button onClick={() => setCurrentPage(p => p + 1)} disabled={currentItems.length < PAGE_SIZE}
+                                className="px-3 py-1.5 text-sm border border-border rounded-lg hover:border-primary text-ink disabled:opacity-40 transition-colors">Наступна →</button>
                         </div>
                     )}
                 </div>
             </div>
 
-            {/* Модал видалення */}
-            <Modal
-                isOpen={deleteModalOpen}
-                onClose={() => setDeleteModalOpen(false)}
-                title="Видалити акаунт"
-            >
+            {/* Модал видалення акаунту */}
+            <Modal isOpen={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} title="Видалити акаунт">
                 <div className="space-y-4">
                     <p className="text-sm text-ink-muted leading-relaxed">
                         Ви впевнені що хочете видалити акаунт? Цю дію неможливо скасувати.
-                        Переконайтесь що у вас немає активних заявок.
                     </p>
                     <div className="flex gap-3">
-                        <button
-                            onClick={() => setDeleteModalOpen(false)}
-                            className="flex-1 py-2.5 border border-border rounded-lg text-sm font-medium text-ink hover:border-primary transition-colors"
-                        >
-                            Скасувати
-                        </button>
-                        <button
-                            onClick={() => deleteAccount()}
-                            disabled={deletingAccount}
-                            className="flex-1 py-2.5 bg-error text-white rounded-lg text-sm font-semibold hover:opacity-90 disabled:opacity-60 transition-colors"
-                        >
+                        <button onClick={() => setDeleteModalOpen(false)}
+                            className="flex-1 py-2.5 border border-border rounded-lg text-sm font-medium text-ink hover:border-primary transition-colors">Скасувати</button>
+                        <button onClick={() => deleteAccount()} disabled={deletingAccount}
+                            className="flex-1 py-2.5 bg-error text-white rounded-lg text-sm font-semibold hover:opacity-90 disabled:opacity-60 transition-colors">
                             {deletingAccount ? 'Видалення...' : 'Видалити'}
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* Модал заявки на волонтера */}
+            <Modal isOpen={volModalOpen} onClose={() => setVolModalOpen(false)} title="Заявка на волонтера">
+                <div className="space-y-4">
+                    {volApp?.status === 2 && volApp.adminComment && (
+                        <div className="bg-error/10 rounded-lg p-3 text-xs text-error">
+                            Попередню відхилено: {volApp.adminComment}
+                        </div>
+                    )}
+                    <div>
+                        <label className="block text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Назва організації</label>
+                        <input value={volForm.organizationName}
+                            onChange={e => setVolForm(f => ({ ...f, organizationName: e.target.value }))}
+                            placeholder="ГО, БФ або незалежний волонтер..."
+                            className="w-full px-4 py-3 bg-surface-muted border border-border rounded-lg text-sm text-ink focus:outline-none focus:border-primary transition-colors" />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Опис діяльності</label>
+                        <textarea value={volForm.activityDescription}
+                            onChange={e => setVolForm(f => ({ ...f, activityDescription: e.target.value }))}
+                            placeholder="Чим займаєтесь, де волонтерите..." rows={3}
+                            className="w-full px-4 py-3 bg-surface-muted border border-border rounded-lg text-sm text-ink focus:outline-none focus:border-primary resize-none transition-colors" />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">
+                            Документ <span className="normal-case font-normal">(необов'язково)</span>
+                        </label>
+                        <label className="flex items-center gap-2 px-3 py-2 border border-border rounded-lg text-xs text-ink-muted hover:border-primary hover:text-primary cursor-pointer transition-colors w-fit">
+                            <Upload size={14} />
+                            {volUploading ? 'Завантаження...' : volForm.documentImageUrl ? '✓ Документ додано' : 'Завантажити фото документа'}
+                            <input type="file" accept="image/*" className="hidden" onChange={handleVolDocUpload} disabled={volUploading} />
+                        </label>
+                        {volForm.documentImageUrl && (
+                            <button onClick={() => setVolForm(f => ({ ...f, documentImageUrl: '' }))}
+                                className="text-xs text-error hover:underline mt-1 block">Видалити</button>
+                        )}
+                    </div>
+                    <div className="flex gap-3">
+                        <button onClick={() => setVolModalOpen(false)}
+                            className="flex-1 py-2.5 border border-border rounded-lg text-sm text-ink hover:border-primary transition-colors">Скасувати</button>
+                        <button
+                            onClick={() => submitApplication({ variables: { ...volForm, documentImageUrl: volForm.documentImageUrl || null } })}
+                            disabled={submitting || !volForm.organizationName.trim() || !volForm.activityDescription.trim()}
+                            className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-semibold disabled:opacity-60 hover:bg-primary-light transition-colors">
+                            {submitting ? 'Надсилання...' : 'Подати заявку'}
                         </button>
                     </div>
                 </div>

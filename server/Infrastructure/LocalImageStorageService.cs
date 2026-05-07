@@ -116,5 +116,20 @@ namespace server.Infrastructure
             return fileName;
         }
 
+        public async Task<string> MoveVolunteerDocumentFromTempAsync(string fileName, CancellationToken ct)
+        {
+            var tempPath = Path.Combine(_env.WebRootPath, "uploads", "temp", fileName);
+            var destDir = Path.Combine(_env.WebRootPath, "uploads", "volunteer-documents");
+
+            Directory.CreateDirectory(destDir);
+
+            var destPath = Path.Combine(destDir, fileName);
+
+            if (!File.Exists(tempPath))
+                throw new FileNotFoundException($"Temp file not found: {fileName}");
+
+            File.Move(tempPath, destPath, overwrite: true);
+            return fileName;
+        }
     }
 }

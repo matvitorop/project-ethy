@@ -504,3 +504,17 @@ export interface ResendVerificationEmailData {
         }
     }
 }
+
+export interface MyVolunteerApplicationData {
+    userQuery: {
+        getMyVolunteerApplication: {
+            application: {
+                id: string
+                status: number
+                adminComment: string | null
+                submittedAtUtc: string
+            } | null
+            error: ApiError | null
+        }
+    }
+}
