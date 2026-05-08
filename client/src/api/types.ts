@@ -518,3 +518,68 @@ export interface MyVolunteerApplicationData {
         }
     }
 }
+
+// ========================
+// Statistics types
+// ========================
+
+export interface PlatformStatsDto {
+    totalRequests: number
+    draftRequests: number
+    openRequests: number
+    inProgressRequests: number
+    resolvedRequests: number
+    cancelledRequests: number
+    totalUsers: number
+    totalVolunteers: number
+    completionRate: number
+    avgCompletionDays: number
+}
+
+export interface PlatformStatsData {
+    statsQuery: {
+        platformStats: {
+            stats: PlatformStatsDto | null
+            error: ApiError | null
+        }
+    }
+}
+
+export interface MonthlyActivityItem {
+    year: number
+    month: number
+    count: number
+}
+
+export interface MonthlyActivityData {
+    statsQuery: {
+        monthlyActivity: {
+            items: MonthlyActivityItem[] | null
+            error: ApiError | null
+        }
+    }
+}
+
+export interface TopVolunteerByCompleted {
+    userId: string
+    username: string
+    completedCount: number
+}
+
+export interface TopVolunteerByReviews {
+    userId: string
+    username: string
+    positiveReviews: number
+}
+
+export interface TopVolunteersData {
+    statsQuery: {
+        topVolunteers: {
+            data: {
+                byCompleted: TopVolunteerByCompleted[]
+                byReviews: TopVolunteerByReviews[]
+            } | null
+            error: ApiError | null
+        }
+    }
+}
