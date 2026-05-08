@@ -583,3 +583,24 @@ export interface TopVolunteersData {
         }
     }
 }
+
+export interface AdminAnalyticsDto {
+    newRequestsThisWeek: number
+    newRequestsLastWeek: number
+    newUsersThisWeek: number
+    pendingComplaints: number
+    totalComplaints: number
+    blockedUsers: number
+    totalUsers: number
+    totalVolunteers: number
+    totalAdmins: number
+}
+
+export interface AdminAnalyticsData {
+    statsQuery: {
+        adminAnalytics: {
+            data: AdminAnalyticsDto | null
+            error: ApiError | null
+        }
+    }
+}
