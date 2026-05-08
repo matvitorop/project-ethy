@@ -15,6 +15,7 @@ import PublicProfilePage from './features/profile/PublicProfilePage'
 import AdminPage from './features/admin/AdminPage'
 import VerifyEmailPendingPage from './features/auth/VerifyEmailPendingPage'
 import VerifyEmailPage from './features/auth/VerifyEmailPage'
+import StatsPage from './pages/StatsPage'
 
 export default function App() {
     return (
@@ -26,6 +27,7 @@ export default function App() {
                     <Route path="/register" element={<RegisterPage />} />
                     <Route path="/verify-email/pending" element={<VerifyEmailPendingPage />} />
                     <Route path="/verify-email" element={<VerifyEmailPage />} />
+                    <Route path="/stats" element={<StatsPage />} />
                 </Route>
 
                 <Route element={<PrivateRoute />}>
