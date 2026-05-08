@@ -28,6 +28,10 @@ export default function AppLayout() {
                             className="text-sm font-medium text-ink hover:text-primary transition-colors">
                             Заявки
                         </Link>
+                        <Link to="/stats"
+                            className="text-sm font-medium text-ink-muted hover:text-primary transition-colors">
+                            Статистика
+                        </Link>
                         <Link to="/profile"
                             className="text-sm font-medium text-ink hover:text-primary transition-colors">
                             {username || 'Профіль'}

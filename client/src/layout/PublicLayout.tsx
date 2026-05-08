@@ -7,7 +7,7 @@ import { toggleTheme } from '../store/themeSlice'
 export default function PublicLayout() {
     const dispatch = useAppDispatch()
     const theme = useAppSelector(s => s.theme.current)
-    const userId = useAppSelector(s => s.auth.userId)      
+    const userId = useAppSelector(s => s.auth.userId)
     const username = useAppSelector(s => s.auth.username)
 
     return (
@@ -24,6 +24,10 @@ export default function PublicLayout() {
                         >
                             {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
                         </button>
+                        <Link to="/stats"
+                            className="px-3 py-2 text-sm font-medium text-ink-muted hover:text-primary transition-colors">
+                            Статистика
+                        </Link>
 
                         {userId ? (  // ← замінити статичні кнопки
                             <Link
