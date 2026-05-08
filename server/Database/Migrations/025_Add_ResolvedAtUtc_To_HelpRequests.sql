@@ -1,0 +1,1 @@
+﻿ALTER TABLE HelpRequests ADD ResolvedAtUtc DATETIME2 NULL;
