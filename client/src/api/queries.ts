@@ -788,3 +788,24 @@ export const GET_TOP_VOLUNTEERS = gql`
     }
   }
 `
+
+export const GET_ADMIN_ANALYTICS = gql`
+  query GetAdminAnalytics {
+    statsQuery {
+      adminAnalytics {
+        data {
+          newRequestsThisWeek
+          newRequestsLastWeek
+          newUsersThisWeek
+          pendingComplaints
+          totalComplaints
+          blockedUsers
+          totalUsers
+          totalVolunteers
+          totalAdmins
+        }
+        error { code message }
+      }
+    }
+  }
+`

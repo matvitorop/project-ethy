@@ -1,4 +1,7 @@
-﻿namespace server.Presentation.GraphQL.Types.StatsTypes
+﻿using GraphQL.Types;
+using server.Application.Handlers.StatisticsHandlers.GetAdminAnalytics;
+
+namespace server.Presentation.GraphQL.Types.StatsTypes
 {
     public class AdminAnalyticsDtoType : ObjectGraphType<AdminAnalyticsDto>
     {
