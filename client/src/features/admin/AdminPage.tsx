@@ -16,7 +16,7 @@ import { addToast } from '../../store/uiSlice'
 import Modal from '../../components/Modal'
 import { PageSpinner } from '../../components/Spinner'
 
-type Tab = 'volunteers' | 'complaints' | 'requests' | 'analytics'
+type Tab = 'analytics' | 'complaints' | 'requests' | 'volunteers'
 const API_BASE_URL = 'http://localhost:5274'
 interface AdminActionResult { success: boolean | null; error: ApiError | null }
 interface ReviewVolunteerData { admin: { reviewVolunteerApplication: AdminActionResult } }
@@ -35,7 +35,7 @@ const REQUEST_STATUS: Record<number, string> = {
 }
 
 export default function AdminPage() {
-    const [tab, setTab] = useState<Tab>('volunteers')
+    const [tab, setTab] = useState<Tab>('analytics')
     const { data: appData, loading: appLoading, refetch: refetchApps } =
         useQuery<VolunteerApplicationsData>(GET_VOLUNTEER_APPLICATIONS, {
             variables: { status: 0 }, fetchPolicy: 'cache-and-network',
@@ -56,10 +56,10 @@ export default function AdminPage() {
 
 
     const tabs: { key: Tab; label: string; icon: React.ReactNode; count?: number }[] = [
+        { key: 'analytics' as Tab, label: 'Аналітика', icon: <BarChart2 size={16} /> },
         { key: 'volunteers', label: 'Заявки волонтерів', icon: <Shield size={16} />, count: appData?.adminQuery.volunteerApplications.items?.length },
         { key: 'complaints', label: 'Скарги', icon: <Flag size={16} />, count: complData?.adminQuery.complaints.items?.length },
         { key: 'requests', label: 'Заявки', icon: <FileText size={16} /> },
-        { key: 'analytics' as Tab, label: 'Аналітика', icon: <BarChart2 size={16} /> },
     ]
 
     return (
@@ -85,12 +85,10 @@ export default function AdminPage() {
                 ))}
             </div>
 
+            {tab === 'analytics' && (<AnalyticsTab data={analyticsData?.statsQuery.adminAnalytics.data ?? null} loading={analyticsLoading} />)}
             {tab === 'volunteers' && <VolunteersTab items={appData?.adminQuery.volunteerApplications.items ?? []} loading={appLoading} onRefresh={refetchApps} />}
             {tab === 'complaints' && <ComplaintsTab items={complData?.adminQuery.complaints.items ?? []} loading={complLoading} onRefresh={refetchCompl} />}
             {tab === 'requests' && <RequestsTab items={hrData?.adminQuery.helpRequests.items ?? []} loading={hrLoading} onRefresh={refetchHR} />}
-            {tab === 'analytics' && (<AnalyticsTab data={analyticsData?.statsQuery.adminAnalytics.data ?? null} loading={analyticsLoading}/>
-            )}
-
         </div>
     )
 }
