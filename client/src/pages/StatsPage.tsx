@@ -2,7 +2,7 @@ import { useQuery } from '@apollo/client/react'
 import { Link } from 'react-router-dom'
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    PieChart, Pie, Cell, Legend,
+    PieChart, Pie, Cell,
 } from 'recharts'
 import { GET_PLATFORM_STATS, GET_MONTHLY_ACTIVITY, GET_TOP_VOLUNTEERS } from '../api/queries'
 import type { PlatformStatsData, MonthlyActivityData, TopVolunteersData } from '../api/types'
