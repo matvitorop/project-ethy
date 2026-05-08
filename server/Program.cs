@@ -71,7 +71,10 @@ builder.Services.AddCors(options =>
 
 Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
 
-
+// =====================
+// CACHE CONFIG
+// =====================
+builder.Services.AddMemoryCache();
 
 // =====================
 // JWT CONFIG
@@ -101,6 +104,7 @@ builder.Services.AddScoped<IStageRepository, StageRepository>();
 builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
 builder.Services.AddScoped<IComplaintRepository, ComplaintRepository>();
+builder.Services.AddScoped<IStatisticsRepository, StatisticsRepository>();
 builder.Services.AddScoped<IPasswordHasher, Pbkdf2PasswordHasher>();
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
 builder.Services.AddTransient<AuthMutation>();
