@@ -1,4 +1,5 @@
 ﻿using Dapper;
+using server.Application.Handlers.StatisticsHandlers.GetAdminAnalytics;
 using server.Application.Handlers.StatisticsHandlers.GetMonthlyActivity;
 using server.Application.Handlers.StatisticsHandlers.GetPlatformStats;
 using server.Application.Handlers.StatisticsHandlers.GetTopVolunteers;
@@ -114,6 +115,50 @@ namespace server.Infrastructure.Repositories
             var byReviews = (await conn.QueryAsync<TopVolunteerByReviewsDto>(byReviewsSql)).AsList();
 
             return new TopVolunteersDto(byCompleted, byReviews);
+        }
+
+        public async Task<AdminAnalyticsDto> GetAdminAnalyticsAsync(CancellationToken ct)
+        {
+            using var conn = await _cf.CreateOpenConnectionAsync(ct);
+
+            const string sql = """
+                SELECT COUNT(*) FROM HelpRequests
+                WHERE CreatedAtUtc >= DATEADD(day, -7, GETUTCDATE()) AND IsDeleted = 0;
+
+                SELECT COUNT(*) FROM HelpRequests
+                WHERE CreatedAtUtc >= DATEADD(day, -14, GETUTCDATE())
+                  AND CreatedAtUtc < DATEADD(day, -7, GETUTCDATE()) AND IsDeleted = 0;
+
+                SELECT COUNT(*) FROM Users
+                WHERE RegisteredAtUtc >= DATEADD(day, -7, GETUTCDATE()) AND IsDeleted = 0;
+
+                SELECT COUNT(*) FROM UserComplaints WHERE IsResolved = 0;
+
+                SELECT COUNT(*) FROM UserComplaints;
+
+                SELECT COUNT(*) FROM Users
+                WHERE BlockedUntilUtc IS NOT NULL
+                  AND (BlockedUntilUtc > GETUTCDATE() OR BlockedUntilUtc = '9999-12-31')
+                  AND IsDeleted = 0;
+
+                SELECT COUNT(*) FROM Users WHERE Role = 1 AND IsDeleted = 0;
+                SELECT COUNT(*) FROM Users WHERE Role = 2 AND IsDeleted = 0;
+                SELECT COUNT(*) FROM Users WHERE Role = 0 AND IsDeleted = 0;
+                """;
+
+            using var multi = await conn.QueryMultipleAsync(sql);
+
+            return new AdminAnalyticsDto(
+                NewRequestsThisWeek: await multi.ReadSingleAsync<int>(),
+                NewRequestsLastWeek: await multi.ReadSingleAsync<int>(),
+                NewUsersThisWeek: await multi.ReadSingleAsync<int>(),
+                PendingComplaints: await multi.ReadSingleAsync<int>(),
+                TotalComplaints: await multi.ReadSingleAsync<int>(),
+                BlockedUsers: await multi.ReadSingleAsync<int>(),
+                TotalUsers: await multi.ReadSingleAsync<int>(),
+                TotalVolunteers: await multi.ReadSingleAsync<int>(),
+                TotalAdmins: await multi.ReadSingleAsync<int>()
+            );
         }
     }
 }
