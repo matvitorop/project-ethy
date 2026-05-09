@@ -36,7 +36,7 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 var upgrader =
     DeployChanges.To
         .SqlDatabase(connectionString)
-        .WithScriptsFromFileSystem("Database/Migrations")
+        .WithScriptsFromFileSystem(Path.Combine(AppContext.BaseDirectory, "Database", "Migrations"))
         .LogToConsole()
         .Build();
 
