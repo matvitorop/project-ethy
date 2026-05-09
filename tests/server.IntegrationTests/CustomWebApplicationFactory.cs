@@ -28,13 +28,8 @@ namespace server.IntegrationTests
         {
             builder.ConfigureAppConfiguration((context, configBuilder) =>
             {
-                configBuilder.AddInMemoryCollection(new Dictionary<string, string?>
-                {
-                    { "ConnectionStrings:DefaultConnection", _msSqlContainer.GetConnectionString() },
-                    { "JwtSettings:Key", "super-secret-key-that-is-very-long-for-testing" },
-                    { "JwtSettings:Issuer", "TestIssuer" },
-                    { "JwtSettings:Audience", "TestAudience" }
-                });
+                // Config is now passed via Environment Variables in InitializeAsync
+                // to ensure Program.cs reads it at the very start of top-level statements.
             });
 
             builder.ConfigureServices(services =>
@@ -48,11 +43,21 @@ namespace server.IntegrationTests
         public async Task InitializeAsync()
         {
             await _msSqlContainer.StartAsync();
+            // We set these as environment variables so they are available immediately
+            // when builder.Configuration is initialized in Program.cs
+            System.Environment.SetEnvironmentVariable("ConnectionStrings__DefaultConnection", _msSqlContainer.GetConnectionString());
+            System.Environment.SetEnvironmentVariable("JwtSettings__Key", "super-secret-key-that-is-very-long-for-testing");
+            System.Environment.SetEnvironmentVariable("JwtSettings__Issuer", "TestIssuer");
+            System.Environment.SetEnvironmentVariable("JwtSettings__Audience", "TestAudience");
         }
 
         public new async Task DisposeAsync()
         {
             await _msSqlContainer.DisposeAsync();
+            System.Environment.SetEnvironmentVariable("ConnectionStrings__DefaultConnection", null);
+            System.Environment.SetEnvironmentVariable("JwtSettings__Key", null);
+            System.Environment.SetEnvironmentVariable("JwtSettings__Issuer", null);
+            System.Environment.SetEnvironmentVariable("JwtSettings__Audience", null);
         }
     }
 }
