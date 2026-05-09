@@ -25,9 +25,13 @@ namespace server.IntegrationTests
             };
 
             var response = await _client.PostAsJsonAsync("/graphql", requestBody);
-            response.EnsureSuccessStatusCode();
-
             var content = await response.Content.ReadAsStringAsync();
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new HttpRequestException($"Response status code does not indicate success: {(int)response.StatusCode} ({response.ReasonPhrase}). Content: {content}");
+            }
+
             using var document = JsonDocument.Parse(content);
             
             return document.RootElement.Clone();
@@ -40,9 +44,8 @@ namespace server.IntegrationTests
             var registerMutation = @"
                 mutation Register($username: String!, $email: String!, $password: String!) {
                     auth {
-                        registerUser(command: { username: $username, email: $email, password: $password }) {
-                            isSuccess
-                            value
+                        register(username: $username, email: $email, password: $password) {
+                            token
                             error { code }
                         }
                     }
@@ -56,18 +59,18 @@ namespace server.IntegrationTests
             };
 
             var registerResult = await SendGraphQLAsync(registerMutation, registerVars);
-            var regData = registerResult.GetProperty("data").GetProperty("auth").GetProperty("registerUser");
+            var regData = registerResult.GetProperty("data").GetProperty("auth").GetProperty("register");
             
-            regData.GetProperty("isSuccess").GetBoolean().Should().BeTrue();
+            // Check that error is null
+            regData.GetProperty("error").ValueKind.Should().Be(JsonValueKind.Null);
             
             // 2. We can't login directly if email is not verified. Let's try to login and expect failure if that's the logic, 
             // or we would need to manually verify them in DB. Since DB migration ran, we can assume the table exists.
             var loginMutation = @"
                 mutation Login($email: String!, $password: String!) {
                     auth {
-                        loginUser(command: { email: $email, password: $password }) {
-                            isSuccess
-                            value { token }
+                        login(email: $email, password: $password) {
+                            token
                             error { code }
                         }
                     }
@@ -80,11 +83,11 @@ namespace server.IntegrationTests
             };
 
             var loginResult = await SendGraphQLAsync(loginMutation, loginVars);
-            var loginData = loginResult.GetProperty("data").GetProperty("auth").GetProperty("loginUser");
+            var loginData = loginResult.GetProperty("data").GetProperty("auth").GetProperty("login");
 
             // Assuming email verification is required, login might fail here, or succeed if not enforced in LoginUserHandler.
             // But this test proves the GraphQL pipeline and Integration setup works end-to-end!
-            loginData.GetProperty("isSuccess").ValueKind.Should().NotBe(JsonValueKind.Null);
+            loginData.GetProperty("error").ValueKind.Should().NotBe(JsonValueKind.Undefined);
         }
     }
 }
