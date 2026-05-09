@@ -1,4 +1,4 @@
-﻿
+
 namespace server.Infrastructure.ImageStoring
 {
     public class TemporaryFileCleanupService : BackgroundService
@@ -33,7 +33,8 @@ namespace server.Infrastructure.ImageStoring
 
         private void CleanupTempFiles()
         {
-            var tempPath = Path.Combine(_env.WebRootPath, "uploads", "temp");
+            var webRoot = _env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            var tempPath = Path.Combine(webRoot, "uploads", "temp");
             if (!Directory.Exists(tempPath)) return;
 
             var files = Directory.GetFiles(tempPath);
