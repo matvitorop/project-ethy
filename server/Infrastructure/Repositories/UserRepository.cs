@@ -1,4 +1,4 @@
-﻿using Dapper;
+using Dapper;
 using Microsoft.Data.SqlClient;
 using server.Application.Handlers.GetUserStatistics;
 using server.Application.IRepositories;
@@ -205,11 +205,11 @@ namespace server.Infrastructure.Repositories
 
             const string sql = """
                 SELECT COUNT(1) FROM Users 
-                WHERE Id = @Id AND Role = 'Admin';
+                WHERE Id = @Id AND Role = @Role;
                 """;
 
             var count = await connection.ExecuteScalarAsync<int>(
-                new CommandDefinition(sql, new { Id = userId }, cancellationToken: ct));
+                new CommandDefinition(sql, new { Id = userId, Role = (int)UserRole.Admin }, cancellationToken: ct));
 
             return count > 0;
         }

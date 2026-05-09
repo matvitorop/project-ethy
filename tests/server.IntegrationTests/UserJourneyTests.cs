@@ -7,7 +7,8 @@ using Xunit;
 
 namespace server.IntegrationTests
 {
-    public class UserJourneyTests : IClassFixture<CustomWebApplicationFactory>
+    [Collection("Integration Tests")]
+    public class UserJourneyTests
     {
         private readonly HttpClient _client;
 
