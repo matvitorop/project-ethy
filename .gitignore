@@ -394,4 +394,5 @@ Thumbs.db
 *.7z
 
 # Uploads
-server/wwwroot/uploads/
+server/wwwroot/uploads/**/*
+!server/wwwroot/uploads/**/.gitkeep
