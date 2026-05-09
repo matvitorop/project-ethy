@@ -2,7 +2,7 @@ import { useQuery } from '@apollo/client/react'
 import { Link } from 'react-router-dom'
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    PieChart, Pie, Cell,
+    PieChart, Pie,
 } from 'recharts'
 import { GET_PLATFORM_STATS, GET_MONTHLY_ACTIVITY, GET_TOP_VOLUNTEERS } from '../api/queries'
 import type { PlatformStatsData, MonthlyActivityData, TopVolunteersData } from '../api/types'
@@ -38,11 +38,11 @@ export default function StatsPage() {
     const top = topData?.statsQuery.topVolunteers.data
 
     const pieData = stats ? [
-        { name: 'Відкриті', value: stats.openRequests },
-        { name: 'В процесі', value: stats.inProgressRequests },
-        { name: 'Виконані', value: stats.resolvedRequests },
-        { name: 'Скасовані', value: stats.cancelledRequests },
-        { name: 'Чернетки', value: stats.draftRequests },
+        { name: 'Відкриті', value: stats.openRequests, fill: STATUS_COLORS['Відкриті'] },
+        { name: 'В процесі', value: stats.inProgressRequests, fill: STATUS_COLORS['В процесі'] },
+        { name: 'Виконані', value: stats.resolvedRequests, fill: STATUS_COLORS['Виконані'] },
+        { name: 'Скасовані', value: stats.cancelledRequests, fill: STATUS_COLORS['Скасовані'] },
+        { name: 'Чернетки', value: stats.draftRequests, fill: STATUS_COLORS['Чернетки'] },
     ].filter(d => d.value > 0) : []
 
     const chartData = monthly.map(m => ({
@@ -102,15 +102,14 @@ export default function StatsPage() {
                     {pieData.length > 0 ? (
                         <ResponsiveContainer width="100%" height={220}>
                             <PieChart>
-                                <Pie data={pieData} dataKey="value" nameKey="name"
-                                    cx="50%" cy="50%" outerRadius={80} label={({ name, percent }) =>
-                                        `${name} ${(percent * 100).toFixed(0)}%`
-                                    }>
-                                    {pieData.map(entry => (
-                                        <Cell key={entry.name}
-                                            fill={STATUS_COLORS[entry.name as keyof typeof STATUS_COLORS] ?? '#94A3B8'} />
-                                    ))}
-                                </Pie>
+                                <Pie
+                                    data={pieData}
+                                    dataKey="value"
+                                    nameKey="name"
+                                    cx="50%" cy="50%"
+                                    outerRadius={80}
+                                    label={({ name, percent = 0 }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                />
                                 <Tooltip formatter={(value) => [`${value} заявок`]} />
                             </PieChart>
                         </ResponsiveContainer>
