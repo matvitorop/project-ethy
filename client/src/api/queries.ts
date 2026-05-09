@@ -737,3 +737,75 @@ export const GET_MY_VOLUNTEER_APPLICATION = gql`
     }
   }
 `
+
+// ========================
+// Statistics queries
+// ========================
+
+export const GET_PLATFORM_STATS = gql`
+  query GetPlatformStats {
+    statsQuery {
+      platformStats {
+        stats {
+          totalRequests
+          draftRequests
+          openRequests
+          inProgressRequests
+          resolvedRequests
+          cancelledRequests
+          totalUsers
+          totalVolunteers
+          completionRate
+          avgCompletionDays
+        }
+        error { code message }
+      }
+    }
+  }
+`
+
+export const GET_MONTHLY_ACTIVITY = gql`
+  query GetMonthlyActivity {
+    statsQuery {
+      monthlyActivity {
+        items { year month count }
+        error { code message }
+      }
+    }
+  }
+`
+
+export const GET_TOP_VOLUNTEERS = gql`
+  query GetTopVolunteers($limit: Int) {
+    statsQuery {
+      topVolunteers(limit: $limit) {
+        data {
+          byCompleted { userId username completedCount }
+          byReviews { userId username positiveReviews }
+        }
+        error { code message }
+      }
+    }
+  }
+`
+
+export const GET_ADMIN_ANALYTICS = gql`
+  query GetAdminAnalytics {
+    statsQuery {
+      adminAnalytics {
+        data {
+          newRequestsThisWeek
+          newRequestsLastWeek
+          newUsersThisWeek
+          pendingComplaints
+          totalComplaints
+          blockedUsers
+          totalUsers
+          totalVolunteers
+          totalAdmins
+        }
+        error { code message }
+      }
+    }
+  }
+`

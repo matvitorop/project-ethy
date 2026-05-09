@@ -1,8 +1,17 @@
 import { Link } from 'react-router-dom'
+import { useQuery } from '@apollo/client/react'
+import { GET_PLATFORM_STATS } from '../api/queries'
+import type { PlatformStatsData } from '../api/types'
 
 export default function HomePage() {
+    const { data } = useQuery<PlatformStatsData>(GET_PLATFORM_STATS, {
+        fetchPolicy: 'cache-first',
+    })
+    const stats = data?.statsQuery.platformStats.stats
+
     return (
-        <div className="flex items-center">
+        <div>
+            {/* Hero */}
             <div className="max-w-6xl mx-auto px-8 py-20 grid md:grid-cols-2 gap-16 items-center">
                 <div>
                     <div className="inline-block px-3 py-1 bg-accent/20 text-ink text-xs font-semibold rounded-full mb-6 tracking-wide">
@@ -19,16 +28,12 @@ export default function HomePage() {
                         Прозоро, структуровано і з підтвердженням кожного етапу.
                     </p>
                     <div className="flex gap-3">
-                        <Link
-                            to="/register"
-                            className="px-6 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-primary-light transition-colors"
-                        >
+                        <Link to="/register"
+                            className="px-6 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-primary-light transition-colors">
                             Почати
                         </Link>
-                        <Link
-                            to="/login"
-                            className="px-6 py-3 border border-border text-ink rounded-lg font-semibold hover:border-primary transition-colors"
-                        >
+                        <Link to="/login"
+                            className="px-6 py-3 border border-border text-ink rounded-lg font-semibold hover:border-primary transition-colors">
                             Я вже маю акаунт
                         </Link>
                     </div>
@@ -58,6 +63,40 @@ export default function HomePage() {
                     </div>
                 </div>
             </div>
+
+            {/* Лічильники */}
+            {stats && (
+                <div className="bg-primary">
+                    <div className="max-w-6xl mx-auto px-8 py-14">
+                        <p className="text-center text-accent/80 text-xs font-semibold uppercase tracking-widest mb-8">
+                            Ethy в цифрах
+                        </p>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+                            <Counter value={stats.totalRequests} label="Заявок створено" />
+                            <Counter value={stats.resolvedRequests} label="Виконано успішно" />
+                            <Counter value={stats.totalUsers} label="Учасників платформи" />
+                            <Counter value={stats.totalVolunteers} label="Підтверджених волонтерів" />
+                        </div>
+                        <div className="text-center mt-8">
+                            <Link to="/stats"
+                                className="text-accent/80 text-sm hover:text-accent transition-colors underline underline-offset-4">
+                                Переглянути детальну статистику →
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    )
+}
+
+function Counter({ value, label }: { value: number; label: string }) {
+    return (
+        <div>
+            <p className="text-4xl font-bold text-accent mb-1" style={{ fontFamily: 'Jua, sans-serif' }}>
+                {value.toLocaleString('uk-UA')}
+            </p>
+            <p className="text-sm text-white/70">{label}</p>
         </div>
     )
 }
