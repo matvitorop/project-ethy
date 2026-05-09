@@ -226,3 +226,4 @@ app.UseGraphQLPlayground("/graphql/playground");
 app.MapHub<ChatHub>("/hubs/chat");
 
 app.Run();
+public partial class Program { }
