@@ -1,21 +1,22 @@
 import { useState } from 'react'
 import { useQuery, useMutation } from '@apollo/client/react'
-import { Shield, FileText, Flag, Eye, EyeOff, Check, X, ChevronDown, ChevronUp } from 'lucide-react'
+import { Shield, FileText, Flag, Eye, EyeOff, Check, X, ChevronDown, ChevronUp, BarChart2 } from 'lucide-react'
 import {
     GET_VOLUNTEER_APPLICATIONS, GET_COMPLAINTS, GET_ADMIN_HELP_REQUESTS,
     REVIEW_VOLUNTEER_APPLICATION, RESOLVE_COMPLAINT, HIDE_HELP_REQUEST,
-    BLOCK_USER,
+    BLOCK_USER, GET_ADMIN_ANALYTICS
 } from '../../api/queries'
 import type {
     VolunteerApplicationsData, ComplaintsData, AdminHelpRequestsData,
-    VolunteerApplicationItem, AdminComplaintItem, AdminHelpRequestItem, ApiError,
+    VolunteerApplicationItem, AdminComplaintItem, AdminHelpRequestItem, ApiError, AdminAnalyticsData,
+    AdminAnalyticsDto
 } from '../../api/types'
 import { useAppDispatch } from '../../store/hooks'
 import { addToast } from '../../store/uiSlice'
 import Modal from '../../components/Modal'
 import { PageSpinner } from '../../components/Spinner'
 
-type Tab = 'volunteers' | 'complaints' | 'requests'
+type Tab = 'analytics' | 'complaints' | 'requests' | 'volunteers'
 const API_BASE_URL = 'http://localhost:5274'
 interface AdminActionResult { success: boolean | null; error: ApiError | null }
 interface ReviewVolunteerData { admin: { reviewVolunteerApplication: AdminActionResult } }
@@ -34,7 +35,7 @@ const REQUEST_STATUS: Record<number, string> = {
 }
 
 export default function AdminPage() {
-    const [tab, setTab] = useState<Tab>('volunteers')
+    const [tab, setTab] = useState<Tab>('analytics')
     const { data: appData, loading: appLoading, refetch: refetchApps } =
         useQuery<VolunteerApplicationsData>(GET_VOLUNTEER_APPLICATIONS, {
             variables: { status: 0 }, fetchPolicy: 'cache-and-network',
@@ -48,7 +49,14 @@ export default function AdminPage() {
             variables: { page: 1, pageSize: 30 }, fetchPolicy: 'cache-and-network',
         })
 
+    const { data: analyticsData, loading: analyticsLoading } =
+        useQuery<AdminAnalyticsData>(GET_ADMIN_ANALYTICS, {
+            fetchPolicy: 'cache-and-network',
+        })
+
+
     const tabs: { key: Tab; label: string; icon: React.ReactNode; count?: number }[] = [
+        { key: 'analytics' as Tab, label: 'Аналітика', icon: <BarChart2 size={16} /> },
         { key: 'volunteers', label: 'Заявки волонтерів', icon: <Shield size={16} />, count: appData?.adminQuery.volunteerApplications.items?.length },
         { key: 'complaints', label: 'Скарги', icon: <Flag size={16} />, count: complData?.adminQuery.complaints.items?.length },
         { key: 'requests', label: 'Заявки', icon: <FileText size={16} /> },
@@ -77,6 +85,7 @@ export default function AdminPage() {
                 ))}
             </div>
 
+            {tab === 'analytics' && (<AnalyticsTab data={analyticsData?.statsQuery.adminAnalytics.data ?? null} loading={analyticsLoading} />)}
             {tab === 'volunteers' && <VolunteersTab items={appData?.adminQuery.volunteerApplications.items ?? []} loading={appLoading} onRefresh={refetchApps} />}
             {tab === 'complaints' && <ComplaintsTab items={complData?.adminQuery.complaints.items ?? []} loading={complLoading} onRefresh={refetchCompl} />}
             {tab === 'requests' && <RequestsTab items={hrData?.adminQuery.helpRequests.items ?? []} loading={hrLoading} onRefresh={refetchHR} />}
@@ -397,6 +406,122 @@ function RequestsTab({ items, loading, onRefresh }: RequestsTabProps) {
                     </div>
                 </div>
             ))}
+        </div>
+    )
+}
+
+interface AnalyticsTabProps {
+    data: AdminAnalyticsDto | null
+    loading: boolean
+}
+
+function AnalyticsTab({ data, loading }: AnalyticsTabProps) {
+    if (loading) return <PageSpinner />
+    if (!data) return <div className="text-center py-12 text-ink-muted">Немає даних</div>
+
+    const requestTrend = data.newRequestsLastWeek > 0
+        ? Math.round((data.newRequestsThisWeek - data.newRequestsLastWeek)
+            / data.newRequestsLastWeek * 100)
+        : null
+
+    return (
+        <div className="space-y-6">
+            {/* Активність за тиждень */}
+            <div>
+                <h3 className="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-3">
+                    Активність за останні 7 днів
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-surface rounded-xl border border-border p-4">
+                        <div className="flex items-end gap-2 mb-1">
+                            <p className="text-2xl font-bold text-primary">{data.newRequestsThisWeek}</p>
+                            {requestTrend !== null && (
+                                <span className={`text-xs font-medium mb-0.5 ${requestTrend >= 0 ? 'text-success' : 'text-error'}`}>
+                                    {requestTrend >= 0 ? '↑' : '↓'} {Math.abs(requestTrend)}%
+                                </span>
+                            )}
+                        </div>
+                        <p className="text-xs text-ink-muted">Нових заявок</p>
+                        <p className="text-xs text-ink-soft mt-0.5">
+                            Минулий тиждень: {data.newRequestsLastWeek}
+                        </p>
+                    </div>
+                    <div className="bg-surface rounded-xl border border-border p-4">
+                        <p className="text-2xl font-bold text-info mb-1">{data.newUsersThisWeek}</p>
+                        <p className="text-xs text-ink-muted">Нових користувачів</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Модерація */}
+            <div>
+                <h3 className="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-3">
+                    Модерація
+                </h3>
+                <div className="grid grid-cols-3 gap-3">
+                    <div className="bg-surface rounded-xl border border-border p-4 text-center">
+                        <p className={`text-2xl font-bold mb-1 ${data.pendingComplaints > 0 ? 'text-error' : 'text-success'}`}>
+                            {data.pendingComplaints}
+                        </p>
+                        <p className="text-xs text-ink-muted">Нерозглянутих скарг</p>
+                    </div>
+                    <div className="bg-surface rounded-xl border border-border p-4 text-center">
+                        <p className="text-2xl font-bold text-ink mb-1">{data.totalComplaints}</p>
+                        <p className="text-xs text-ink-muted">Всього скарг</p>
+                    </div>
+                    <div className="bg-surface rounded-xl border border-border p-4 text-center">
+                        <p className={`text-2xl font-bold mb-1 ${data.blockedUsers > 0 ? 'text-error' : 'text-ink'}`}>
+                            {data.blockedUsers}
+                        </p>
+                        <p className="text-xs text-ink-muted">Заблоковано</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Розбивка користувачів */}
+            <div>
+                <h3 className="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-3">
+                    Користувачі по ролях
+                </h3>
+                <div className="bg-surface rounded-xl border border-border p-4 space-y-3">
+                    <RoleBar
+                        label="Користувачі"
+                        count={data.totalUsers}
+                        total={data.totalUsers + data.totalVolunteers + data.totalAdmins}
+                        color="bg-info"
+                    />
+                    <RoleBar
+                        label="Волонтери"
+                        count={data.totalVolunteers}
+                        total={data.totalUsers + data.totalVolunteers + data.totalAdmins}
+                        color="bg-success"
+                    />
+                    <RoleBar
+                        label="Адміністратори"
+                        count={data.totalAdmins}
+                        total={data.totalUsers + data.totalVolunteers + data.totalAdmins}
+                        color="bg-error"
+                    />
+                </div>
+            </div>
+        </div>
+    )
+}
+
+function RoleBar({ label, count, total, color }: {
+    label: string; count: number; total: number; color: string
+}) {
+    const pct = total > 0 ? Math.round(count / total * 100) : 0
+    return (
+        <div>
+            <div className="flex items-center justify-between mb-1">
+                <span className="text-sm text-ink">{label}</span>
+                <span className="text-sm font-medium text-ink">{count} ({pct}%)</span>
+            </div>
+            <div className="h-2 bg-surface-muted rounded-full overflow-hidden">
+                <div className={`h-full rounded-full transition-all ${color}`}
+                    style={{ width: `${pct}%` }} />
+            </div>
         </div>
     )
 }

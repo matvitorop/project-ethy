@@ -43,6 +43,16 @@ namespace server.Presentation.GraphQL.Schemas
                 Resolver = new FuncFieldResolver<object>(_ => new object())
             });
             // ---
+
+            // Statistic module
+            AddField(new FieldType
+            {
+                Name = "statsQuery",
+                Description = "Statistics queries",
+                ResolvedType = provider.GetRequiredService<StatsQuery>(),
+                Resolver = new FuncFieldResolver<object>(_ => new object())
+            });
+            // ---
         }
     }
 }

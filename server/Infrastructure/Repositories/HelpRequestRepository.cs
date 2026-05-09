@@ -843,5 +843,13 @@ namespace server.Infrastructure.Repositories
             });
             return rows.AsList();
         }
+
+        public async Task SetResolvedAtAsync(Guid helpRequestId, CancellationToken ct)
+        {
+            using var conn = await _connectionFactory.CreateOpenConnectionAsync(ct);
+            await conn.ExecuteAsync(
+                "UPDATE HelpRequests SET ResolvedAtUtc = @Now WHERE Id = @Id",
+                new { Id = helpRequestId, Now = DateTime.UtcNow });
+        }
     }
 }

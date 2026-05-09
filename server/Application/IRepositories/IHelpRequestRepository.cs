@@ -33,5 +33,7 @@ namespace server.Application.IRepositories
         Task SetHiddenAsync(Guid helpRequestId, bool isHidden, CancellationToken ct);
         Task<List<AdminHelpRequestDto>> GetAllForAdminAsync(int page, int pageSize, bool? isHidden, bool? isDeleted, CancellationToken ct);
         // ---
+
+        Task SetResolvedAtAsync(Guid helpRequestId, CancellationToken ct);
     }
 }

@@ -21,8 +21,8 @@ namespace server.Application.Handlers.ChangeHelpRequestStatus
         }
 
         public async Task<Result<ChangeHelpRequestStatusResult>> Handle(
-    ChangeHelpRequestStatusCommand request,
-    CancellationToken ct)
+            ChangeHelpRequestStatusCommand request,
+            CancellationToken ct)
         {
             var helpRequest = await _repository
                 .GetAggregateByIdAsync(ct, request.HelpRequestId);
@@ -65,6 +65,11 @@ namespace server.Application.Handlers.ChangeHelpRequestStatus
                 await _repository.UpdateAsync(helpRequest, logEvent, ct);
             else
                 await _repository.UpdateStatusAsync(ct, helpRequest.Id, helpRequest.Status, logEvent);
+
+            if (request.NewStatus == HelpRequestStatus.Resolved)
+            {
+                await _repository.SetResolvedAtAsync(helpRequest.Id, ct);
+            }
 
             return Result<ChangeHelpRequestStatusResult>.Success(
                 new ChangeHelpRequestStatusResult(
