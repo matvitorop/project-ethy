@@ -8,6 +8,7 @@ import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { toggleTheme } from '../store/themeSlice'
 import { useLogout } from '../features/auth/useAuth'
 import ReportsPanel from '../features/reports/ReportsPanel'
+import Footer from '../components/Footer'
 
 export default function AppLayout() {
     const dispatch = useAppDispatch()
@@ -130,21 +131,7 @@ export default function AppLayout() {
             <ChatPanel />
             <ReportsPanel />
 
-            <footer className="py-8 px-6 border-t border-border bg-surface mt-auto">
-                <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-                    <div className="flex items-center gap-2">
-                        <Logo size={24} showText={false} />
-                        <span className="text-sm font-bold text-ink-muted tracking-tight">Project Ethy</span>
-                    </div>
-                    <p className="text-xs text-ink-soft font-medium">
-                        © {new Date().getFullYear()} Ethy. Платформа для взаємодопомоги.
-                    </p>
-                    <div className="flex gap-6">
-                        <a href="#" className="text-xs text-ink-soft hover:text-primary transition-colors font-medium">Документація</a>
-                        <a href="#" className="text-xs text-ink-soft hover:text-primary transition-colors font-medium">Підтримка</a>
-                    </div>
-                </div>
-            </footer>
+            <Footer />
         </div>
     )
 }
