@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 import { useQuery } from '@apollo/client/react'
 import { X, Send, ArrowLeft, MessageCircle, ListChecks, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -86,8 +86,11 @@ function ChatList({ onSelectChat }: { onSelectChat: (chat: ChatListItem) => void
 function ChatConversation({ chat, onBack }: { chat: ChatListItem; onBack: () => void }) {
     const userId = useAppSelector(s => s.auth.userId)
     const dispatch = useAppDispatch()
-    const [messages, setMessages] = useState<ChatMessage[]>([])
-    const [stages, setStages] = useState<StageItem[]>([])
+    
+    // Стан тільки для живих оновлень через SignalR
+    const [liveMessages, setLiveMessages] = useState<ChatMessage[]>([])
+    const [liveStages, setLiveStages] = useState<StageItem[]>([])
+    
     const [input, setInput] = useState('')
     const [connected, setConnected] = useState(false)
     const [proposeModalOpen, setProposeModalOpen] = useState(false)
@@ -97,23 +100,31 @@ function ChatConversation({ chat, onBack }: { chat: ChatListItem; onBack: () => 
     const [confirming, setConfirming] = useState(false)
     const bottomRef = useRef<HTMLDivElement>(null)
 
+    // Дані з бази
     const { data: messagesData } = useQuery<ChatMessagesData>(GET_CHAT_MESSAGES, {
         variables: { helpRequestId: chat.helpRequestId },
-        fetchPolicy: 'network-only',
+        fetchPolicy: 'network-only'
     })
 
     const { data: stagesData } = useQuery<StagesData>(GET_STAGES_FOR_CHAT, {
         variables: { helpRequestId: chat.helpRequestId },
-        fetchPolicy: 'network-only',
+        fetchPolicy: 'network-only'
     })
 
-    useEffect(() => {
-        if (messagesData) setMessages(messagesData.helpRequestQuer.chatMessages.messages)
-    }, [messagesData])
+    // Об'єднуємо дані з бази та живі оновлення, видаляючи дублікати за ID
+    const messages = useMemo(() => {
+        const initial = messagesData?.helpRequestQuer.chatMessages.messages || []
+        const initialIds = new Set(initial.map(m => m.id))
+        const filteredLive = liveMessages.filter(m => !initialIds.has(m.id))
+        return [...initial, ...filteredLive]
+    }, [messagesData, liveMessages])
 
-    useEffect(() => {
-        if (stagesData) setStages(stagesData.helpRequestQuer.stages.items)
-    }, [stagesData])
+    const stages = useMemo(() => {
+        const initial = stagesData?.helpRequestQuer.stages.items || []
+        const initialIds = new Set(initial.map(s => s.id))
+        const filteredLive = liveStages.filter(s => !initialIds.has(s.id))
+        return [...initial, ...filteredLive]
+    }, [stagesData, liveStages])
 
     useEffect(() => {
         let mounted = true
@@ -131,7 +142,7 @@ function ChatConversation({ chat, onBack }: { chat: ChatListItem; onBack: () => 
 
                 conn.off('ReceiveMessage')
                 conn.on('ReceiveMessage', (msg: ChatMessage) => {
-                    if (mounted) setMessages(prev => [...prev, msg])
+                    if (mounted) setLiveMessages(prev => [...prev, msg])
                 })
 
                 conn.off('StageProposed')
@@ -146,7 +157,7 @@ function ChatConversation({ chat, onBack }: { chat: ChatListItem; onBack: () => 
                             createdAtUtc: event.createdAtUtc ?? new Date().toISOString(),
                             resolvedAtUtc: null,
                         }
-                        setStages(prev => [...prev, newStage])
+                        setLiveStages(prev => [...prev, newStage])
                         setProposeModalOpen(false)
                     }
                 })
@@ -154,22 +165,22 @@ function ChatConversation({ chat, onBack }: { chat: ChatListItem; onBack: () => 
                 conn.off('StageConfirmed')
                 conn.on('StageConfirmed', (event: StageEvent) => {
                     if (mounted) {
-                        setStages(prev => prev.map(s => s.id === event.stageId ? { ...s, status: 1 } : s))
-                        apolloClient.refetchQueries({ include: ['GetStages', 'GetEventLog'] })
+                        setLiveStages(prev => prev.map(s => s.id === event.stageId ? { ...s, status: 1 } : s))
+                        apolloClient.refetchQueries({ include: [GET_STAGES_FOR_CHAT] })
                     }
                 })
 
                 conn.off('StageRejected')
                 conn.on('StageRejected', (event: StageEvent) => {
                     if (mounted) {
-                        setStages(prev => prev.map(s => s.id === event.stageId ? { ...s, status: 2, rejectionReason: event.reason ?? null } : s))
-                        apolloClient.refetchQueries({ include: ['GetStages', 'GetEventLog'] })
+                        setLiveStages(prev => prev.map(s => s.id === event.stageId ? { ...s, status: 2, rejectionReason: event.reason ?? null } : s))
+                        apolloClient.refetchQueries({ include: [GET_STAGES_FOR_CHAT] })
                     }
                 })
 
                 conn.off('StageDeleted')
                 conn.on('StageDeleted', (event: StageEvent) => {
-                    if (mounted) setStages(prev => prev.filter(s => s.id !== event.stageId))
+                    if (mounted) setLiveStages(prev => prev.filter(s => s.id !== event.stageId))
                 })
 
                 conn.off('Error')
@@ -179,7 +190,7 @@ function ChatConversation({ chat, onBack }: { chat: ChatListItem; onBack: () => 
                 })
 
                 if (mounted) setConnected(true)
-            } catch (err) { console.error(err) }
+            } catch { console.error('SignalR connection failed') }
         }
         connect()
         return () => {
@@ -203,7 +214,7 @@ function ChatConversation({ chat, onBack }: { chat: ChatListItem; onBack: () => 
                 await conn.invoke('SendMessage', chat.helpRequestId, input.trim())
                 setInput('')
             }
-        } catch (err) { console.error(err) }
+        } catch { console.error('SignalR error') }
     }
 
     const handleProposeStage = async (content: string) => {
@@ -213,7 +224,7 @@ function ChatConversation({ chat, onBack }: { chat: ChatListItem; onBack: () => 
             if (conn.state === signalR.HubConnectionState.Connected) {
                 await conn.invoke('ProposeStage', chat.helpRequestId, chat.chatId, content)
             }
-        } catch (err) {
+        } catch {
             dispatch(addToast({ type: 'error', message: 'Помилка пропозиції' }))
         } finally { setProposing(false) }
     }
@@ -244,10 +255,13 @@ function ChatConversation({ chat, onBack }: { chat: ChatListItem; onBack: () => 
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
     }
 
-    const chatItems = [
-        ...messages.map(m => ({ type: 'message' as const, data: m })),
-        ...stages.filter(s => s.status === 0).map(s => ({ type: 'stage' as const, data: s })),
-    ].sort((a, b) => new Date(a.data.createdAtUtc).getTime() - new Date(b.data.createdAtUtc).getTime())
+    // Готуємо список елементів для відображення
+    const chatItems = useMemo(() => {
+        return [
+            ...messages.map(m => ({ type: 'message' as const, data: m })),
+            ...stages.filter(s => s.status === 0).map(s => ({ type: 'stage' as const, data: s })),
+        ].sort((a, b) => new Date(a.data.createdAtUtc).getTime() - new Date(b.data.createdAtUtc).getTime())
+    }, [messages, stages])
 
     return (
         <div className="flex flex-col h-full bg-surface-muted/30">
@@ -267,8 +281,8 @@ function ChatConversation({ chat, onBack }: { chat: ChatListItem; onBack: () => 
                 </div>
             </div>
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
                 {chatItems.length === 0 && (
                     <div className="text-center py-10">
                         <p className="text-[10px] font-black text-ink-soft uppercase tracking-widest">Повідомлень поки немає</p>
@@ -306,7 +320,7 @@ function ChatConversation({ chat, onBack }: { chat: ChatListItem; onBack: () => 
                                 status={stage.status}
                                 proposedByUserId={stage.proposedByUserId}
                                 rejectionReason={stage.rejectionReason}
-                                currentUserId={userId}
+                                currentUserId={userId || ''}
                                 onConfirm={handleConfirmStage}
                                 onReject={(id) => { setRejectingStageId(id); setRejectModalOpen(true) }}
                                 confirming={confirming}
@@ -317,7 +331,7 @@ function ChatConversation({ chat, onBack }: { chat: ChatListItem; onBack: () => 
                 <div ref={bottomRef} />
             </div>
 
-            {/* Input */}
+            {/* Input Area */}
             <div className="p-4 bg-surface border-t border-border shadow-[0_-4px_12px_rgba(0,0,0,0.02)]">
                 <div className="flex items-end gap-2 bg-surface-muted border border-border rounded-2xl p-1.5 focus-within:border-primary/50 transition-colors shadow-inner">
                     <button

@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useMutation } from '@apollo/client/react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
-import { CheckCircle, XCircle, Loader2, AlertCircle, Mail } from 'lucide-react'
+import { CheckCircle, XCircle, Loader2, AlertCircle } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { VERIFY_EMAIL } from '../../api/queries'
 import type { VerifyEmailData } from '../../api/types'
@@ -9,92 +9,88 @@ import Button from '../../components/ui/Button'
 import Card from '../../components/ui/Card'
 
 export default function VerifyEmailPage() {
-    const [searchParams] = useSearchParams()
     const navigate = useNavigate()
+    const [searchParams] = useSearchParams()
+    const userId = searchParams.get('userId')
     const token = searchParams.get('token')
 
-    const [verifyEmail, { loading, data, error }] = useMutation<VerifyEmailData>(VERIFY_EMAIL)
-    const result = data?.user.verifyEmail
+    const [verifyEmail, { data, loading, error }] = useMutation<VerifyEmailData>(VERIFY_EMAIL)
 
     useEffect(() => {
-        if (token) {
-            verifyEmail({ variables: { token } })
+        if (userId && token) {
+            verifyEmail({ variables: { userId, token } })
         }
-    }, [token])
+    }, [userId, token, verifyEmail])
 
     useEffect(() => {
-        if (result?.success) {
-            const timer = setTimeout(() => navigate('/login'), 2500)
+        if (data?.auth.verifyEmail.success) {
+            const timer = setTimeout(() => {
+                navigate('/login')
+            }, 3000)
             return () => clearTimeout(timer)
         }
-    }, [result?.success])
+    }, [data, navigate])
 
-    const containerVariants = {
-        hidden: { opacity: 0, y: 20 },
-        visible: { opacity: 1, y: 0 }
-    }
+    const isPending = !userId || !token
 
     return (
-        <div className="min-h-[calc(100vh-120px)] flex items-center justify-center px-4">
-            <motion.div 
-                initial="hidden"
-                animate="visible"
-                variants={containerVariants}
-                className="w-full max-w-md"
-            >
-                <Card padding="lg" className="text-center shadow-2xl border-2 border-primary/5">
-                    {!token && (
-                        <>
-                            <div className="w-16 h-16 bg-error/10 text-error rounded-full flex items-center justify-center mx-auto mb-6">
-                                <AlertCircle size={32} />
-                            </div>
-                            <h1 className="text-2xl font-black text-ink mb-2" style={{ fontFamily: 'Jua, sans-serif' }}>Помилка</h1>
-                            <p className="text-ink-soft font-medium mb-8">Посилання недійсне або токен відсутній.</p>
-                            <Link to="/login">
-                                <Button variant="outline" className="w-full">Повернутись до входу</Button>
-                            </Link>
-                        </>
-                    )}
-
-                    {loading && (
+        <div className="min-h-[80vh] flex items-center justify-center p-4">
+            <Card padding="lg" className="max-w-md w-full text-center">
+                <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="space-y-6"
+                >
+                    {isPending ? (
                         <>
                             <div className="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-6">
-                                <Loader2 size={32} className="animate-spin" />
+                                <Loader2 className="w-8 h-8 animate-spin" />
                             </div>
-                            <h1 className="text-2xl font-black text-ink mb-2" style={{ fontFamily: 'Jua, sans-serif' }}>Перевірка</h1>
-                            <p className="text-ink-soft font-medium">Підтверджуємо вашу адресу...</p>
-                        </>
-                    )}
-
-                    {(error || result?.error) && (
-                        <>
-                            <div className="w-16 h-16 bg-error/10 text-error rounded-full flex items-center justify-center mx-auto mb-6">
-                                <XCircle size={32} />
-                            </div>
-                            <h1 className="text-2xl font-black text-ink mb-2" style={{ fontFamily: 'Jua, sans-serif' }}>Не вдалося</h1>
-                            <p className="text-ink-soft font-medium mb-8">
-                                {result?.error?.message ?? 'Посилання застаріло або вже було використане.'}
-                            </p>
-                            <Link to="/login">
+                            <h2 className="text-2xl font-black text-ink" style={{ fontFamily: 'Jua, sans-serif' }}>Перевірка пошти</h2>
+                            <p className="text-ink-soft font-medium">Будь ласка, перейдіть за посиланням у листі, який ми вам надіслали.</p>
+                            <Link to="/login" className="block">
                                 <Button variant="outline" className="w-full">Повернутись до входу</Button>
                             </Link>
                         </>
-                    )}
-
-                    {result?.success && (
+                    ) : loading ? (
                         <>
-                            <div className="w-16 h-16 bg-success/10 text-success rounded-full flex items-center justify-center mx-auto mb-6">
-                                <CheckCircle size={32} />
+                            <div className="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-6">
+                                <Loader2 className="w-8 h-8 animate-spin" />
                             </div>
-                            <h1 className="text-2xl font-black text-ink mb-2" style={{ fontFamily: 'Jua, sans-serif' }}>Успішно!</h1>
-                            <p className="text-ink-soft font-medium mb-6">Вашу пошту підтверджено.</p>
-                            <div className="text-[10px] font-black text-ink-soft uppercase tracking-widest animate-pulse">
-                                Перенаправлення на вхід...
+                            <h2 className="text-2xl font-black text-ink" style={{ fontFamily: 'Jua, sans-serif' }}>Підтвердження...</h2>
+                            <p className="text-ink-soft font-medium">Ми перевіряємо ваш токен.</p>
+                        </>
+                    ) : error || data?.auth.verifyEmail.error ? (
+                        <>
+                            <div className="w-16 h-16 bg-error/10 text-error rounded-full flex items-center justify-center mx-auto mb-6">
+                                <XCircle className="w-8 h-8" />
+                            </div>
+                            <h2 className="text-2xl font-black text-ink" style={{ fontFamily: 'Jua, sans-serif' }}>Помилка</h2>
+                            <p className="text-error font-medium">{data?.auth.verifyEmail.error?.message || 'Щось пішло не так'}</p>
+                            <div className="pt-4 space-y-3">
+                                <Link to="/login" className="block">
+                                    <Button variant="outline" className="w-full">Спробувати увійти</Button>
+                                </Link>
+                                <p className="text-[10px] font-black text-ink-soft uppercase tracking-widest flex items-center justify-center gap-2">
+                                    <AlertCircle size={12} />
+                                    Посилання може бути недійсним
+                                </p>
                             </div>
                         </>
+                    ) : (
+                        <>
+                            <div className="w-16 h-16 bg-success/10 text-success rounded-full flex items-center justify-center mx-auto mb-6">
+                                <CheckCircle className="w-8 h-8" />
+                            </div>
+                            <h2 className="text-2xl font-black text-ink" style={{ fontFamily: 'Jua, sans-serif' }}>Успішно!</h2>
+                            <p className="text-ink-soft font-medium">Вашу пошту підтверджено. Зараз ви будете перенаправлені на сторінку входу.</p>
+                            <Link to="/login" className="block mt-4">
+                                <Button className="w-full">Увійти зараз</Button>
+                            </Link>
+                        </>
                     )}
-                </Card>
-            </motion.div>
+                </motion.div>
+            </Card>
         </div>
     )
 }

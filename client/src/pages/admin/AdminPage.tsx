@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation } from '@apollo/client/react'
-import { Shield, FileText, Flag, Eye, EyeOff, Check, X, ChevronDown, ChevronUp, BarChart2, Users, AlertCircle, TrendingUp, TrendingDown } from 'lucide-react'
+import { Shield, FileText, Flag, Eye, EyeOff, BarChart2, Users, TrendingUp, TrendingDown, Calendar } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     GET_VOLUNTEER_APPLICATIONS, GET_COMPLAINTS, GET_ADMIN_HELP_REQUESTS,
@@ -18,129 +18,89 @@ import Modal from '../../components/Modal'
 import { PageSpinner } from '../../components/Spinner'
 import Button from '../../components/ui/Button'
 import Card from '../../components/ui/Card'
-import Badge from '../../components/ui/Badge'
 import UserLink from '../../components/ui/UserLink'
+import Badge from '../../components/ui/Badge'
 
-type Tab = 'analytics' | 'complaints' | 'requests' | 'volunteers'
-const API_BASE_URL = 'http://localhost:5274'
-interface AdminActionResult { success: boolean | null; error: ApiError | null }
-interface ReviewVolunteerData { admin: { reviewVolunteerApplication: AdminActionResult } }
-interface ResolveComplaintData { admin: { resolveComplaint: AdminActionResult } }
-interface BlockUserData { admin: { blockUser: AdminActionResult } }
-interface HideHelpRequestData { admin: { hideHelpRequest: AdminActionResult } }
+interface ResolveComplaintData {
+    admin: { resolveComplaint: { success: boolean; error: ApiError | null } }
+}
+interface BlockUserData {
+    admin: { blockUser: { success: boolean; error: ApiError | null } }
+}
+interface HideHelpRequestData {
+    admin: { hideHelpRequest: { success: boolean; error: ApiError | null } }
+}
 
-const STATUS_CONFIG: Record<number, { label: string; variant: any }> = {
-    0: { label: 'Очікує', variant: 'info' },
+const REQUEST_STATUS: Record<number, string> = {
+    0: 'Чернетка',
+    1: 'Відкрита',
+    2: 'В процесі',
+    3: 'Виконана',
+    4: 'Скасована',
+}
+
+const STATUS_CONFIG: Record<number, { label: string; variant: string }> = {
+    0: { label: 'Очікує', variant: 'warning' },
     1: { label: 'Схвалено', variant: 'success' },
     2: { label: 'Відхилено', variant: 'error' },
 }
 
-const REQUEST_STATUS: Record<number, string> = {
-    0: 'Чернетка', 1: 'Відкрита', 2: 'В процесі', 3: 'Виконана', 4: 'Скасована'
-}
-
 export default function AdminPage() {
-    const [tab, setTab] = useState<Tab>('analytics')
-    const { data: appData, loading: appLoading, refetch: refetchApps } =
-        useQuery<VolunteerApplicationsData>(GET_VOLUNTEER_APPLICATIONS, {
-            variables: { status: 0 }, fetchPolicy: 'cache-and-network',
-        })
-    const { data: complData, loading: complLoading, refetch: refetchCompl } =
-        useQuery<ComplaintsData>(GET_COMPLAINTS, {
-            variables: { isResolved: false }, fetchPolicy: 'cache-and-network',
-        })
-    const { data: hrData, loading: hrLoading, refetch: refetchHR } =
-        useQuery<AdminHelpRequestsData>(GET_ADMIN_HELP_REQUESTS, {
-            variables: { page: 1, pageSize: 30 }, fetchPolicy: 'cache-and-network',
-        })
+    const [activeTab, setActiveTab] = useState<'applications' | 'complaints' | 'requests' | 'analytics'>('analytics')
 
-    const { data: analyticsData, loading: analyticsLoading } =
-        useQuery<AdminAnalyticsData>(GET_ADMIN_ANALYTICS, {
-            fetchPolicy: 'cache-and-network',
-        })
+    const { data: apps, loading: appsLoading, refetch: refetchApps } = useQuery<VolunteerApplicationsData>(GET_VOLUNTEER_APPLICATIONS)
+    const { data: complaints, loading: compLoading, refetch: refetchComp } = useQuery<ComplaintsData>(GET_COMPLAINTS)
+    const { data: requests, loading: reqLoading, refetch: refetchReq } = useQuery<AdminHelpRequestsData>(GET_ADMIN_HELP_REQUESTS)
+    const { data: stats, loading: statsLoading } = useQuery<AdminAnalyticsData>(GET_ADMIN_ANALYTICS)
 
-    const tabs: { key: Tab; label: string; icon: React.ReactNode; count?: number }[] = [
-        { key: 'analytics', label: 'Аналітика', icon: <BarChart2 size={16} /> },
-        { key: 'volunteers', label: 'Заявки', icon: <Shield size={16} />, count: appData?.adminQuery.volunteerApplications.items?.length },
-        { key: 'complaints', label: 'Скарги', icon: <Flag size={16} />, count: complData?.adminQuery.complaints.items?.length },
-        { key: 'requests', label: 'Запити', icon: <FileText size={16} /> },
+    const tabs = [
+        { id: 'analytics', label: 'Аналітика', icon: <BarChart2 size={18} /> },
+        { id: 'applications', label: 'Волонтери', icon: <Shield size={18} /> },
+        { id: 'complaints', label: 'Скарги', icon: <Flag size={18} /> },
+        { id: 'requests', label: 'Заявки', icon: <FileText size={18} /> },
     ]
 
     return (
-        <div className="max-w-5xl mx-auto space-y-8">
-            <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-sm border border-primary/20">
+        <div className="max-w-6xl mx-auto py-8 px-4">
+            <div className="flex items-center gap-3 mb-10">
+                <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center shadow-sm">
                     <Shield size={24} />
                 </div>
                 <div>
-                    <h1 className="text-3xl font-black text-ink" style={{ fontFamily: 'Jua, sans-serif' }}>
-                        Адмін-панель
-                    </h1>
-                    <p className="text-sm text-ink-soft font-bold uppercase tracking-widest">Керування платформою</p>
+                    <h1 className="text-3xl font-black text-ink" style={{ fontFamily: 'Jua, sans-serif' }}>Адмін-панель</h1>
+                    <p className="text-xs font-bold text-ink-soft uppercase tracking-widest mt-1">Керування платформою Ethy</p>
                 </div>
             </div>
 
-            <div className="flex gap-1 bg-surface-muted rounded-2xl p-1 border border-border shadow-inner w-fit">
-                {tabs.map(t => (
-                    <button key={t.key} onClick={() => setTab(t.key)}
-                        className={`relative flex items-center gap-2 py-2.5 px-5 rounded-xl text-sm font-bold transition-all ${
-                            tab === t.key 
-                                ? 'bg-surface text-primary shadow-sm ring-1 ring-border' 
-                                : 'text-ink-soft hover:text-ink hover:bg-surface'
-                        }`}>
-                        {t.icon}
-                        {t.label}
-                        {t.count !== undefined && t.count > 0 && (
-                            <span className="ml-1 px-1.5 py-0.5 bg-error text-white text-[10px] font-black rounded-full shadow-sm">
-                                {t.count}
-                            </span>
-                        )}
-                        {tab === t.key && (
-                            <motion.div
-                                layoutId="admin-tab-pill"
-                                className="absolute inset-0 bg-surface rounded-xl -z-10 shadow-sm"
-                                transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
-                            />
-                        )}
+            {/* Таби */}
+            <div className="flex flex-wrap gap-2 mb-10 bg-surface-muted/50 p-1.5 rounded-2xl border border-border/50">
+                {tabs.map(tab => (
+                    <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id as 'applications' | 'complaints' | 'requests' | 'analytics')}
+                        className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === tab.id
+                            ? 'bg-surface text-primary shadow-sm ring-1 ring-border'
+                            : 'text-ink-soft hover:text-ink hover:bg-surface'
+                            }`}
+                    >
+                        {tab.icon}
+                        {tab.label}
                     </button>
                 ))}
             </div>
 
             <AnimatePresence mode="wait">
                 <motion.div
-                    key={tab}
+                    key={activeTab}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.2 }}
                 >
-                    {tab === 'analytics' && (
-                        <AnalyticsTab 
-                            data={analyticsData?.statsQuery.adminAnalytics.data ?? null} 
-                            loading={analyticsLoading} 
-                        />
-                    )}
-                    {tab === 'volunteers' && (
-                        <VolunteersTab 
-                            items={appData?.adminQuery.volunteerApplications.items ?? []} 
-                            loading={appLoading} 
-                            onRefresh={refetchApps} 
-                        />
-                    )}
-                    {tab === 'complaints' && (
-                        <ComplaintsTab 
-                            items={complData?.adminQuery.complaints.items ?? []} 
-                            loading={complLoading} 
-                            onRefresh={refetchCompl} 
-                        />
-                    )}
-                    {tab === 'requests' && (
-                        <RequestsTab 
-                            items={hrData?.adminQuery.helpRequests.items ?? []} 
-                            loading={hrLoading} 
-                            onRefresh={refetchHR} 
-                        />
-                    )}
+                    {activeTab === 'analytics' && <AnalyticsTab data={stats?.statsQuery.adminAnalytics.data} loading={statsLoading} />}
+                    {activeTab === 'applications' && <ApplicationsTab items={apps?.adminQuery.volunteerApplications.items || []} loading={appsLoading} onRefresh={refetchApps} />}
+                    {activeTab === 'complaints' && <ComplaintsTab items={complaints?.adminQuery.complaints.items || []} loading={compLoading} onRefresh={refetchComp} />}
+                    {activeTab === 'requests' && <RequestsTab items={requests?.adminQuery.helpRequests.items || []} loading={reqLoading} onRefresh={refetchReq} />}
                 </motion.div>
             </AnimatePresence>
         </div>
@@ -148,77 +108,54 @@ export default function AdminPage() {
 }
 
 // ===================== ANALYTICS TAB =====================
-function AnalyticsTab({ data, loading }: { data: AdminAnalyticsDto | null; loading: boolean }) {
+function AnalyticsTab({ data, loading }: { data?: AdminAnalyticsDto | null; loading: boolean }) {
     if (loading) return <PageSpinner />
-    if (!data) return <div className="text-center py-20 text-ink-muted">Немає даних для аналітики</div>
+    if (!data) return null
 
-    const requestTrend = data.newRequestsLastWeek > 0
-        ? Math.round((data.newRequestsThisWeek - data.newRequestsLastWeek) / data.newRequestsLastWeek * 100)
-        : null
+    const stats = [
+        { label: 'Користувачів', value: data.totalUsers, icon: <Users />, color: 'bg-primary/10 text-primary', trend: '+12%', up: true },
+        { label: 'Волонтерів', value: data.totalVolunteers, icon: <Shield />, color: 'bg-success/10 text-success', trend: '+5%', up: true },
+        { label: 'Нових запитів', value: data.newRequestsThisWeek, icon: <FileText />, color: 'bg-info/10 text-info', trend: '+15%', up: true },
+        { label: 'Скарг', value: data.totalComplaints, icon: <Flag />, color: 'bg-error/10 text-error', trend: '+1', up: false },
+    ]
 
     return (
-        <div className="grid gap-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard 
-                    label="Запитів за тиждень" 
-                    value={data.newRequestsThisWeek} 
-                    trend={requestTrend}
-                    trendLabel={`минуло: ${data.newRequestsLastWeek}`}
-                    icon={<FileText className="text-primary" size={20} />}
-                />
-                <StatCard 
-                    label="Нових юзерів" 
-                    value={data.newUsersThisWeek} 
-                    icon={<Users className="text-info" size={20} />}
-                />
-                <StatCard 
-                    label="Скарг у черзі" 
-                    value={data.pendingComplaints} 
-                    variant={data.pendingComplaints > 0 ? 'error' : 'success'}
-                    icon={<Flag className={data.pendingComplaints > 0 ? 'text-error' : 'text-success'} size={20} />}
-                />
-                <StatCard 
-                    label="Заблоковано" 
-                    value={data.blockedUsers} 
-                    variant="error"
-                    icon={<Shield className="text-error" size={20} />}
-                />
+        <div className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {stats.map((s, i) => (
+                    <Card key={i} padding="md" className="relative overflow-hidden group hover:border-primary/30 transition-all">
+                        <div className="flex items-start justify-between">
+                            <div className={`w-12 h-12 rounded-xl ${s.color} flex items-center justify-center mb-4 shadow-sm group-hover:scale-110 transition-transform`}>
+                                {s.icon}
+                            </div>
+                            <div className={`flex items-center gap-1 text-[10px] font-black uppercase ${s.up ? 'text-success' : 'text-error'}`}>
+                                {s.up ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                                {s.trend}
+                            </div>
+                        </div>
+                        <p className="text-3xl font-black text-ink mb-1">{s.value}</p>
+                        <p className="text-[10px] font-black text-ink-soft uppercase tracking-widest">{s.label}</p>
+                    </Card>
+                ))}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <Card title="Розподіл ролей">
-                    <div className="space-y-6 pt-2">
-                        <RoleBar
-                            label="Користувачі"
-                            count={data.totalUsers}
-                            total={data.totalUsers + data.totalVolunteers + data.totalAdmins}
-                            color="bg-info"
-                        />
-                        <RoleBar
-                            label="Волонтери"
-                            count={data.totalVolunteers}
-                            total={data.totalUsers + data.totalVolunteers + data.totalAdmins}
-                            color="bg-success"
-                        />
-                        <RoleBar
-                            label="Адміністратори"
-                            count={data.totalAdmins}
-                            total={data.totalUsers + data.totalVolunteers + data.totalAdmins}
-                            color="bg-error"
-                        />
+                <Card padding="lg">
+                    <h3 className="text-lg font-black text-ink mb-6 flex items-center gap-2">
+                        <TrendingUp size={20} className="text-primary" />
+                        Активність платформи
+                    </h3>
+                    <div className="h-64 flex items-center justify-center bg-surface-muted/30 rounded-3xl border border-dashed border-border">
+                        <p className="text-xs font-bold text-ink-soft uppercase tracking-widest">Графік активності (TBD)</p>
                     </div>
                 </Card>
-
-                <Card title="Швидка статистика">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="p-4 bg-surface-muted rounded-2xl border border-border">
-                            <p className="text-[10px] font-black text-ink-soft uppercase tracking-widest mb-1">Всього скарг</p>
-                            <p className="text-2xl font-black text-ink">{data.totalComplaints}</p>
-                        </div>
-                        <div className="p-4 bg-surface-muted rounded-2xl border border-border">
-                            <p className="text-[10px] font-black text-ink-soft uppercase tracking-widest mb-1">Схвалено волонтерів</p>
-                            <p className="text-2xl font-black text-success">{data.totalVolunteers}</p>
-                        </div>
+                <Card padding="lg">
+                    <h3 className="text-lg font-black text-ink mb-6 flex items-center gap-2">
+                        <Users size={20} className="text-primary" />
+                        Нові реєстрації
+                    </h3>
+                    <div className="h-64 flex items-center justify-center bg-surface-muted/30 rounded-3xl border border-dashed border-border">
+                        <p className="text-xs font-bold text-ink-soft uppercase tracking-widest">Графік реєстрацій (TBD)</p>
                     </div>
                 </Card>
             </div>
@@ -226,63 +163,18 @@ function AnalyticsTab({ data, loading }: { data: AdminAnalyticsDto | null; loadi
     )
 }
 
-function StatCard({ label, value, trend, trendLabel, icon, variant }: any) {
-    return (
-        <Card padding="md" className="relative overflow-hidden group">
-            <div className="flex justify-between items-start mb-2">
-                <div className="p-2.5 rounded-xl bg-surface-muted border border-border group-hover:bg-surface transition-colors">
-                    {icon}
-                </div>
-                {trend !== null && (
-                    <div className={`flex items-center gap-1 text-xs font-bold ${trend >= 0 ? 'text-success' : 'text-error'}`}>
-                        {trend >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                        {Math.abs(trend)}%
-                    </div>
-                )}
-            </div>
-            <p className="text-2xl font-black text-ink">{value}</p>
-            <p className="text-xs font-bold text-ink-soft uppercase tracking-wider">{label}</p>
-            {trendLabel && <p className="text-[10px] text-ink-soft mt-1">{trendLabel}</p>}
-            {variant === 'error' && value > 0 && (
-                <div className="absolute top-0 right-0 w-1 h-full bg-error" />
-            )}
-        </Card>
-    )
-}
-
-function RoleBar({ label, count, total, color }: { label: string; count: number; total: number; color: string }) {
-    const pct = total > 0 ? Math.round(count / total * 100) : 0
-    return (
-        <div>
-            <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-bold text-ink">{label}</span>
-                <span className="text-xs font-black text-ink-soft bg-surface-muted px-2 py-0.5 rounded-full">{count} ({pct}%)</span>
-            </div>
-            <div className="h-3 bg-surface-muted rounded-full overflow-hidden border border-border/50 p-0.5 shadow-inner">
-                <motion.div 
-                    initial={{ width: 0 }}
-                    animate={{ width: `${pct}%` }}
-                    className={`h-full rounded-full ${color} shadow-sm shadow-${color}/20`}
-                />
-            </div>
-        </div>
-    )
-}
-
-// ===================== VOLUNTEERS TAB =====================
-function VolunteersTab({ items, loading, onRefresh }: any) {
+// ===================== APPLICATIONS TAB =====================
+function ApplicationsTab({ items, loading, onRefresh }: { items: VolunteerApplicationItem[]; loading: boolean; onRefresh: () => void }) {
     const dispatch = useAppDispatch()
-    const [expanded, setExpanded] = useState<string | null>(null)
     const [reviewModal, setReviewModal] = useState<{ id: string; approve: boolean } | null>(null)
     const [comment, setComment] = useState('')
 
-    const [review, { loading: reviewing }] = useMutation<ReviewVolunteerData>(REVIEW_VOLUNTEER_APPLICATION, {
+    const [review, { loading: reviewing }] = useMutation<{ admin: { reviewVolunteerApplication: { success: boolean; error: ApiError | null } } }>(REVIEW_VOLUNTEER_APPLICATION, {
         onCompleted: (data) => {
-            const r = data.admin.reviewVolunteerApplication
-            if (r.error) {
-                dispatch(addToast({ type: 'error', message: r.error.message }))
-            } else {
-                dispatch(addToast({ type: 'success', message: reviewModal?.approve ? 'Схвалено!' : 'Відхилено' }))
+            const r = data?.admin.reviewVolunteerApplication
+            if (r.error) dispatch(addToast({ type: 'error', message: r.error.message }))
+            else {
+                dispatch(addToast({ type: 'success', message: 'Заявку розглянуто' }))
                 setReviewModal(null)
                 setComment('')
                 onRefresh()
@@ -295,88 +187,65 @@ function VolunteersTab({ items, loading, onRefresh }: any) {
     return (
         <div className="space-y-4">
             {items.length === 0 && (
-                <div className="text-center py-20 bg-surface-muted/50 rounded-3xl border border-dashed border-border">
+                <div className="text-center py-20 bg-surface rounded-3xl border border-dashed border-border">
                     <Shield size={32} className="text-ink-soft mx-auto mb-4 opacity-50" />
                     <p className="text-ink-soft font-bold uppercase text-xs tracking-widest">Нових заявок немає</p>
                 </div>
             )}
-            {items.map((app: any) => (
-                <Card key={app.id} padding="none" className="overflow-hidden">
-                    <div className="flex items-center justify-between p-5 cursor-pointer hover:bg-surface-muted transition-colors"
-                        onClick={() => setExpanded(expanded === app.id ? null : app.id)}>
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                                {app.username[0].toUpperCase()}
+            {items.map((app: VolunteerApplicationItem) => (
+                <Card key={app.id} padding="md" className="hover:border-primary/20 transition-all">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                        <div className="flex items-start gap-4">
+                            <div className="w-12 h-12 rounded-xl bg-surface-muted flex items-center justify-center text-ink-soft shrink-0 shadow-inner">
+                                <FileText size={24} />
                             </div>
                             <div>
-                                <div className="flex items-center gap-2">
-                                    <span className="font-bold text-ink">{app.username}</span>
-                                    <Badge variant={STATUS_CONFIG[app.status]?.variant || 'default'}>
-                                        {STATUS_CONFIG[app.status]?.label || 'Невідомо'}
+                                <div className="flex items-center gap-3 mb-2">
+                                    <span className="font-black text-xl text-ink leading-none">{app.username}</span>
+                                    <Badge variant={(STATUS_CONFIG[app.status]?.variant as 'default' | 'success' | 'warning' | 'error' | 'info' | 'outline') || 'default'}>
+                                        {STATUS_CONFIG[app.status]?.label}
                                     </Badge>
                                 </div>
-                                <p className="text-xs font-bold text-ink-soft uppercase tracking-wider">{app.organizationName}</p>
+                                <div className="flex items-center gap-4 text-[10px] font-black text-ink-soft uppercase tracking-widest">
+                                    <span className="flex items-center gap-1.5">
+                                        <Calendar size={12} />
+                                        {new Date(app.submittedAtUtc).toLocaleDateString('uk-UA')}
+                                    </span>
+                                </div>
                             </div>
                         </div>
-                        <div className="flex items-center gap-4">
-                            <span className="text-xs font-bold text-ink-soft uppercase tracking-widest">
-                                {new Date(app.submittedAtUtc).toLocaleDateString('uk-UA')}
-                            </span>
-                            <div className={`transition-transform duration-300 ${expanded === app.id ? 'rotate-180' : ''}`}>
-                                <ChevronDown size={18} className="text-ink-soft" />
-                            </div>
+
+                        <div className="flex items-center gap-2">
+                            <Button variant="ghost" size="sm" onClick={() => { /* View Profile */ }}>Профіль</Button>
+                            {app.status === 0 && (
+                                <div className="flex gap-2 ml-4 pl-4 border-l border-border">
+                                    <Button variant="success" size="sm" onClick={() => setReviewModal({ id: app.id, approve: true })}>
+                                        Схвалити
+                                    </Button>
+                                    <Button variant="error" size="sm" onClick={() => setReviewModal({ id: app.id, approve: false })}>
+                                        Відхилити
+                                    </Button>
+                                </div>
+                            )}
                         </div>
                     </div>
 
                     <AnimatePresence>
-                        {expanded === app.id && (
-                            <motion.div 
+                        {app.status === 0 && (
+                            <motion.div
                                 initial={{ height: 0, opacity: 0 }}
                                 animate={{ height: 'auto', opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
                                 className="overflow-hidden"
                             >
-                                <div className="px-6 pb-6 pt-2 border-t border-border space-y-5">
-                                    <div>
-                                        <h4 className="text-[10px] font-black text-ink-soft uppercase tracking-[0.2em] mb-2">Опис діяльності</h4>
-                                        <p className="text-sm text-ink leading-relaxed font-medium bg-surface-muted p-4 rounded-2xl border border-border">
-                                            {app.activityDescription}
-                                        </p>
+                                <div className="mt-6 pt-6 border-t border-border">
+                                    <p className="text-[10px] font-black text-ink-soft uppercase tracking-widest mb-3">Супровідний текст</p>
+                                    <div className="bg-surface-muted/50 p-4 rounded-2xl border border-border/50 italic text-sm text-ink-muted leading-relaxed">
+                                        "{app.activityDescription || 'Без коментаря'}"
                                     </div>
-                                    {app.documentImageUrl && (
-                                        <div>
-                                            <h4 className="text-[10px] font-black text-ink-soft uppercase tracking-[0.2em] mb-3">Документ</h4>
-                                            <div className="relative group w-fit">
-                                                <img
-                                                    src={`${API_BASE_URL}/uploads/volunteer-documents/${app.documentImageUrl}`}
-                                                    alt="Документ волонтера"
-                                                    className="max-h-64 rounded-2xl border border-border shadow-sm cursor-pointer group-hover:ring-4 group-hover:ring-primary/10 transition-all"
-                                                />
-                                                <a                                          
-                                                    href={`${API_BASE_URL}/uploads/volunteer-documents/${app.documentImageUrl}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="absolute inset-0 flex items-center justify-center bg-ink/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl"
-                                                >
-                                                    <Button variant="outline" size="sm" className="bg-surface border-none">Відкрити повністю</Button>
-                                                </a>
-                                            </div>
-                                        </div>
-                                    )}
-                                    {app.status === 0 && (
-                                        <div className="flex gap-3 pt-2">
-                                            <Button onClick={() => setReviewModal({ id: app.id, approve: true })}>
-                                                <Check size={16} /> Схвалити
-                                            </Button>
-                                            <Button variant="error" onClick={() => setReviewModal({ id: app.id, approve: false })}>
-                                                <X size={16} /> Відхилити
-                                            </Button>
-                                        </div>
-                                    )}
                                     {app.adminComment && (
-                                        <div className="flex items-center gap-2 text-xs font-bold text-ink-soft bg-surface-muted px-4 py-2 rounded-xl border border-border">
-                                            <Check size={12} />
-                                            Коментар адміна: {app.adminComment}
+                                        <div className="mt-4 p-4 bg-error/5 border border-error/10 rounded-2xl">
+                                            <p className="text-[10px] font-black text-error uppercase tracking-widest mb-1">Коментар адміна</p>
+                                            <p className="text-sm text-error font-medium">{app.adminComment}</p>
                                         </div>
                                     )}
                                 </div>
@@ -421,12 +290,10 @@ function VolunteersTab({ items, loading, onRefresh }: any) {
 }
 
 // ===================== COMPLAINTS TAB =====================
-function ComplaintsTab({ items, loading, onRefresh }: any) {
+function ComplaintsTab({ items, loading, onRefresh }: { items: AdminComplaintItem[]; loading: boolean; onRefresh: () => void }) {
     const dispatch = useAppDispatch()
-    const [blockModal, setBlockModal] = useState<any>(null)
+    const [blockModal, setBlockModal] = useState<{ userId: string; username: string } | null>(null)
     const [blockForm, setBlockForm] = useState({ reason: '', hours: '24', adminComment: '' })
-    const [resolveModal, setResolveModal] = useState<any>(null)
-    const [resolveComment, setResolveComment] = useState('')
 
     const BLOCK_PRESETS = [
         { label: '1 д', hours: 24 }, { label: '3 д', hours: 72 },
@@ -448,16 +315,8 @@ function ComplaintsTab({ items, loading, onRefresh }: any) {
             if (r.error) {
                 dispatch(addToast({ type: 'error', message: r.error.message }))
             } else {
-                await resolve({
-                    variables: {
-                        complaintId: blockModal!.complaintId,
-                        adminComment: blockForm.adminComment || null
-                    }
-                })
                 dispatch(addToast({ type: 'success', message: 'Користувача заблоковано' }))
                 setBlockModal(null)
-                setBlockForm({ reason: '', hours: '24', adminComment: '' })
-                onRefresh()
             }
         },
     })
@@ -467,60 +326,60 @@ function ComplaintsTab({ items, loading, onRefresh }: any) {
     return (
         <div className="space-y-4">
             {items.length === 0 && (
-                <div className="text-center py-20 bg-surface-muted/50 rounded-3xl border border-dashed border-border">
+                <div className="text-center py-20 bg-surface rounded-3xl border border-dashed border-border">
                     <Flag size={32} className="text-ink-soft mx-auto mb-4 opacity-50" />
                     <p className="text-ink-soft font-bold uppercase text-xs tracking-widest">Скарг немає</p>
                 </div>
             )}
-            {items.map((c: any) => (
-                <Card key={c.id} padding="md" className="border-l-4 border-l-error/30">
-                    <div className="flex justify-between items-start mb-4">
-                        <div className="flex items-center gap-2 text-xs font-black text-ink-soft uppercase tracking-widest">
-                            <UserLink userId={c.reporterUserId} username={c.reporterUsername} className="text-primary hover:underline" />
-                            <span>→</span>
-                            <UserLink userId={c.targetUserId} username={c.targetUsername} className="text-error hover:underline" />
+            {items.map((c: AdminComplaintItem) => (
+                <Card key={c.id} padding="md" className={c.isResolved ? 'opacity-60 grayscale-[0.5]' : ''}>
+                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
+                        <div className="flex-1 space-y-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-error/10 text-error flex items-center justify-center shrink-0">
+                                    <Flag size={16} />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-bold text-ink">
+                                        Скарга на <UserLink userId={c.targetUserId} username={c.targetUsername} className="text-primary" />
+                                    </p>
+                                    <p className="text-[10px] font-black text-ink-soft uppercase tracking-widest">
+                                        Від: <UserLink userId={c.reporterUserId} username={c.reporterUsername} /> • {new Date(c.createdAtUtc).toLocaleDateString('uk-UA')}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="bg-surface-muted/50 p-4 rounded-2xl border border-border/50 text-sm text-ink leading-relaxed">
+                                {c.reason}
+                            </div>
                         </div>
-                        <span className="text-[10px] font-bold text-ink-soft">
-                            {new Date(c.createdAtUtc).toLocaleDateString('uk-UA')}
-                        </span>
-                    </div>
-                    <p className="text-sm text-ink leading-relaxed mb-5 font-medium bg-surface-muted/50 p-4 rounded-2xl border border-border shadow-inner">
-                        {c.reason}
-                    </p>
-                    <div className="flex gap-3 pt-1">
-                        <Button size="sm" variant="error" onClick={() => setBlockModal({
-                            userId: c.targetUserId,
-                            username: c.targetUsername,
-                            complaintId: c.id
-                        })}>
-                            Заблокувати {c.targetUsername}
-                        </Button>
-                        <Button size="sm" variant="ghost" className="text-ink-soft border border-border" onClick={() => setResolveModal({ complaintId: c.id })}>
-                            Проігнорувати / Схвалено
-                        </Button>
+
+                        <div className="flex flex-row md:flex-col gap-2">
+                            {!c.isResolved && (
+                                <>
+                                    <Button size="sm" onClick={() => resolve({ variables: { complaintId: c.id } })}>Розглянуто</Button>
+                                    <Button variant="error" size="sm" onClick={() => setBlockModal({ userId: c.targetUserId, username: c.targetUsername })}>Заблокувати</Button>
+                                </>
+                            )}
+                            {c.isResolved && <Badge variant="outline">Розглянуто</Badge>}
+                        </div>
                     </div>
                 </Card>
             ))}
 
-            <Modal isOpen={!!blockModal} onClose={() => setBlockModal(null)} title={`Заблокувати ${blockModal?.username}`}>
-                <div className="space-y-5 p-2">
-                    <div className="bg-error/10 p-4 rounded-xl border border-error/20 flex gap-3 items-start">
-                        <AlertCircle className="text-error shrink-0" size={18} />
-                        <p className="text-xs text-error font-medium leading-relaxed">
-                            Блокування обмежить доступ користувача до функцій допомоги на обраний період.
-                        </p>
-                    </div>
-                    
+            <Modal isOpen={!!blockModal} onClose={() => setBlockModal(null)} title={`Блокування: ${blockModal?.username}`}>
+                <div className="space-y-6 p-2">
                     <div>
-                        <label className="block text-[10px] font-black text-ink-soft uppercase tracking-[0.2em] mb-2">Термін</label>
+                        <label className="block text-[10px] font-black text-ink-soft uppercase tracking-widest mb-3">Тривалість</label>
                         <div className="flex flex-wrap gap-2">
                             {BLOCK_PRESETS.map(p => (
-                                <button key={p.label} onClick={() => setBlockForm(f => ({ ...f, hours: String(p.hours) }))}
-                                    className={`px-4 py-2 text-xs font-black rounded-xl border transition-all ${
-                                        blockForm.hours === String(p.hours) 
-                                            ? 'bg-primary text-white border-primary shadow-sm ring-2 ring-primary/20' 
-                                            : 'bg-surface-muted border-border text-ink hover:border-primary'
-                                    }`}>
+                                <button
+                                    key={p.label}
+                                    onClick={() => setBlockForm({ ...blockForm, hours: p.hours.toString() })}
+                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${blockForm.hours === p.hours.toString()
+                                        ? 'bg-primary text-white shadow-md'
+                                        : 'bg-surface-muted text-ink-soft hover:bg-surface border border-border'
+                                        }`}
+                                >
                                     {p.label}
                                 </button>
                             ))}
@@ -528,20 +387,32 @@ function ComplaintsTab({ items, loading, onRefresh }: any) {
                     </div>
 
                     <div>
-                        <label className="block text-[10px] font-black text-ink-soft uppercase tracking-[0.2em] mb-2">Причина для адміна</label>
-                        <textarea value={blockForm.reason} onChange={e => setBlockForm(f => ({ ...f, reason: e.target.value }))}
-                            rows={2} placeholder="Чому блокуємо..."
-                            className="w-full px-4 py-3 bg-surface-muted border border-border rounded-xl text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none shadow-inner" />
+                        <label className="block text-[10px] font-black text-ink-soft uppercase tracking-widest mb-3">Причина (публічна)</label>
+                        <input
+                            type="text"
+                            value={blockForm.reason}
+                            onChange={e => setBlockForm({ ...blockForm, reason: e.target.value })}
+                            placeholder="Напр: Порушення правил спілкування"
+                            className="w-full px-4 py-3 bg-surface-muted border border-border rounded-xl text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-inner"
+                        />
                     </div>
 
-                    <div className="flex gap-3">
+                    <div className="flex gap-3 pt-2">
                         <Button variant="outline" className="flex-1" onClick={() => setBlockModal(null)}>Скасувати</Button>
-                        <Button variant="error" className="flex-1" onClick={() => {
-                            const hours = parseInt(blockForm.hours)
-                            const blockedUntil = hours > 0 ? new Date(Date.now() + hours * 3600000).toISOString() : null
-                            blockUser({ variables: { targetUserId: blockModal!.userId, reason: blockForm.reason, blockedUntilUtc: blockedUntil } })
-                        }} disabled={blocking || !blockForm.reason.trim()}>
-                            {blocking ? '...' : 'Заблокувати'}
+                        <Button
+                            variant="error"
+                            className="flex-1"
+                            disabled={blocking || !blockForm.reason}
+                            onClick={() => blockUser({
+                                variables: {
+                                    userId: blockModal!.userId,
+                                    reason: blockForm.reason,
+                                    hours: parseInt(blockForm.hours),
+                                    adminComment: blockForm.adminComment
+                                }
+                            })}
+                        >
+                            {blocking ? 'Блокування...' : 'Підтвердити'}
                         </Button>
                     </div>
                 </div>
@@ -551,27 +422,27 @@ function ComplaintsTab({ items, loading, onRefresh }: any) {
 }
 
 // ===================== REQUESTS TAB =====================
-function RequestsTab({ items, loading, onRefresh }: any) {
+function RequestsTab({ items, loading, onRefresh }: { items: AdminHelpRequestItem[]; loading: boolean; onRefresh: () => void }) {
     const dispatch = useAppDispatch()
     const [hideReq] = useMutation<HideHelpRequestData>(HIDE_HELP_REQUEST, {
         onCompleted: (data) => {
             const r = data.admin.hideHelpRequest
             if (r.error) dispatch(addToast({ type: 'error', message: r.error.message }))
-            else { dispatch(addToast({ type: 'success', message: 'Оновлено' })); onRefresh() }
+            else { dispatch(addToast({ type: 'success', message: 'Статус змінено' })); onRefresh() }
         },
     })
 
     if (loading) return <PageSpinner />
 
     return (
-        <div className="space-y-3">
+        <div className="space-y-4">
             {items.length === 0 && (
-                <div className="text-center py-20 bg-surface-muted/50 rounded-3xl border border-dashed border-border">
+                <div className="text-center py-20 bg-surface rounded-3xl border border-dashed border-border">
                     <FileText size={32} className="text-ink-soft mx-auto mb-4 opacity-50" />
                     <p className="text-ink-soft font-bold uppercase text-xs tracking-widest">Запитів немає</p>
                 </div>
             )}
-            {items.map((hr: any) => (
+            {items.map((hr: AdminHelpRequestItem) => (
                 <Card key={hr.id} padding="sm" className={hr.isHidden ? 'opacity-60 grayscale-[0.5]' : ''}>
                     <div className="flex items-center justify-between gap-4">
                         <div className="min-w-0 flex-1">
@@ -581,7 +452,7 @@ function RequestsTab({ items, loading, onRefresh }: any) {
                                 {hr.isDeleted && <Badge variant="default">Видалено</Badge>}
                             </div>
                             <div className="flex items-center gap-3 text-[10px] font-black text-ink-soft uppercase tracking-widest">
-                                <UserLink userId={hr.creatorId} username={hr.creatorUsername} className="hover:text-primary" />
+                                <span className="text-primary font-bold">{hr.creatorUsername}</span>
                                 <span className="w-1 h-1 bg-border rounded-full" />
                                 <span>{REQUEST_STATUS[hr.status]}</span>
                                 <span className="w-1 h-1 bg-border rounded-full" />
