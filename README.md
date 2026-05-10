@@ -39,14 +39,10 @@ The project is built using modern tools ensuring speed, reliability, and scalabi
 
 ## 📁 Project Structure
 
-Organized according to Clean Architecture principles:
+Organized according to Clean Architecture principles. For detailed technical documentation, see the respective directories:
 
-- `client/` — Frontend application (React + Vite).
-- `server/` — Backend application (.NET):
-    - `Domain/` — Entities and business rules.
-    - `Application/` — Application logic (Handlers, DTOs).
-    - `Infrastructure/` — DB work, repositories, external services.
-    - `Presentation/` — GraphQL schemas, Controllers, SignalR hubs.
+- [**`client/`**](./client/README.md) — Frontend application (React + Vite).
+- [**`server/`**](./server/README.md) — Backend application (.NET & Clean Architecture).
 - `tests/` — Unit and integration tests for reliability.
 
 ---
