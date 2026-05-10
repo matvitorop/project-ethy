@@ -1,17 +1,19 @@
-import { ReactNode } from 'react'
+import type { ReactNode } from 'react'
 
 type BadgeVariant = 'default' | 'success' | 'warning' | 'error' | 'info' | 'outline'
 
 interface BadgeProps {
     children: ReactNode
     variant?: BadgeVariant
+    size?: 'sm' | 'md'
     className?: string
 }
 
-export default function Badge({ 
-    children, 
+
+export default function Badge({
+    children,
     variant = 'default',
-    className = '' 
+    className = ''
 }: BadgeProps) {
     const variants = {
         default: 'bg-surface-muted text-ink-muted',

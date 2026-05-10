@@ -13,8 +13,6 @@ import RejectStageModal from './RejectStageModal'
 import StageCard from './StageCard'
 import { addToast } from '../../store/uiSlice'
 import { apolloClient } from '../../api/ApolloClient'
-import Button from '../../components/ui/Button'
-import Card from '../../components/ui/Card'
 
 function formatTime(dateStr: string) {
     return new Date(dateStr).toLocaleTimeString('uk-UA', {
@@ -277,7 +275,7 @@ function ChatConversation({ chat, onBack }: { chat: ChatListItem; onBack: () => 
                     </div>
                 )}
 
-                {chatItems.map((item, idx) => {
+                {chatItems.map((item) => {
                     if (item.type === 'message') {
                         const msg = item.data
                         const isMe = msg.senderId === userId
@@ -288,9 +286,8 @@ function ChatConversation({ chat, onBack }: { chat: ChatListItem; onBack: () => 
                                 key={msg.id}
                                 className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
                             >
-                                <div className={`max-w-[85%] px-4 py-2.5 rounded-2xl shadow-sm relative group ${
-                                    isMe ? 'bg-primary text-white rounded-br-none' : 'bg-surface border border-border text-ink rounded-bl-none'
-                                }`}>
+                                <div className={`max-w-[85%] px-4 py-2.5 rounded-2xl shadow-sm relative group ${isMe ? 'bg-primary text-white rounded-br-none' : 'bg-surface border border-border text-ink rounded-bl-none'
+                                    }`}>
                                     <p className="text-sm font-medium leading-relaxed break-words">{msg.content}</p>
                                     <p className={`text-[9px] font-bold uppercase mt-1 opacity-60 ${isMe ? 'text-white' : 'text-ink-soft'}`}>
                                         {formatTime(msg.createdAtUtc)}
