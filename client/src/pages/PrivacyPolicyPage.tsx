@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Shield, Globe, Mail, Lock, Eye, Trash2, Database, Scale } from 'lucide-react'
+import { Globe, Mail, Lock, Eye, Trash2, Database, Scale } from 'lucide-react'
 
 type Language = 'ua' | 'en'
 
@@ -132,8 +132,8 @@ export default function PrivacyPolicyPage() {
                     <p className="text-ink-soft font-medium">{t.subtitle}</p>
                     <p className="text-xs text-primary font-bold mt-2 uppercase tracking-widest">{t.lastUpdated}</p>
                 </div>
-                
-                <button 
+
+                <button
                     onClick={() => setLang(l => l === 'ua' ? 'en' : 'ua')}
                     className="flex items-center gap-2 px-4 py-2 bg-surface border border-border rounded-xl hover:border-primary/50 transition-all shadow-sm font-bold text-sm"
                 >
@@ -143,7 +143,7 @@ export default function PrivacyPolicyPage() {
             </div>
 
             <AnimatePresence mode="wait">
-                <motion.div 
+                <motion.div
                     key={lang}
                     initial={{ opacity: 0, x: 10 }}
                     animate={{ opacity: 1, x: 0 }}
