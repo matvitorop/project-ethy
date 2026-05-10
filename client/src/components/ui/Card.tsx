@@ -1,4 +1,4 @@
-import { ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { motion, type HTMLMotionProps } from 'framer-motion'
 
 interface CardProps extends HTMLMotionProps<'div'> {
@@ -24,7 +24,7 @@ export default function Card({
 
     return (
         <motion.div
-            whileHover={hoverable ? { y: -4, shadow: 'var(--shadow-lg)' } : {}}
+            whileHover={hoverable ? { y: -4, boxShadow: 'var(--shadow-lg)' } : {}}
             className={`
                 bg-surface border border-border rounded-xl shadow-sm overflow-hidden
                 ${hoverable ? 'transition-shadow hover:shadow-md' : ''}

@@ -13,7 +13,6 @@ import Card from '../../components/ui/Card'
 import Badge from '../../components/ui/Badge'
 import UserLink from '../../components/ui/UserLink'
 
-const ROLE_LABELS: Record<number, string> = { 0: 'Адміністратор', 1: 'Користувач', 2: 'Волонтер' }
 
 export default function PublicProfilePage() {
     const { userId } = useParams<{ userId: string }>()
