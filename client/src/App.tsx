@@ -16,6 +16,7 @@ import AdminPage from './pages/admin/AdminPage'
 import VerifyEmailPendingPage from './pages/auth/VerifyEmailPendingPage'
 import VerifyEmailPage from './pages/auth/VerifyEmailPage'
 import StatsPage from './pages/StatsPage'
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 
 export default function App() {
     return (
@@ -28,6 +29,7 @@ export default function App() {
                     <Route path="/verify-email/pending" element={<VerifyEmailPendingPage />} />
                     <Route path="/verify-email" element={<VerifyEmailPage />} />
                     <Route path="/stats" element={<StatsPage />} />
+                    <Route path="/privacy" element={<PrivacyPolicyPage />} />
                 </Route>
 
                 <Route element={<PrivateRoute />}>

@@ -5,6 +5,7 @@ import Logo from '../components/Logo'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { toggleTheme } from '../store/themeSlice'
 import Button from '../components/ui/Button'
+import Footer from '../components/Footer'
 
 export default function PublicLayout() {
     const dispatch = useAppDispatch()
@@ -71,6 +72,7 @@ export default function PublicLayout() {
                     </motion.div>
                 </AnimatePresence>
             </main>
+            <Footer />
         </div>
     )
 }

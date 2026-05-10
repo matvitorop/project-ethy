@@ -137,6 +137,84 @@ export default function HomePage() {
                     </div>
                 </div>
             )}
+
+            {/* Who We Are / How It Works */}
+            <div className="max-w-6xl mx-auto px-6 py-24">
+                <div className="text-center mb-16">
+                    <h2 className="text-4xl font-bold text-primary mb-4" style={{ fontFamily: 'Jua, sans-serif' }}>Хто ми та як це працює?</h2>
+                    <p className="text-ink-soft max-w-2xl mx-auto font-medium">
+                        Ethy — це не просто сайт, це екосистема довіри, де кожна дія спрямована на допомогу громаді.
+                    </p>
+                </div>
+
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {/* User Workflow */}
+                    <Card padding="lg" className="border-2 border-primary/5">
+                        <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mb-6">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        </div>
+                        <h3 className="text-xl font-bold text-ink mb-4">Для тих, хто потребує допомоги</h3>
+                        <ul className="space-y-4 text-sm text-ink-soft font-medium">
+                            <li className="flex gap-3">
+                                <span className="text-primary font-black">•</span>
+                                Створюйте запити, вказуючи локацію на мапі.
+                            </li>
+                            <li className="flex gap-3">
+                                <span className="text-primary font-black">•</span>
+                                Спілкуйтеся з волонтерами у безпечному чаті.
+                            </li>
+                            <li className="flex gap-3">
+                                <span className="text-primary font-black">•</span>
+                                Контролюйте статус виконання в реальному часі.
+                            </li>
+                        </ul>
+                    </Card>
+
+                    {/* Volunteer Workflow */}
+                    <Card padding="lg" className="border-2 border-accent/20">
+                        <div className="w-12 h-12 bg-accent/10 rounded-2xl flex items-center justify-center text-accent-dark mb-6">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+                        </div>
+                        <h3 className="text-xl font-bold text-ink mb-4">Для волонтерів</h3>
+                        <ul className="space-y-4 text-sm text-ink-soft font-medium">
+                            <li className="flex gap-3">
+                                <span className="text-accent-dark font-black">•</span>
+                                Проходьте верифікацію для отримання довіри.
+                            </li>
+                            <li className="flex gap-3">
+                                <span className="text-accent-dark font-black">•</span>
+                                Обирайте заявки поблизу та допомагайте.
+                            </li>
+                            <li className="flex gap-3">
+                                <span className="text-accent-dark font-black">•</span>
+                                Надавайте фотозвіти про виконану роботу.
+                            </li>
+                        </ul>
+                    </Card>
+
+                    {/* Trust System */}
+                    <Card padding="lg" className="border-2 border-primary/5 md:col-span-2 lg:col-span-1">
+                        <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mb-6">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+                        </div>
+                        <h3 className="text-xl font-bold text-ink mb-4">Система довіри</h3>
+                        <ul className="space-y-4 text-sm text-ink-soft font-medium">
+                            <li className="flex gap-3">
+                                <span className="text-primary font-black">•</span>
+                                Взаємні відгуки після кожної завершеної справи.
+                            </li>
+                            <li className="flex gap-3">
+                                <span className="text-primary font-black">•</span>
+                                Прозора модерація та система скарг.
+                            </li>
+                            <li className="flex gap-3">
+                                <span className="text-primary font-black">•</span>
+                                Рейтинг, що базується на реальних діях.
+                            </li>
+                        </ul>
+                    </Card>
+                </div>
+            </div>
         </div>
     )
 }
