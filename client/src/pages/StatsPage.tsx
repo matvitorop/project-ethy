@@ -1,12 +1,16 @@
 import { useQuery } from '@apollo/client/react'
 import { Link } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    PieChart, Pie,
+    PieChart, Pie, Cell
 } from 'recharts'
 import { GET_PLATFORM_STATS, GET_MONTHLY_ACTIVITY, GET_TOP_VOLUNTEERS } from '../api/queries'
 import type { PlatformStatsData, MonthlyActivityData, TopVolunteersData } from '../api/types'
 import { PageSpinner } from '../components/Spinner'
+import Card from '../components/ui/Card'
+import Badge from '../components/ui/Badge'
+import UserLink from '../components/ui/UserLink'
 
 const MONTH_NAMES = ['Січ', 'Лют', 'Бер', 'Кві', 'Тра', 'Чер', 'Лип', 'Сер', 'Вер', 'Жов', 'Лис', 'Гру']
 
@@ -38,11 +42,11 @@ export default function StatsPage() {
     const top = topData?.statsQuery.topVolunteers.data
 
     const pieData = stats ? [
-        { name: 'Відкриті', value: stats.openRequests, fill: STATUS_COLORS['Відкриті'] },
-        { name: 'В процесі', value: stats.inProgressRequests, fill: STATUS_COLORS['В процесі'] },
-        { name: 'Виконані', value: stats.resolvedRequests, fill: STATUS_COLORS['Виконані'] },
-        { name: 'Скасовані', value: stats.cancelledRequests, fill: STATUS_COLORS['Скасовані'] },
-        { name: 'Чернетки', value: stats.draftRequests, fill: STATUS_COLORS['Чернетки'] },
+        { name: 'Відкриті', value: stats.openRequests, color: STATUS_COLORS['Відкриті'] },
+        { name: 'В процесі', value: stats.inProgressRequests, color: STATUS_COLORS['В процесі'] },
+        { name: 'Виконані', value: stats.resolvedRequests, color: STATUS_COLORS['Виконані'] },
+        { name: 'Скасовані', value: stats.cancelledRequests, color: STATUS_COLORS['Скасовані'] },
+        { name: 'Чернетки', value: stats.draftRequests, color: STATUS_COLORS['Чернетки'] },
     ].filter(d => d.value > 0) : []
 
     const chartData = monthly.map(m => ({
@@ -51,111 +55,125 @@ export default function StatsPage() {
     }))
 
     return (
-        <div className="max-w-5xl mx-auto space-y-8">
+        <div className="max-w-5xl mx-auto space-y-10">
             {/* Заголовок */}
-            <div>
-                <h1 className="text-2xl font-bold text-primary mb-1"
+            <motion.div 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+            >
+                <h1 className="text-3xl font-bold text-primary mb-2"
                     style={{ fontFamily: 'Jua, sans-serif' }}>
                     Статистика платформи
                 </h1>
                 <p className="text-sm text-ink-muted">
-                    Дані оновлюються кожні 10 хвилин
+                    Глобальна активність спільноти Project Ethy
                 </p>
-            </div>
+            </motion.div>
 
             {/* Ключові показники */}
             {stats && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <StatCard label="Всього заявок" value={stats.totalRequests} color="text-primary" />
-                    <StatCard label="Виконано" value={stats.resolvedRequests} color="text-success" />
-                    <StatCard label="Користувачів" value={stats.totalUsers} color="text-info" />
-                    <StatCard label="Волонтерів" value={stats.totalVolunteers} color="text-accent-dark" />
+                    <StatCard label="Всього заявок" value={stats.totalRequests} color="text-primary" delay={0.1} />
+                    <StatCard label="Виконано" value={stats.resolvedRequests} color="text-success" delay={0.2} />
+                    <StatCard label="Користувачів" value={stats.totalUsers} color="text-info" delay={0.3} />
+                    <StatCard label="Волонтерів" value={stats.totalVolunteers} color="text-accent-dark" delay={0.4} />
                 </div>
             )}
 
             {/* Метрики ефективності */}
             {stats && (
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-surface rounded-xl border border-border p-5 text-center">
-                        <p className="text-3xl font-bold text-success mb-1">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Card padding="md" className="flex flex-col items-center justify-center text-center">
+                        <p className="text-4xl font-black text-success mb-2 tracking-tight">
                             {stats.completionRate.toFixed(1)}%
                         </p>
-                        <p className="text-sm text-ink-muted">Відсоток виконаних заявок</p>
-                    </div>
-                    <div className="bg-surface rounded-xl border border-border p-5 text-center">
-                        <p className="text-3xl font-bold text-primary mb-1">
+                        <p className="text-xs font-bold text-ink-soft uppercase tracking-widest">Відсоток успіху</p>
+                    </Card>
+                    <Card padding="md" className="flex flex-col items-center justify-center text-center">
+                        <p className="text-4xl font-black text-primary mb-2 tracking-tight">
                             {stats.avgCompletionDays.toFixed(1)}
                         </p>
-                        <p className="text-sm text-ink-muted">Середній час виконання (днів)</p>
-                    </div>
+                        <p className="text-xs font-bold text-ink-soft uppercase tracking-widest">Днів на заявку (сер.)</p>
+                    </Card>
                 </div>
             )}
 
             {/* Графіки */}
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid lg:grid-cols-2 gap-8">
                 {/* Pie — розбивка по статусах */}
-                <div className="bg-surface rounded-xl border border-border p-6">
-                    <h2 className="text-base font-semibold text-ink mb-4"
+                <Card padding="lg">
+                    <h2 className="text-lg font-bold text-ink mb-6"
                         style={{ fontFamily: 'Jua, sans-serif' }}>
-                        Заявки по статусах
+                        Розподіл за статусами
                     </h2>
                     {pieData.length > 0 ? (
-                        <ResponsiveContainer width="100%" height={220}>
+                        <ResponsiveContainer width="100%" height={250}>
                             <PieChart>
                                 <Pie
                                     data={pieData}
                                     dataKey="value"
                                     nameKey="name"
                                     cx="50%" cy="50%"
-                                    outerRadius={80}
-                                    label={({ name, percent = 0 }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                    innerRadius={60}
+                                    outerRadius={90}
+                                    paddingAngle={5}
+                                >
+                                    {pieData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.color} />
+                                    ))}
+                                </Pie>
+                                <Tooltip 
+                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                                    formatter={(value) => [`${value} заявок`]} 
                                 />
-                                <Tooltip formatter={(value) => [`${value} заявок`]} />
                             </PieChart>
                         </ResponsiveContainer>
                     ) : (
-                        <div className="h-[220px] flex items-center justify-center text-ink-muted text-sm">
-                            Немає даних
+                        <div className="h-[250px] flex items-center justify-center text-ink-soft text-sm">
+                            Дані відсутні
                         </div>
                     )}
-                </div>
+                </Card>
 
                 {/* Area — активність по місяцях */}
-                <div className="bg-surface rounded-xl border border-border p-6">
-                    <h2 className="text-base font-semibold text-ink mb-4"
+                <Card padding="lg">
+                    <h2 className="text-lg font-bold text-ink mb-6"
                         style={{ fontFamily: 'Jua, sans-serif' }}>
-                        Активність (останні 12 місяців)
+                        Динаміка за рік
                     </h2>
                     {chartData.length > 0 ? (
-                        <ResponsiveContainer width="100%" height={220}>
+                        <ResponsiveContainer width="100%" height={250}>
                             <AreaChart data={chartData}>
                                 <defs>
                                     <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#0B1D3A" stopOpacity={0.3} />
+                                        <stop offset="5%" stopColor="#0B1D3A" stopOpacity={0.2} />
                                         <stop offset="95%" stopColor="#0B1D3A" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                                <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                                <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
-                                <Tooltip formatter={(value) => [`${value} заявок`]} />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'var(--color-ink-soft)' }} />
+                                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'var(--color-ink-soft)' }} allowDecimals={false} />
+                                <Tooltip 
+                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                                    formatter={(value) => [`${value} заявок`]} 
+                                />
                                 <Area type="monotone" dataKey="count" name="Заявок"
-                                    stroke="#0B1D3A" fill="url(#colorCount)" strokeWidth={2} />
+                                    stroke="#0B1D3A" fill="url(#colorCount)" strokeWidth={3} />
                             </AreaChart>
                         </ResponsiveContainer>
                     ) : (
-                        <div className="h-[220px] flex items-center justify-center text-ink-muted text-sm">
-                            Немає даних
+                        <div className="h-[250px] flex items-center justify-center text-ink-soft text-sm">
+                            Дані відсутні
                         </div>
                     )}
-                </div>
+                </Card>
             </div>
 
             {/* Топ волонтерів */}
             {!topLoading && top && (
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid md:grid-cols-2 gap-8">
                     <TopTable
-                        title="Топ за виконаними заявками"
+                        title="Герої за виконанням"
                         rows={top.byCompleted.map((v, i) => ({
                             rank: i + 1,
                             userId: v.userId,
@@ -165,7 +183,7 @@ export default function StatsPage() {
                         }))}
                     />
                     <TopTable
-                        title="Топ за позитивними відгуками"
+                        title="Улюбленці спільноти"
                         rows={top.byReviews.map((v, i) => ({
                             rank: i + 1,
                             userId: v.userId,
@@ -180,12 +198,18 @@ export default function StatsPage() {
     )
 }
 
-function StatCard({ label, value, color }: { label: string; value: number; color: string }) {
+function StatCard({ label, value, color, delay }: { label: string; value: number; color: string; delay: number }) {
     return (
-        <div className="bg-surface rounded-xl border border-border p-5 text-center">
-            <p className={`text-3xl font-bold mb-1 ${color}`}>{value.toLocaleString('uk-UA')}</p>
-            <p className="text-xs text-ink-muted">{label}</p>
-        </div>
+        <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay }}
+        >
+            <Card padding="md" className="text-center h-full">
+                <p className={`text-3xl font-black mb-1 ${color}`}>{value.toLocaleString('uk-UA')}</p>
+                <p className="text-[10px] font-bold text-ink-soft uppercase tracking-wider">{label}</p>
+            </Card>
+        </motion.div>
     )
 }
 
@@ -194,35 +218,41 @@ function TopTable({ title, rows }: {
     rows: { rank: number; userId: string; username: string; value: number; label: string }[]
 }) {
     return (
-        <div className="bg-surface rounded-xl border border-border p-6">
-            <h2 className="text-base font-semibold text-ink mb-4"
+        <Card padding="lg">
+            <h2 className="text-lg font-bold text-ink mb-6"
                 style={{ fontFamily: 'Jua, sans-serif' }}>
                 {title}
             </h2>
             {rows.length === 0 ? (
-                <p className="text-sm text-ink-muted text-center py-4">Немає даних</p>
+                <p className="text-sm text-ink-muted text-center py-8">Дані завантажуються...</p>
             ) : (
-                <div className="space-y-2">
-                    {rows.map(row => (
-                        <div key={row.userId}
-                            className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-surface-muted transition-colors">
-                            <span className={`w-6 text-center text-sm font-bold ${row.rank === 1 ? 'text-accent-dark' :
-                                    row.rank === 2 ? 'text-ink-muted' :
-                                        row.rank === 3 ? 'text-amber-600' : 'text-ink-soft'
+                <div className="space-y-1">
+                    {rows.map((row, index) => (
+                        <motion.div 
+                            key={row.userId}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.1 }}
+                            className="flex items-center gap-3 p-3 rounded-xl hover:bg-surface-muted transition-colors group"
+                        >
+                            <span className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-black ${
+                                    row.rank === 1 ? 'bg-accent/20 text-accent-dark' :
+                                    row.rank === 2 ? 'bg-slate-100 text-slate-500' :
+                                    row.rank === 3 ? 'bg-amber-50 text-amber-700' : 
+                                    'text-ink-soft'
                                 }`}>
                                 {row.rank === 1 ? '🥇' : row.rank === 2 ? '🥈' : row.rank === 3 ? '🥉' : row.rank}
                             </span>
-                            <Link to={`/profile/${row.userId}`}
-                                className="flex-1 text-sm font-medium text-ink hover:text-primary transition-colors">
-                                {row.username}
-                            </Link>
-                            <span className="text-sm text-ink-muted">
+                            <div className="flex-1">
+                                <UserLink userId={row.userId} username={row.username} className="font-bold text-ink" />
+                            </div>
+                            <Badge variant={row.rank === 1 ? 'success' : 'default'} className="font-black">
                                 {row.value} {row.label}
-                            </span>
-                        </div>
+                            </Badge>
+                        </motion.div>
                     ))}
                 </div>
             )}
-        </div>
+        </Card>
     )
 }

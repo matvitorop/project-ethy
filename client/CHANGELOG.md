@@ -1,12 +1,19 @@
-This file explains how Visual Studio created the project.
+## [2026-05-10] Refactoring & UI/UX Overhaul
 
-The following tools were used to generate this project:
-- create-vite
+### Added
+- **Framer Motion** for smooth animations and transitions.
+- **UI Component Library**: Generic components in `src/components/ui` (`Button`, `Card`, `Badge`, `UserLink`, `Skeleton`).
+- **UserLink Component**: Reusable component for clickable usernames throughout the app.
+- **Page Transitions**: Smooth entry/exit animations for all routes.
 
-The following steps were used to generate this project:
-- Create react project with create-vite: `npm init --yes vite@latest client -- --template=react-ts  --no-rolldown --no-immediate`.
-- Updating `vite.config.ts` with port.
-- Create project file (`client.esproj`).
-- Create `launch.json` to enable debugging.
-- Add project to solution.
-- Write this file.
+### Changed
+- **Directory Structure**: Moved all page components to `src/pages/` for better separation of concerns.
+- **AppLayout**: Modern "glassmorphism" style navbar with improved navigation.
+- **PublicLayout**: Polished landing and auth layouts.
+- **Design Overhaul**: Refined colors, shadows, and spacing across `HomePage`, `RequestsListPage`, and `StatsPage`.
+- **RequestCard**: Modernized card design with status badges and hover effects.
+
+### Technical
+- Standardized UI components for better maintainability.
+- Extracted business logic from `RequestsListPage` and `StatsPage` into cleaner component structures.
+- Improved mobile responsiveness of main layouts.

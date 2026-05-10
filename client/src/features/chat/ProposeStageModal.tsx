@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Modal from '../../components/Modal'
+import Button from '../../components/ui/Button'
 
 interface ProposeStageModalProps {
   isOpen: boolean
@@ -25,41 +26,45 @@ export default function ProposeStageModal({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Запропонувати етап">
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label className="block text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">
+          <label className="block text-[10px] font-black text-ink-soft uppercase tracking-widest mb-3 ml-1">
             Опис етапу
           </label>
           <textarea
             value={content}
             onChange={e => setContent(e.target.value)}
-            placeholder="Опишіть що має відбутись на цьому етапі..."
+            placeholder="Опишіть що саме ви плануєте зробити або яку допомогу надати на цьому етапі..."
             maxLength={500}
-            rows={3}
-            className="w-full px-4 py-3 bg-surface-muted border border-border rounded-lg text-ink placeholder-ink-soft focus:outline-none focus:border-primary focus:bg-surface transition-colors resize-none"
+            rows={4}
+            className="w-full px-4 py-4 bg-surface-muted border-2 border-border rounded-2xl text-sm font-medium text-ink placeholder-ink-soft focus:outline-none focus:border-primary/30 focus:bg-surface transition-all resize-none shadow-inner"
           />
-          <p className="text-xs text-ink-soft mt-1 text-right">
-            {content.length}/500
-          </p>
+          <div className="flex justify-between items-center mt-2 px-1">
+             <p className="text-[10px] text-ink-soft font-bold">Будьте лаконічними та зрозумілими</p>
+             <p className="text-[10px] font-black text-ink-soft uppercase tabular-nums">
+                {content.length}/500
+             </p>
+          </div>
         </div>
 
-        <div className="flex gap-3">
-          <button
-            type="button"
+        <div className="flex gap-3 pt-2">
+          <Button
+            variant="outline"
             onClick={onClose}
-            className="flex-1 py-2.5 border border-border rounded-lg text-sm font-medium text-ink hover:border-primary transition-colors"
+            className="flex-1 py-3 text-[10px] font-black uppercase tracking-widest"
           >
             Скасувати
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
             disabled={loading || !content.trim()}
-            className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-light disabled:opacity-60 transition-colors"
+            isLoading={loading}
+            className="flex-1 py-3 text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20"
           >
-            {loading ? 'Надсилання...' : 'Запропонувати'}
-          </button>
+            Запропонувати
+          </Button>
         </div>
       </form>
     </Modal>
   )
-}
+}

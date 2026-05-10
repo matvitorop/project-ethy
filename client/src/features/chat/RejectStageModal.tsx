@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Modal from '../../components/Modal'
+import Button from '../../components/ui/Button'
 
 interface RejectStageModalProps {
   isOpen: boolean
@@ -25,41 +26,46 @@ export default function RejectStageModal({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Відхилити етап">
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label className="block text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">
+          <label className="block text-[10px] font-black text-ink-soft uppercase tracking-widest mb-3 ml-1">
             Причина відхилення
           </label>
           <textarea
             value={reason}
             onChange={e => setReason(e.target.value)}
-            placeholder="Вкажіть причину відхилення..."
+            placeholder="Будь ласка, поясніть, чому цей етап не може бути прийнятий у поточному вигляді..."
             maxLength={500}
-            rows={3}
-            className="w-full px-4 py-3 bg-surface-muted border border-border rounded-lg text-ink placeholder-ink-soft focus:outline-none focus:border-primary focus:bg-surface transition-colors resize-none"
+            rows={4}
+            className="w-full px-4 py-4 bg-surface-muted border-2 border-border rounded-2xl text-sm font-medium text-ink placeholder-ink-soft focus:outline-none focus:border-error/30 focus:bg-surface transition-all resize-none shadow-inner"
           />
-          <p className="text-xs text-ink-soft mt-1 text-right">
-            {reason.length}/500
-          </p>
+          <div className="flex justify-between items-center mt-2 px-1">
+             <p className="text-[10px] text-error font-bold">Це допоможе вашому партнеру виправити помилки</p>
+             <p className="text-[10px] font-black text-ink-soft uppercase tabular-nums">
+                {reason.length}/500
+             </p>
+          </div>
         </div>
 
-        <div className="flex gap-3">
-          <button
-            type="button"
+        <div className="flex gap-3 pt-2">
+          <Button
+            variant="outline"
             onClick={onClose}
-            className="flex-1 py-2.5 border border-border rounded-lg text-sm font-medium text-ink hover:border-primary transition-colors"
+            className="flex-1 py-3 text-[10px] font-black uppercase tracking-widest"
           >
             Скасувати
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
+            variant="error"
             disabled={loading || !reason.trim()}
-            className="flex-1 py-2.5 bg-error text-white rounded-lg text-sm font-semibold hover:opacity-90 disabled:opacity-60 transition-colors"
+            isLoading={loading}
+            className="flex-1 py-3 text-[10px] font-black uppercase tracking-widest shadow-lg shadow-error/20"
           >
-            {loading ? 'Відхилення...' : 'Відхилити'}
-          </button>
+            Відхилити
+          </Button>
         </div>
       </form>
     </Modal>
   )
-}
+}

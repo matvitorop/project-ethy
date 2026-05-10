@@ -1,4 +1,6 @@
-import { CheckCircle, XCircle, Clock } from 'lucide-react'
+import { CheckCircle, XCircle, Clock, Info } from 'lucide-react'
+import { motion } from 'framer-motion'
+import Button from '../../components/ui/Button'
 
 interface StageCardProps {
     stageId: string
@@ -13,10 +15,10 @@ interface StageCardProps {
 }
 
 const STATUS_CONFIG = {
-    0: { label: 'Очікує підтвердження', color: 'border-warning/30 bg-warning/5' },
-    1: { label: 'Підтверджено', color: 'border-success/30 bg-success/5' },
-    2: { label: 'Відхилено', color: 'border-error/30 bg-error/5' },
-    3: { label: 'Видалено', color: 'border-border bg-surface-muted' },
+    0: { label: 'Очікує підтвердження', color: 'border-primary/20 bg-primary/5 text-primary', icon: Clock },
+    1: { label: 'Підтверджено', color: 'border-success/20 bg-success/5 text-success', icon: CheckCircle },
+    2: { label: 'Відхилено', color: 'border-error/20 bg-error/5 text-error', icon: XCircle },
+    3: { label: 'Видалено', color: 'border-border bg-surface-muted text-ink-soft', icon: Info },
 } as const
 
 export default function StageCard({
@@ -32,49 +34,58 @@ export default function StageCard({
 }: StageCardProps) {
     const config = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG]
     const canAct = status === 0 && proposedByUserId !== currentUserId
+    const StatusIcon = config.icon
 
     return (
-        <div className={`rounded-xl border p-3 ${config.color}`}>
-            <div className="flex items-start gap-2 mb-2">
-                <Clock size={14} className="text-ink-muted mt-0.5 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-1">
-                        Етап запропоновано
-                    </p>
-                    <p className="text-sm text-ink leading-relaxed">{content}</p>
-                </div>
+        <motion.div 
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className={`rounded-2xl border-2 p-4 transition-all shadow-sm ${config.color}`}
+        >
+            <div className="flex items-center gap-2 mb-3">
+                <StatusIcon size={14} className="opacity-80" />
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80" style={{ fontFamily: 'Jua, sans-serif' }}>
+                    {config.label}
+                </span>
+            </div>
+
+            <div className="bg-surface/50 backdrop-blur-sm rounded-xl p-3 border border-current/10 mb-3 shadow-inner">
+                <p className="text-sm font-semibold text-ink leading-relaxed">
+                    {content}
+                </p>
             </div>
 
             {rejectionReason && (
-                <p className="text-xs text-error mt-1 mb-2">
-                    Причина: {rejectionReason}
-                </p>
+                <div className="flex items-start gap-2 text-error bg-error/10 p-2.5 rounded-xl border border-error/20 mb-3">
+                    <XCircle size={14} className="mt-0.5 shrink-0" />
+                    <p className="text-xs font-bold leading-relaxed">
+                        Причина відмови: {rejectionReason}
+                    </p>
+                </div>
             )}
 
-            <div className="flex items-center justify-between mt-2 flex-wrap gap-2">
-                <span className="text-xs text-ink-muted">{config.label}</span>
-
-                {canAct && (
-                    <div className="flex gap-1.5 flex-wrap">
-                        <button
-                            onClick={() => onConfirm(stageId)}
-                            disabled={confirming}
-                            className="flex items-center gap-1 px-2 py-1 text-xs font-medium bg-success text-white rounded-lg hover:opacity-90 disabled:opacity-60 transition-colors"
-                        >
-                            <CheckCircle size={11} />
-                            Підтвердити
-                        </button>
-                        <button
-                            onClick={() => onReject(stageId)}
-                            disabled={confirming}
-                            className="flex items-center gap-1 px-2 py-1 text-xs font-medium bg-error text-white rounded-lg hover:opacity-90 disabled:opacity-60 transition-colors"
-                        >
-                            <XCircle size={11} />
-                            Відхилити
-                        </button>
-                    </div>
-                )}
-            </div>
-        </div>
+            {canAct && (
+                <div className="grid grid-cols-2 gap-2 mt-4">
+                    <Button
+                        variant="success"
+                        size="sm"
+                        onClick={() => onConfirm(stageId)}
+                        isLoading={confirming}
+                        className="py-2 text-[10px] font-black uppercase tracking-widest shadow-md shadow-success/20"
+                    >
+                        Підтвердити
+                    </Button>
+                    <Button
+                        variant="error"
+                        size="sm"
+                        onClick={() => onReject(stageId)}
+                        isLoading={confirming}
+                        className="py-2 text-[10px] font-black uppercase tracking-widest shadow-md shadow-error/20"
+                    >
+                        Відхилити
+                    </Button>
+                </div>
+            )}
+        </motion.div>
     )
-}
+}
