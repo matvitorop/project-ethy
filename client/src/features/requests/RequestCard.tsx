@@ -50,7 +50,7 @@ export default function RequestCard({ item }: { item: HelpRequestListItem }) {
                         </div>
                         <div className="flex items-center gap-3">
                             {statusConfig && (
-                                <Badge variant={statusConfig.variant as any}>
+                                <Badge variant={statusConfig.variant as 'default' | 'success' | 'info' | 'outline' | 'error'}>
                                     {statusConfig.label}
                                 </Badge>
                             )}

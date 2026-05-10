@@ -40,7 +40,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(({
 
     return (
         <motion.button
-            ref={ref as any}
+            ref={ref}
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
             disabled={isLoading || disabled}

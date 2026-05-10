@@ -14,7 +14,8 @@ import type {
     EventLogData,
     ReportsData,
     CreateReportData,
-    ChangeHelpRequestStatusData
+    ChangeHelpRequestStatusData,
+    ApiError
 } from '../../api/types'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { addToast } from '../../store/uiSlice'
@@ -108,7 +109,7 @@ export default function RequestDetailsPage() {
     })
 
     const [cancelRequest, { loading: cancelling }] = useMutation(CANCEL_HELP_REQUEST, {
-        onCompleted: (data: any) => {
+        onCompleted: (data: { helpRequest: { cancelHelpRequest: { success: boolean; error: ApiError | null } } }) => {
             const result = data.helpRequest.cancelHelpRequest
             if (result.error) {
                 dispatch(addToast({ type: 'error', message: result.error.message }))
@@ -220,7 +221,7 @@ export default function RequestDetailsPage() {
     ]
 
     return (
-        <motion.div 
+        <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="max-w-4xl mx-auto"
@@ -249,9 +250,8 @@ export default function RequestDetailsPage() {
                                 <button
                                     key={url}
                                     onClick={() => setActiveImage(i)}
-                                    className={`relative flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${
-                                        i === activeImage ? 'border-primary ring-2 ring-primary/20' : 'border-transparent opacity-70 hover:opacity-100'
-                                    }`}
+                                    className={`relative flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${i === activeImage ? 'border-primary ring-2 ring-primary/20' : 'border-transparent opacity-70 hover:opacity-100'
+                                        }`}
                                 >
                                     <img
                                         src={`${API_BASE_URL}${url}`}
@@ -270,7 +270,7 @@ export default function RequestDetailsPage() {
                 <div>
                     <div className="flex items-center gap-3 mb-2">
                         {statusConfig && (
-                            <Badge variant={statusConfig.variant as any}>
+                            <Badge variant={statusConfig.variant as 'default' | 'success' | 'warning' | 'error' | 'info' | 'outline'}>
                                 {statusConfig.label}
                             </Badge>
                         )}
@@ -410,10 +410,10 @@ export default function RequestDetailsPage() {
                     {TABS.map(tab => (
                         <button
                             key={tab.key}
-                            onClick={() => setActiveTab(tab.key as any)}
+                            onClick={() => setActiveTab(tab.key as 'stages' | 'log')}
                             className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 text-sm font-bold transition-all rounded-2xl ${activeTab === tab.key
-                                    ? 'bg-surface text-primary shadow-sm ring-1 ring-border'
-                                    : 'text-ink-soft hover:text-ink hover:bg-surface-muted'
+                                ? 'bg-surface text-primary shadow-sm ring-1 ring-border'
+                                : 'text-ink-soft hover:text-ink hover:bg-surface-muted'
                                 }`}
                         >
                             {tab.icon}
@@ -490,7 +490,7 @@ export default function RequestDetailsPage() {
                                                         disabled={reportUploading}
                                                     />
                                                 </label>
-                                                
+
                                                 {reportImage && (
                                                     <div className="flex items-center gap-3 bg-success/10 px-4 py-2 rounded-xl border border-success/20">
                                                         <span className="text-xs font-black text-success uppercase">Фото готове</span>
@@ -566,8 +566,8 @@ export default function RequestDetailsPage() {
                     />
                     <div className="flex gap-3">
                         <Button variant="outline" className="flex-1" onClick={() => setCancelModalOpen(false)}>Назад</Button>
-                        <Button 
-                            variant="error" 
+                        <Button
+                            variant="error"
                             className="flex-1"
                             onClick={() => cancelRequest({
                                 variables: { helpRequestId: hr.id, reason: cancelReason.trim() }
@@ -593,8 +593,8 @@ export default function RequestDetailsPage() {
                     </div>
                     <div className="flex gap-3">
                         <Button variant="outline" className="flex-1" onClick={() => setDeleteModalOpen(false)}>Назад</Button>
-                        <Button 
-                            variant="error" 
+                        <Button
+                            variant="error"
                             className="flex-1"
                             onClick={() => softDelete({ variables: { helpRequestId: hr.id } })}
                             disabled={deleting}

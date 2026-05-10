@@ -8,7 +8,6 @@ import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { toggleTheme } from '../store/themeSlice'
 import { useLogout } from '../features/auth/useAuth'
 import ReportsPanel from '../features/reports/ReportsPanel'
-import Button from '../components/ui/Button'
 
 export default function AppLayout() {
     const dispatch = useAppDispatch()
