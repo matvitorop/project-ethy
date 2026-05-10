@@ -23,7 +23,7 @@ export default function VerifyEmailPage() {
     }, [userId, token, verifyEmail])
 
     useEffect(() => {
-        if (data?.auth.verifyEmail.success) {
+        if (data?.user.verifyEmail.success) {
             const timer = setTimeout(() => {
                 navigate('/login')
             }, 3000)
@@ -60,13 +60,13 @@ export default function VerifyEmailPage() {
                             <h2 className="text-2xl font-black text-ink" style={{ fontFamily: 'Jua, sans-serif' }}>Підтвердження...</h2>
                             <p className="text-ink-soft font-medium">Ми перевіряємо ваш токен.</p>
                         </>
-                    ) : error || data?.auth.verifyEmail.error ? (
+                    ) : error || data?.user.verifyEmail.error ? (
                         <>
                             <div className="w-16 h-16 bg-error/10 text-error rounded-full flex items-center justify-center mx-auto mb-6">
                                 <XCircle className="w-8 h-8" />
                             </div>
                             <h2 className="text-2xl font-black text-ink" style={{ fontFamily: 'Jua, sans-serif' }}>Помилка</h2>
-                            <p className="text-error font-medium">{data?.auth.verifyEmail.error?.message || 'Щось пішло не так'}</p>
+                            <p className="text-error font-medium">{data?.user.verifyEmail.error?.message || 'Щось пішло не так'}</p>
                             <div className="pt-4 space-y-3">
                                 <Link to="/login" className="block">
                                     <Button variant="outline" className="w-full">Спробувати увійти</Button>

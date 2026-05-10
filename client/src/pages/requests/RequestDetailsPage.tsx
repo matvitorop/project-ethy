@@ -108,8 +108,8 @@ export default function RequestDetailsPage() {
         onError: () => dispatch(addToast({ type: 'error', message: 'Помилка видалення' })),
     })
 
-    const [cancelRequest, { loading: cancelling }] = useMutation(CANCEL_HELP_REQUEST, {
-        onCompleted: (data: { helpRequest: { cancelHelpRequest: { success: boolean; error: ApiError | null } } }) => {
+    const [cancelRequest, { loading: cancelling }] = useMutation<{ helpRequest: { cancelHelpRequest: { success: boolean; error: ApiError | null } } }>(CANCEL_HELP_REQUEST, {
+        onCompleted: (data) => {
             const result = data.helpRequest.cancelHelpRequest
             if (result.error) {
                 dispatch(addToast({ type: 'error', message: result.error.message }))
@@ -313,7 +313,7 @@ export default function RequestDetailsPage() {
                             </div>
                             <div>
                                 <p className="text-[10px] font-bold text-ink-soft uppercase leading-none mb-1">Виконавець</p>
-                                <UserLink userId={hr.assignedUserId} username={hr.assignedUsername} className="text-xs font-bold" />
+                                <UserLink userId={hr.assignedUserId || undefined} username={hr.assignedUsername} className="text-xs font-bold" />
                             </div>
                         </div>
                     )}
