@@ -6,9 +6,9 @@ import { CREATE_HELP_REQUEST } from '../../api/queries'
 import type { CreateHelpRequestData } from '../../api/types'
 import { useAppDispatch } from '../../store/hooks'
 import { addToast } from '../../store/uiSlice'
-import ImageUploader from './components/ImageUploader'
+import ImageUploader from '../../features/requests/components/ImageUploader'
 
-const LocationPicker = lazy(() => import('./components/LocationPicker'))
+const LocationPicker = lazy(() => import('../../features/requests/components/LocationPicker'))
 
 export default function CreateRequestPage() {
     const navigate = useNavigate()
