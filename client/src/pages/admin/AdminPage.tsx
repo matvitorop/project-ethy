@@ -6,12 +6,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
     GET_VOLUNTEER_APPLICATIONS, GET_COMPLAINTS, GET_ADMIN_HELP_REQUESTS,
     REVIEW_VOLUNTEER_APPLICATION, RESOLVE_COMPLAINT, HIDE_HELP_REQUEST,
-    BLOCK_USER, GET_ADMIN_ANALYTICS
+    BLOCK_USER, GET_ADMIN_ANALYTICS, GET_ADMIN_USERS, UNBLOCK_USER
 } from '../../api/queries'
 import type {
     VolunteerApplicationsData, ComplaintsData, AdminHelpRequestsData,
     VolunteerApplicationItem, AdminComplaintItem, AdminHelpRequestItem, ApiError, AdminAnalyticsData,
-    AdminAnalyticsDto
+    AdminAnalyticsDto, AdminUsersData, AdminUserDto
 } from '../../api/types'
 import { useAppDispatch } from '../../store/hooks'
 import { addToast } from '../../store/uiSlice'
@@ -28,6 +28,9 @@ interface ResolveComplaintData {
 }
 interface BlockUserData {
     admin: { blockUser: { success: boolean; error: ApiError | null } }
+}
+interface UnblockUserData {
+    admin: { unblockUser: { success: boolean; error: ApiError | null } }
 }
 interface HideHelpRequestData {
     admin: { hideHelpRequest: { success: boolean; error: ApiError | null } }
@@ -74,9 +77,13 @@ function RefreshBar({ onRefresh, loading, lastUpdated }: { onRefresh: () => void
 
 export default function AdminPage() {
     const [searchParams, setSearchParams] = useSearchParams()
-    const activeTab = (searchParams.get('tab') as 'applications' | 'complaints' | 'requests' | 'analytics') || 'analytics'
+    const activeTab = (searchParams.get('tab') as 'applications' | 'complaints' | 'requests' | 'analytics' | 'users') || 'analytics'
     const reqFilter = (searchParams.get('filter') as 'all' | 'active' | 'completed' | 'hidden') || 'all'
     const reqSearch = searchParams.get('q') || ''
+    
+    // User search state
+    const userSearch = searchParams.get('uq') || ''
+    const userShortId = searchParams.get('uid') || ''
 
     const setActiveTab = useCallback((tab: string) => {
         setSearchParams(prev => { prev.set('tab', tab); return prev }, { replace: true })
@@ -90,18 +97,38 @@ export default function AdminPage() {
         setSearchParams(prev => { if (q) prev.set('q', q); else prev.delete('q'); return prev }, { replace: true })
     }, [setSearchParams])
 
+    const setUserSearch = useCallback((q: string) => {
+        setSearchParams(prev => { if (q) prev.set('uq', q); else prev.delete('uq'); return prev }, { replace: true })
+    }, [setSearchParams])
+
+    const setUserShortId = useCallback((id: string) => {
+        setSearchParams(prev => { if (id) prev.set('uid', id); else prev.delete('uid'); return prev }, { replace: true })
+    }, [setSearchParams])
+
     const [lastUpdated, setLastUpdated] = useState<Record<string, Date | null>>({
-        analytics: null, applications: null, complaints: null, requests: null,
+        analytics: null, applications: null, complaints: null, requests: null, users: null,
     })
 
     const client = useApolloClient()
 
     const [debouncedSearch, setDebouncedSearch] = useState(reqSearch)
+    const [debouncedUserSearch, setDebouncedUserSearch] = useState(userSearch)
+    const [debouncedUserShortId, setDebouncedUserShortId] = useState(userShortId)
 
     useEffect(() => {
         const timer = setTimeout(() => setDebouncedSearch(reqSearch), 500)
         return () => clearTimeout(timer)
     }, [reqSearch])
+
+    useEffect(() => {
+        const timer = setTimeout(() => setDebouncedUserSearch(userSearch), 500)
+        return () => clearTimeout(timer)
+    }, [userSearch])
+
+    useEffect(() => {
+        const timer = setTimeout(() => setDebouncedUserShortId(userShortId), 500)
+        return () => clearTimeout(timer)
+    }, [userShortId])
 
     const reqVariables = useMemo(() => {
         const f: any = { page: 1, pageSize: 50, searchTerm: debouncedSearch || null }
@@ -126,34 +153,54 @@ export default function AdminPage() {
         variables: reqVariables
     })
     const { data: stats, loading: statsLoading } = useQuery<AdminAnalyticsData>(GET_ADMIN_ANALYTICS)
+    
+    const { data: users, loading: usersLoading } = useQuery<AdminUsersData>(GET_ADMIN_USERS, {
+        variables: {
+            page: 1,
+            pageSize: 50,
+            searchTerm: debouncedUserSearch || null,
+            shortId: debouncedUserShortId || null
+        },
+        skip: activeTab !== 'users'
+    })
 
     useEffect(() => { if (apps && !appsLoading) setLastUpdated(p => ({ ...p, applications: new Date() })) }, [apps, appsLoading])
     useEffect(() => { if (complaints && !compLoading) setLastUpdated(p => ({ ...p, complaints: new Date() })) }, [complaints, compLoading])
     useEffect(() => { if (requests && !reqLoading) setLastUpdated(p => ({ ...p, requests: new Date() })) }, [requests, reqLoading])
     useEffect(() => { if (stats && !statsLoading) setLastUpdated(p => ({ ...p, analytics: new Date() })) }, [stats, statsLoading])
+    useEffect(() => { if (users && !usersLoading) setLastUpdated(p => ({ ...p, users: new Date() })) }, [users, usersLoading])
 
     const TAB_QUERIES: Record<string, string[]> = {
         analytics: ['GetAdminAnalytics'],
         applications: ['GetVolunteerApplications'],
         complaints: ['GetComplaints'],
         requests: ['GetAdminHelpRequests'],
+        users: ['GetAdminUsers'],
     }
 
     const refetchApps = useCallback(() => client.refetchQueries({ include: ['GetVolunteerApplications'] }), [client])
     const refetchComp = useCallback(() => client.refetchQueries({ include: ['GetComplaints'] }), [client])
     const refetchReq = useCallback(() => client.refetchQueries({ include: ['GetAdminHelpRequests'] }), [client])
+    const refetchUsers = useCallback(() => client.refetchQueries({ include: ['GetAdminUsers'] }), [client])
 
     const handleRefresh = useCallback(() =>
         client.refetchQueries({ include: TAB_QUERIES[activeTab] })
     , [client, activeTab]) // eslint-disable-line react-hooks/exhaustive-deps
 
-    const activeLoading = { analytics: statsLoading, applications: appsLoading, complaints: compLoading, requests: reqLoading }[activeTab]
+    const activeLoading = { 
+        analytics: statsLoading, 
+        applications: appsLoading, 
+        complaints: compLoading, 
+        requests: reqLoading,
+        users: usersLoading 
+    }[activeTab]
 
     const tabs = [
         { id: 'analytics', label: 'Аналітика', icon: <BarChart2 size={18} /> },
         { id: 'applications', label: 'Волонтери', icon: <Shield size={18} /> },
         { id: 'complaints', label: 'Скарги', icon: <Flag size={18} /> },
         { id: 'requests', label: 'Заявки', icon: <FileText size={18} /> },
+        { id: 'users', label: 'Користувачі', icon: <Users size={18} /> },
     ]
 
     return (
@@ -173,7 +220,7 @@ export default function AdminPage() {
                 {tabs.map(tab => (
                     <button
                         key={tab.id}
-                        onClick={() => setActiveTab(tab.id as 'applications' | 'complaints' | 'requests' | 'analytics')}
+                        onClick={() => setActiveTab(tab.id as 'applications' | 'complaints' | 'requests' | 'analytics' | 'users')}
                         className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === tab.id
                             ? 'bg-surface text-primary shadow-sm ring-1 ring-border'
                             : 'text-ink-soft hover:text-ink hover:bg-surface'
@@ -213,8 +260,212 @@ export default function AdminPage() {
                             onSearchChange={setReqSearch}
                         />
                     )}
+                    {activeTab === 'users' && (
+                        <UsersTab 
+                            items={users?.adminQuery.users.items || []} 
+                            loading={usersLoading} 
+                            onRefresh={refetchUsers}
+                            search={userSearch}
+                            onSearchChange={setUserSearch}
+                            shortId={userShortId}
+                            onShortIdChange={setUserShortId}
+                        />
+                    )}
                 </motion.div>
             </AnimatePresence>
+        </div>
+    )
+}
+
+// ... AnalyticsTab, ApplicationsTab, ComplaintsTab, RequestsTab ...
+
+// ===================== USERS TAB =====================
+interface UsersTabProps {
+    items: AdminUserDto[]
+    loading: boolean
+    onRefresh: () => void
+    search: string
+    onSearchChange: (s: string) => void
+    shortId: string
+    onShortIdChange: (id: string) => void
+}
+
+function UsersTab({ items, loading, onRefresh, search, onSearchChange, shortId, onShortIdChange }: UsersTabProps) {
+    const dispatch = useAppDispatch()
+    const [blockModal, setBlockModal] = useState<{ userId: string; username: string } | null>(null)
+    const [blockForm, setBlockForm] = useState({ reason: '', hours: '24' })
+
+    const [unblock] = useMutation<UnblockUserData>(UNBLOCK_USER, {
+        onCompleted: (data) => {
+            const r = data.admin.unblockUser
+            if (r.error) dispatch(addToast({ type: 'error', message: r.error.message }))
+            else { dispatch(addToast({ type: 'success', message: 'Користувача розблоковано' })); onRefresh() }
+        },
+    })
+
+    const [block, { loading: blocking }] = useMutation<BlockUserData>(BLOCK_USER, {
+        onCompleted: (data) => {
+            const r = data.admin.blockUser
+            if (r.error) dispatch(addToast({ type: 'error', message: r.error.message }))
+            else {
+                dispatch(addToast({ type: 'success', message: 'Користувача заблоковано' }))
+                setBlockModal(null)
+                setBlockForm({ reason: '', hours: '24' })
+                onRefresh()
+            }
+        },
+    })
+
+    const BLOCK_PRESETS = [
+        { label: '1 д', hours: 24 }, { label: '3 д', hours: 72 },
+        { label: '7 д', hours: 168 }, { label: '30 д', hours: 720 },
+        { label: '∞', hours: 0 },
+    ]
+
+    const ROLE_LABELS: Record<number, string> = { 0: 'Адмін', 1: 'Користувач', 2: 'Волонтер' }
+
+    const handleCopyId = (id: string) => {
+        navigator.clipboard.writeText(id.slice(-6))
+        dispatch(addToast({ type: 'success', message: 'ID скопійовано' }))
+    }
+
+    return (
+        <div className="space-y-6">
+            <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-surface-muted/30 p-4 rounded-3xl border border-border/50">
+                <div className="flex flex-col sm:flex-row gap-3 flex-1 w-full">
+                    <div className="relative flex-1 group">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-soft group-focus-within:text-primary transition-colors" size={16} />
+                        <input
+                            type="text"
+                            value={search}
+                            onChange={e => onSearchChange(e.target.value)}
+                            placeholder="Пошук за ім'ям або email..."
+                            className="w-full pl-11 pr-10 py-2.5 bg-surface border border-border rounded-xl text-sm text-ink placeholder:text-ink-soft focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-sm"
+                        />
+                        {search && (
+                            <button onClick={() => onSearchChange('')} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-ink-soft hover:text-error transition-colors">
+                                <X size={14} />
+                            </button>
+                        )}
+                    </div>
+                    <div className="relative w-full sm:w-48 group">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-soft font-bold text-xs">#</span>
+                        <input
+                            type="text"
+                            value={shortId}
+                            onChange={e => onShortIdChange(e.target.value)}
+                            placeholder="ID (6 знаків)"
+                            maxLength={6}
+                            className="w-full pl-11 pr-10 py-2.5 bg-surface border border-border rounded-xl text-sm text-ink placeholder:text-ink-soft focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-sm"
+                        />
+                        {shortId && (
+                            <button onClick={() => onShortIdChange('')} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-ink-soft hover:text-error transition-colors">
+                                <X size={14} />
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            <div className="space-y-4">
+                {loading ? (
+                    <PageSpinner />
+                ) : items.length === 0 ? (
+                    <div className="text-center py-20 bg-surface rounded-3xl border border-dashed border-border">
+                        <Users size={32} className="text-ink-soft mx-auto mb-4 opacity-50" />
+                        <p className="text-ink-soft font-bold uppercase text-xs tracking-widest">Користувачів не знайдено</p>
+                    </div>
+                ) : (
+                    items.map((u: AdminUserDto) => (
+                        <Card key={u.id} padding="sm" className={u.isDeleted ? 'opacity-50 grayscale' : ''}>
+                            <div className="flex items-center justify-between gap-4">
+                                <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-3 mb-1">
+                                        <UserLink userId={u.id} username={u.username} className="font-bold text-ink text-base hover:text-primary transition-colors" />
+                                        <Badge variant={u.role === 0 ? 'error' : u.role === 2 ? 'success' : 'default'}>
+                                            {ROLE_LABELS[u.role]}
+                                        </Badge>
+                                        {u.isBlocked && <Badge variant="error">Заблокований</Badge>}
+                                        {u.isDeleted && <Badge variant="outline">Видалений</Badge>}
+                                    </div>
+                                    <div className="flex items-center gap-3 text-[10px] font-black text-ink-soft uppercase tracking-widest">
+                                        <span>{u.email}</span>
+                                        <span className="w-1 h-1 bg-border rounded-full" />
+                                        <button 
+                                            onClick={() => handleCopyId(u.id)}
+                                            className="hover:text-primary transition-colors"
+                                            title="Копіювати повний ID"
+                                        >
+                                            ID: ...{u.id.slice(-6)}
+                                        </button>
+                                        <span className="w-1 h-1 bg-border rounded-full" />
+                                        <span>Реєстрація: {new Date(u.registeredAtUtc).toLocaleDateString('uk-UA')}</span>
+                                    </div>
+                                </div>
+                                <div className="flex gap-2">
+                                    {!u.isDeleted && (
+                                        u.isBlocked ? (
+                                            <Button variant="success" size="sm" onClick={() => unblock({ variables: { targetUserId: u.id } })}>
+                                                Розблокувати
+                                            </Button>
+                                        ) : (
+                                            <Button variant="error" size="sm" onClick={() => setBlockModal({ userId: u.id, username: u.username })}>
+                                                Заблокувати
+                                            </Button>
+                                        )
+                                    )}
+                                </div>
+                            </div>
+                        </Card>
+                    ))
+                )}
+            </div>
+
+            <Modal isOpen={!!blockModal} onClose={() => setBlockModal(null)} title={`Блокування: ${blockModal?.username}`}>
+                <div className="space-y-6 p-2">
+                    <div>
+                        <label className="block text-[10px] font-black text-ink-soft uppercase tracking-widest mb-3">Тривалість</label>
+                        <div className="flex flex-wrap gap-2">
+                            {BLOCK_PRESETS.map(p => (
+                                <button
+                                    key={p.label}
+                                    onClick={() => setBlockForm({ ...blockForm, hours: p.hours.toString() })}
+                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${blockForm.hours === p.hours.toString()
+                                        ? 'bg-primary text-white shadow-md'
+                                        : 'bg-surface-muted text-ink-soft hover:bg-surface border border-border'
+                                        }`}
+                                >
+                                    {p.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-[10px] font-black text-ink-soft uppercase tracking-widest mb-3">Причина</label>
+                        <input
+                            type="text"
+                            value={blockForm.reason}
+                            onChange={e => setBlockForm({ ...blockForm, reason: e.target.value })}
+                            placeholder="Вкажіть причину..."
+                            className="w-full px-4 py-3 bg-surface-muted border border-border rounded-xl text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-inner"
+                        />
+                    </div>
+                    <div className="flex gap-3">
+                        <Button variant="outline" className="flex-1" onClick={() => setBlockModal(null)}>Скасувати</Button>
+                        <Button 
+                            variant="error" 
+                            className="flex-1" 
+                            disabled={blocking || !blockForm.reason}
+                            onClick={() => {
+                                const until = blockForm.hours === '0' ? null : new Date(Date.now() + parseInt(blockForm.hours) * 60 * 60 * 1000).toISOString()
+                                block({ variables: { targetUserId: blockModal!.userId, reason: blockForm.reason, blockedUntilUtc: until } })
+                            }}
+                        >
+                            {blocking ? 'Блокування...' : 'Підтвердити'}
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     )
 }

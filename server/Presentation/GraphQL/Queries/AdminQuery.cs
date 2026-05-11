@@ -4,6 +4,7 @@ using System.Linq;
 using GraphQL;
 using GraphQL.Types;
 using MediatR;
+using server.Application.Handlers.AdminHandlers.AdminGetUsers;
 using server.Application.Handlers.AdminHandlers.AdminGetHelpRequests;
 using server.Application.Handlers.UserHandlers.GetBlockHistory;
 using server.Application.Handlers.UserHandlers.GetComplaints;
@@ -37,6 +38,24 @@ namespace server.Presentation.GraphQL.Queries
 
                 var result = await mediator.Send(q);
                 return result.ToPayload((val, err) => new AdminHelpRequestsPayload(val, err));
+            });
+
+            Field<AdminUsersPayloadType>("users")
+            .Authorize().AuthorizeWithRoles("Admin")
+            .Argument<IntGraphType>("page")
+            .Argument<IntGraphType>("pageSize")
+            .Argument<StringGraphType>("searchTerm")
+            .Argument<StringGraphType>("shortId")
+            .ResolveAsync(async ctx =>
+            {
+                var page = ctx.GetArgument<int>("page", 1);
+                var pageSize = ctx.GetArgument<int>("pageSize", 20);
+                var searchTerm = ctx.GetArgument<string?>("searchTerm");
+                var shortId = ctx.GetArgument<string?>("shortId");
+
+                var q = new AdminGetUsersQuery(page, pageSize, searchTerm, shortId);
+                var result = await mediator.Send(q);
+                return result.ToPayload((val, err) => new AdminUsersPayload(val, err));
             });
 
             Field<ComplaintsPayloadType>("complaints")

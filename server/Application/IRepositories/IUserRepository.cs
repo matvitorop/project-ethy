@@ -1,4 +1,5 @@
-﻿using server.Application.Handlers.GetUserStatistics;
+using server.Application.Handlers.AdminHandlers.AdminGetUsers;
+using server.Application.Handlers.GetUserStatistics;
 using server.Domain;
 
 namespace server.Application.IRepositories
@@ -19,6 +20,7 @@ namespace server.Application.IRepositories
         // ---
 
         // Admin module
+        Task<IReadOnlyList<AdminUserDto>> GetUsersPageAsync(int page, int pageSize, string? searchTerm, string? shortId, CancellationToken ct);
         Task VerifyEmailAsync(Guid userId, CancellationToken ct);
         Task UpdateLastVolunteerApplicationDateAsync(Guid userId, CancellationToken ct);
         Task UpdateRoleAsync(Guid userId, UserRole role, CancellationToken ct);

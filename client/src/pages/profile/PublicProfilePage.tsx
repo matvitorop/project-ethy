@@ -5,7 +5,8 @@ import { ThumbsUp, ThumbsDown, CheckCircle, Shield, Phone, Link as LinkIcon, Ale
 import { motion } from 'framer-motion'
 import { GET_PUBLIC_PROFILE, GET_USER_REVIEWS_PUBLIC } from '../../api/queries'
 import type { PublicProfileData, GetUserReviewsData } from '../../api/types'
-import { useAppSelector } from '../../store/hooks'
+import { useAppSelector, useAppDispatch } from '../../store/hooks'
+import { addToast } from '../../store/uiSlice'
 import { PageSpinner } from '../../components/Spinner'
 import LeaveComplaintModal from '../../features/requests/components/LeaveComplaintModal'
 import Button from '../../components/ui/Button'
@@ -16,6 +17,7 @@ import UserLink from '../../components/ui/UserLink'
 
 export default function PublicProfilePage() {
     const { userId } = useParams<{ userId: string }>()
+    const dispatch = useAppDispatch()
     const currentUserId = useAppSelector(s => s.auth.userId)
     const [complaintOpen, setComplaintOpen] = useState(false)
 
@@ -61,6 +63,12 @@ export default function PublicProfilePage() {
     const positiveCount = reviews.filter(r => r.isPositive).length  
     const negativeCount = reviews.filter(r => !r.isPositive).length
 
+    const handleCopyId = () => {
+        if (!profile) return
+        navigator.clipboard.writeText(profile.id.slice(-6))
+        dispatch(addToast({ type: 'success', message: 'ID скопійовано' }))
+    }
+
     return (
         <motion.div 
             initial={{ opacity: 0 }}
@@ -85,6 +93,13 @@ export default function PublicProfilePage() {
                             <div className="flex flex-wrap items-center gap-3 mb-2">
                                 <h1 className="text-3xl font-black text-ink" style={{ fontFamily: 'Jua, sans-serif' }}>
                                     {profile.username}
+                                    <button 
+                                        onClick={handleCopyId}
+                                        className="ml-2 text-xs font-medium text-ink-soft opacity-60 hover:opacity-100 hover:text-primary transition-all"
+                                        title="Копіювати повний ID"
+                                    >
+                                        #{profile.id.slice(-6)}
+                                    </button>
                                 </h1>
                                 {profile.role === 0 && <Badge variant="info" size="sm">Адміністратор</Badge>}
                                 {profile.role === 2 && <Badge variant="success" size="sm">Волонтер</Badge>}

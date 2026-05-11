@@ -460,6 +460,33 @@ export interface BlockHistoryData {
     }
 }
 
+export interface AdminUserDto {
+    id: string
+    username: string
+    email: string
+    role: number
+    registeredAtUtc: string
+    isBlocked: boolean
+    blockedUntilUtc: string | null
+    isDeleted: boolean
+}
+
+export interface AdminUsersData {
+    adminQuery: {
+        users: {
+            items: AdminUserDto[] | null
+            error: ApiError | null
+        }
+    }
+}
+
+export interface AdminUsersVars {
+    page: number
+    pageSize: number
+    searchTerm?: string | null
+    shortId?: string | null
+}
+
 export interface AdminActionData {
     admin: {
         [key: string]: {

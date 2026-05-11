@@ -1,5 +1,6 @@
 using Dapper;
 using Microsoft.Data.SqlClient;
+using server.Application.Handlers.AdminHandlers.AdminGetUsers;
 using server.Application.Handlers.GetUserStatistics;
 using server.Application.IRepositories;
 using server.Application.IServices;
@@ -275,6 +276,49 @@ namespace server.Infrastructure.Repositories
                 SET BlockedUntilUtc = @BlockedUntilUtc, BlockReason = @BlockReason
                 WHERE Id = @Id
         """, new { Id = userId, BlockedUntilUtc = blockedUntilUtc, BlockReason = reason });
+        }
+
+        public async Task<IReadOnlyList<AdminUserDto>> GetUsersPageAsync(int page, int pageSize, string? searchTerm, string? shortId, CancellationToken ct)
+        {
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
+            var offset = (page - 1) * pageSize;
+
+            var filters = new List<string> { "Role <> 0" };
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                filters.Add("(Username LIKE @SearchTerm OR Email LIKE @SearchTerm)");
+            }
+            if (!string.IsNullOrWhiteSpace(shortId))
+            {
+                filters.Add("CAST(Id AS NVARCHAR(36)) LIKE '%' + @ShortId");
+            }
+
+            var filterClause = string.Join(" AND ", filters);
+
+            var sql = $"""
+                SELECT 
+                    Id, Username, Email, Role, RegisteredAtUtc,
+                    CAST(CASE WHEN BlockedUntilUtc IS NOT NULL AND (BlockedUntilUtc > GETUTCDATE() OR BlockedUntilUtc = '9999-12-31') THEN 1 ELSE 0 END AS BIT) as IsBlocked,
+                    BlockedUntilUtc,
+                    IsDeleted
+                FROM Users
+                WHERE {filterClause}
+                ORDER BY RegisteredAtUtc DESC
+                OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY;
+                """;
+
+            var result = await connection.QueryAsync<AdminUserDto>(
+                sql,
+                new
+                {
+                    Offset = offset,
+                    PageSize = pageSize,
+                    SearchTerm = $"%{searchTerm}%",
+                    ShortId = shortId
+                }
+            );
+
+            return result.ToList();
         }
 
         public async Task UnblockAsync(Guid userId, CancellationToken ct)
