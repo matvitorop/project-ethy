@@ -1,4 +1,4 @@
-﻿using Azure.Core;
+using Azure.Core;
 using GraphQL;
 using MediatR;
 using server.Application.IRepositories;
@@ -13,11 +13,14 @@ namespace server.Application.Handlers.ChangeHelpRequestStatus
     : IRequestHandler<ChangeHelpRequestStatusCommand, Result<ChangeHelpRequestStatusResult>>
     {
         private readonly IHelpRequestRepository _repository;
+        private readonly IStageRepository _stageRepository;
 
         public ChangeHelpRequestStatusHandler(
-            IHelpRequestRepository repository)
+            IHelpRequestRepository repository,
+            IStageRepository stageRepository)
         {
             _repository = repository;
+            _stageRepository = stageRepository;
         }
 
         public async Task<Result<ChangeHelpRequestStatusResult>> Handle(
@@ -37,6 +40,19 @@ namespace server.Application.Handlers.ChangeHelpRequestStatus
 
             // Зберігаємо попередній статус для логу
             var previousStatus = helpRequest.Status;
+
+            // Prevent completion when a stage is still awaiting review
+            if (request.NewStatus == HelpRequestStatus.Resolved)
+            {
+                var hasPendingStages = await _stageRepository
+                    .HasAnyProposedStageAsync(request.HelpRequestId, ct);
+
+                if (hasPendingStages)
+                    return Result<ChangeHelpRequestStatusResult>.Failure(
+                        new Error(
+                            "Cannot complete a request that has pending stages. Resolve or reject all stages first.",
+                            "HelpRequest.HAS_PENDING_STAGES"));
+            }
 
             try
             {

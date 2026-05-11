@@ -1,6 +1,6 @@
-import { useState } from 'react'
-import { useQuery, useMutation } from '@apollo/client/react'
-import { Shield, FileText, Flag, Eye, EyeOff, BarChart2, Users, TrendingUp, TrendingDown, Calendar } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { useQuery, useMutation, useApolloClient } from '@apollo/client/react'
+import { Shield, FileText, Flag, Eye, EyeOff, BarChart2, Users, TrendingUp, TrendingDown, Calendar, RefreshCw } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     GET_VOLUNTEER_APPLICATIONS, GET_COMPLAINTS, GET_ADMIN_HELP_REQUESTS,
@@ -20,6 +20,7 @@ import Button from '../../components/ui/Button'
 import Card from '../../components/ui/Card'
 import UserLink from '../../components/ui/UserLink'
 import Badge from '../../components/ui/Badge'
+import { useRelativeTime } from '../../hooks/useRelativeTime'
 
 interface ResolveComplaintData {
     admin: { resolveComplaint: { success: boolean; error: ApiError | null } }
@@ -45,13 +46,65 @@ const STATUS_CONFIG: Record<number, { label: string; variant: string }> = {
     2: { label: 'Відхилено', variant: 'error' },
 }
 
+
+// ===================== REFRESH BAR =====================
+function RefreshBar({ onRefresh, loading, lastUpdated }: { onRefresh: () => void; loading: boolean; lastUpdated: Date | null }) {
+    const timeLabel = useRelativeTime(lastUpdated)
+
+    return (
+        <div className="flex items-center justify-between mb-5 px-1">
+            <span className="text-[10px] font-black text-ink-soft uppercase tracking-widest">
+                {timeLabel ? `Оновлено: ${timeLabel}` : 'Завантаження...'}
+            </span>
+            <button
+                onClick={onRefresh}
+                disabled={loading}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-ink-muted hover:text-primary hover:bg-primary/5 border border-transparent hover:border-primary/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+                <RefreshCw
+                    size={12}
+                    className={loading ? 'animate-spin' : 'transition-transform group-hover:rotate-180'}
+                />
+                Оновити
+            </button>
+        </div>
+    )
+}
+
 export default function AdminPage() {
     const [activeTab, setActiveTab] = useState<'applications' | 'complaints' | 'requests' | 'analytics'>('analytics')
+    const [lastUpdated, setLastUpdated] = useState<Record<string, Date | null>>({
+        analytics: null, applications: null, complaints: null, requests: null,
+    })
 
-    const { data: apps, loading: appsLoading, refetch: refetchApps } = useQuery<VolunteerApplicationsData>(GET_VOLUNTEER_APPLICATIONS)
-    const { data: complaints, loading: compLoading, refetch: refetchComp } = useQuery<ComplaintsData>(GET_COMPLAINTS)
-    const { data: requests, loading: reqLoading, refetch: refetchReq } = useQuery<AdminHelpRequestsData>(GET_ADMIN_HELP_REQUESTS)
+    const client = useApolloClient()
+
+    const { data: apps, loading: appsLoading } = useQuery<VolunteerApplicationsData>(GET_VOLUNTEER_APPLICATIONS)
+    const { data: complaints, loading: compLoading } = useQuery<ComplaintsData>(GET_COMPLAINTS)
+    const { data: requests, loading: reqLoading } = useQuery<AdminHelpRequestsData>(GET_ADMIN_HELP_REQUESTS)
     const { data: stats, loading: statsLoading } = useQuery<AdminAnalyticsData>(GET_ADMIN_ANALYTICS)
+
+    useEffect(() => { if (apps && !appsLoading) setLastUpdated(p => ({ ...p, applications: new Date() })) }, [apps, appsLoading])
+    useEffect(() => { if (complaints && !compLoading) setLastUpdated(p => ({ ...p, complaints: new Date() })) }, [complaints, compLoading])
+    useEffect(() => { if (requests && !reqLoading) setLastUpdated(p => ({ ...p, requests: new Date() })) }, [requests, reqLoading])
+    useEffect(() => { if (stats && !statsLoading) setLastUpdated(p => ({ ...p, analytics: new Date() })) }, [stats, statsLoading])
+
+    const TAB_QUERIES: Record<string, string[]> = {
+        analytics: ['GetAdminAnalytics'],
+        applications: ['GetVolunteerApplications'],
+        complaints: ['GetComplaints'],
+        requests: ['GetAdminHelpRequests'],
+    }
+
+    const refetchApps = useCallback(() => client.refetchQueries({ include: ['GetVolunteerApplications'] }), [client])
+    const refetchComp = useCallback(() => client.refetchQueries({ include: ['GetComplaints'] }), [client])
+    const refetchReq = useCallback(() => client.refetchQueries({ include: ['GetAdminHelpRequests'] }), [client])
+
+    const handleRefresh = useCallback(() =>
+        client.refetchQueries({ include: TAB_QUERIES[activeTab] })
+    , [client, activeTab]) // eslint-disable-line react-hooks/exhaustive-deps
+
+    const activeLoading = { analytics: statsLoading, applications: appsLoading, complaints: compLoading, requests: reqLoading }[activeTab]
 
     const tabs = [
         { id: 'analytics', label: 'Аналітика', icon: <BarChart2 size={18} /> },
@@ -73,7 +126,7 @@ export default function AdminPage() {
             </div>
 
             {/* Таби */}
-            <div className="flex flex-wrap gap-2 mb-10 bg-surface-muted/50 p-1.5 rounded-2xl border border-border/50">
+            <div className="flex flex-wrap gap-2 mb-4 bg-surface-muted/50 p-1.5 rounded-2xl border border-border/50">
                 {tabs.map(tab => (
                     <button
                         key={tab.id}
@@ -88,6 +141,12 @@ export default function AdminPage() {
                     </button>
                 ))}
             </div>
+
+            <RefreshBar
+                onRefresh={handleRefresh}
+                loading={activeLoading}
+                lastUpdated={lastUpdated[activeTab]}
+            />
 
             <AnimatePresence mode="wait">
                 <motion.div
