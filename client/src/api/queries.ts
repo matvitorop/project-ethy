@@ -60,6 +60,8 @@ export const GET_HELP_REQUESTS = gql`
     $pageSize: Int!
     $status: HelpRequestStatus
     $statuses: [HelpRequestStatus]
+    $searchTerm: String
+    $shortId: String
   ) {
     helpRequestQuer {
       helpRequestQuery(
@@ -67,6 +69,8 @@ export const GET_HELP_REQUESTS = gql`
         pageSize: $pageSize
         status: $status
         statuses: $statuses
+        searchTerm: $searchTerm
+        shortId: $shortId
       ) {
         items {
           id

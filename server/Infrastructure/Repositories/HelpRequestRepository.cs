@@ -142,66 +142,59 @@ namespace server.Infrastructure.Repositories
             IReadOnlyList<HelpRequestStatus>? statuses = null,
             Guid? creatorId = null,
             Guid? assignedUserId = null,
-            bool? hasNoReport = null)
+            bool? hasNoReport = null,
+            string? searchTerm = null,
+            string? shortId = null)
         {
             using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
             var offset = (page - 1) * pageSize;
 
             var filters = new List<string> { "hr.IsDeleted = 0" };
-
-            if (status.HasValue)
-                filters.Add("hr.Status = @Status");
-            else if (statuses != null && statuses.Count > 0)
-                filters.Add("hr.Status IN @Statuses");
-
-            if (creatorId.HasValue)
-                filters.Add("hr.CreatorId = @CreatorId");
-
-            if (assignedUserId.HasValue)
-                filters.Add("hr.AssignedUserId = @AssignedUserId");
-
+            if (status.HasValue) filters.Add("hr.Status = @Status");
+            if (statuses != null && statuses.Count > 0) filters.Add("hr.Status IN @Statuses");
+            if (creatorId.HasValue) filters.Add("hr.CreatorId = @CreatorId");
+            if (assignedUserId.HasValue) filters.Add("hr.AssignedUserId = @AssignedUserId");
             if (hasNoReport == true)
-                filters.Add("""
-                    NOT EXISTS (
-                        SELECT 1 FROM HelpRequestReports r
-                        WHERE r.HelpRequestId = hr.Id
-                    )
-                    """);
+            {
+                filters.Add("NOT EXISTS (SELECT 1 FROM Reports r WHERE r.HelpRequestId = hr.Id)");
+            }
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                filters.Add("hr.Title LIKE @SearchTerm");
+            }
+            if (!string.IsNullOrWhiteSpace(shortId))
+            {
+                filters.Add("RIGHT(CAST(hr.Id AS NVARCHAR(36)), 6) = @ShortId");
+            }
 
-            var whereClause = "WHERE " + string.Join(" AND ", filters);
+            var filterClause = string.Join(" AND ", filters);
 
             var sql = $"""
-                SELECT hr.Id, hr.Title, hr.Status,
-                       img.ImageUrl AS PreviewImageUrl,
-                       hr.CreatedAtUtc AS CreatedAt
-                FROM HelpRequests hr
-                OUTER APPLY (
-                    SELECT TOP 1 ImageUrl
-                    FROM HelpRequestImages
-                    WHERE HelpRequestId = hr.Id
-                    ORDER BY [Order] ASC
-                ) img
-                {whereClause}
-                ORDER BY hr.CreatedAtUtc DESC
-                OFFSET @Offset ROWS
-                FETCH NEXT @PageSize ROWS ONLY;
-                """;
+                 SELECT hr.Id, hr.Title, hr.Status, 
+                        (SELECT TOP 1 ImageUrl FROM HelpRequestImages WHERE HelpRequestId = hr.Id) as PreviewImageUrl,
+                        hr.CreatedAtUtc as CreatedAt
+                 FROM HelpRequests hr
+                 WHERE {filterClause}
+                 ORDER BY hr.CreatedAtUtc DESC
+                 OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY;
+                 """;
 
             var result = await connection.QueryAsync<HelpRequestListItemDto>(
-                new CommandDefinition(
-                    sql,
-                    new
-                    {
-                        Offset = offset,
-                        PageSize = pageSize,
-                        Status = status.HasValue ? (int?)((int)status.Value) : null,
-                        Statuses = statuses?.Select(s => (int)s).ToArray(),
-                        CreatorId = creatorId,
-                        AssignedUserId = assignedUserId
-                    },
-                    cancellationToken: ct));
+                sql,
+                new
+                {
+                    Offset = offset,
+                    PageSize = pageSize,
+                    Status = status.HasValue ? (int)status.Value : 0,
+                    Statuses = statuses?.Select(s => (int)s).ToList(),
+                    CreatorId = creatorId,
+                    AssignedUserId = assignedUserId,
+                    SearchTerm = $"%{searchTerm}%",
+                    ShortId = shortId
+                }
+            );
 
-            return result.AsList();
+            return result.ToList();
         }
 
         public async Task<HelpRequestDetailDto?> GetHelpRequestById(CancellationToken ct, Guid id)

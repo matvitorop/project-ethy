@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useQuery } from '@apollo/client/react'
-import { Link } from 'react-router-dom'
-import { Plus, ChevronLeft, ChevronRight, Inbox } from 'lucide-react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { Plus, ChevronLeft, ChevronRight, Inbox, Search, Hash, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { GET_HELP_REQUESTS } from '../../api/queries'
 import type { HelpRequestsPageData } from '../../api/types'
@@ -21,10 +21,28 @@ const TABS = [
 type Tab = typeof TABS[number]['key']
 
 export default function RequestsListPage() {
-    const [activeTab, setActiveTab] = useState<Tab>('open')
-    const [page, setPage] = useState(1)
+    const [searchParams, setSearchParams] = useSearchParams()
+    
+    // URL State
+    const activeTab = (searchParams.get('tab') as Tab) || 'open'
+    const page = parseInt(searchParams.get('page') || '1')
+    const searchTerm = searchParams.get('q') || ''
+    const shortId = searchParams.get('id') || ''
 
-    const currentTab = TABS.find(t => t.key === activeTab)!
+    const [debouncedSearch, setDebouncedSearch] = useState(searchTerm)
+    const [debouncedShortId, setDebouncedShortId] = useState(shortId)
+
+    useEffect(() => {
+        const timer = setTimeout(() => setDebouncedSearch(searchTerm), 500)
+        return () => clearTimeout(timer)
+    }, [searchTerm])
+
+    useEffect(() => {
+        const timer = setTimeout(() => setDebouncedShortId(shortId), 500)
+        return () => clearTimeout(timer)
+    }, [shortId])
+
+    const currentTab = useMemo(() => TABS.find(t => t.key === activeTab) || TABS[0], [activeTab])
 
     const { data, loading, error } = useQuery<HelpRequestsPageData>(GET_HELP_REQUESTS, {
         variables: {
@@ -32,6 +50,8 @@ export default function RequestsListPage() {
             pageSize: PAGE_SIZE,
             status: currentTab.status ?? null,
             statuses: currentTab.statuses ?? null,
+            searchTerm: debouncedSearch || null,
+            shortId: debouncedShortId || null,
         },
         fetchPolicy: 'cache-and-network',
     })
@@ -40,9 +60,29 @@ export default function RequestsListPage() {
     const hasNext = items.length === PAGE_SIZE
     const hasPrev = page > 1
 
+    const updateParams = (updates: Record<string, string | null>) => {
+        const newParams = new URLSearchParams(searchParams)
+        Object.entries(updates).forEach(([key, value]) => {
+            if (value === null || value === '') newParams.delete(key)
+            else newParams.set(key, value)
+        })
+        setSearchParams(newParams)
+    }
+
     const handleTabChange = (tab: Tab) => {
-        setActiveTab(tab)
-        setPage(1)
+        updateParams({ tab, page: '1', q: null, id: null })
+    }
+
+    const handleSearchChange = (q: string) => {
+        updateParams({ q, page: '1' })
+    }
+
+    const handleIdChange = (id: string) => {
+        updateParams({ id, page: '1' })
+    }
+
+    const handlePageChange = (p: number) => {
+        updateParams({ page: p.toString() })
     }
 
     return (
@@ -69,19 +109,61 @@ export default function RequestsListPage() {
                 </Link>
             </div>
 
-            <div className="flex gap-1 mb-8 bg-surface-muted border border-border p-1 w-fit rounded-xl">
-                {TABS.map(tab => (
-                    <button
-                        key={tab.key}
-                        onClick={() => handleTabChange(tab.key)}
-                        className={`px-5 py-2 text-sm font-semibold rounded-lg transition-all ${activeTab === tab.key
-                                ? 'bg-surface text-primary shadow-sm ring-1 ring-border'
-                                : 'text-ink-muted hover:text-ink'
-                            }`}
-                    >
-                        {tab.label}
-                    </button>
-                ))}
+            <div className="flex flex-col lg:flex-row gap-4 mb-8">
+                <div className="flex gap-1 bg-surface-muted border border-border p-1 w-fit rounded-xl shrink-0 h-fit">
+                    {TABS.map(tab => (
+                        <button
+                            key={tab.key}
+                            onClick={() => handleTabChange(tab.key)}
+                            className={`px-5 py-2 text-sm font-semibold rounded-lg transition-all ${activeTab === tab.key
+                                    ? 'bg-surface text-primary shadow-sm ring-1 ring-border'
+                                    : 'text-ink-muted hover:text-ink'
+                                }`}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3 flex-1">
+                    <div className="relative flex-1 group">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-soft group-focus-within:text-primary transition-colors" size={16} />
+                        <input
+                            type="text"
+                            value={searchTerm}
+                            onChange={e => handleSearchChange(e.target.value)}
+                            placeholder="Пошук за назвою..."
+                            className="w-full pl-11 pr-10 py-2.5 bg-surface border border-border rounded-xl text-sm text-ink placeholder:text-ink-soft focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-sm"
+                        />
+                        {searchTerm && (
+                            <button 
+                                onClick={() => handleSearchChange('')}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-ink-soft hover:text-error transition-colors"
+                            >
+                                <X size={14} />
+                            </button>
+                        )}
+                    </div>
+                    <div className="relative w-full sm:w-48 group">
+                        <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-soft group-focus-within:text-primary transition-colors" size={16} />
+                        <input
+                            type="text"
+                            value={shortId}
+                            onChange={e => handleIdChange(e.target.value)}
+                            placeholder="ID (останні 6)..."
+                            maxLength={6}
+                            className="w-full pl-11 pr-10 py-2.5 bg-surface border border-border rounded-xl text-sm text-ink placeholder:text-ink-soft focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-sm"
+                        />
+                        {shortId && (
+                            <button 
+                                onClick={() => handleIdChange('')}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-ink-soft hover:text-error transition-colors"
+                            >
+                                <X size={14} />
+                            </button>
+                        )}
+                    </div>
+                </div>
             </div>
 
             {loading && (
@@ -112,16 +194,18 @@ export default function RequestsListPage() {
                         </div>
                         <p className="text-ink-muted text-lg font-medium mb-1">Заявок немає</p>
                         <p className="text-ink-soft text-sm">
-                            {activeTab === 'open'
-                                ? 'Поки немає відкритих заявок. Станьте першим!'
-                                : 'В цій категорії поки що порожньо.'}
+                            {searchTerm || shortId 
+                                ? 'За вашим запитом нічого не знайдено.'
+                                : activeTab === 'open'
+                                    ? 'Поки немає відкритих заявок. Станьте першим!'
+                                    : 'В цій категорії поки що порожньо.'}
                         </p>
                     </motion.div>
                 )}
 
                 {!loading && items.length > 0 && (
                     <motion.div 
-                        key={activeTab + page}
+                        key={activeTab + page + debouncedSearch + debouncedShortId}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
@@ -146,7 +230,7 @@ export default function RequestsListPage() {
                     <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setPage(p => p - 1)}
+                        onClick={() => handlePageChange(page - 1)}
                         disabled={!hasPrev}
                     >
                         <ChevronLeft size={16} />
@@ -160,7 +244,7 @@ export default function RequestsListPage() {
                     <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setPage(p => p + 1)}
+                        onClick={() => handlePageChange(page + 1)}
                         disabled={!hasNext}
                     >
                         Наступна
