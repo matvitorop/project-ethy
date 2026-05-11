@@ -196,6 +196,8 @@ export default function RequestDetailsPage() {
         }
     }
 
+    const [copied, setCopied] = useState(false)
+
     if (loading) return <PageSpinner />
 
     if (error || !data?.helpRequestQuer.helpRequestById.item) {
@@ -222,6 +224,13 @@ export default function RequestDetailsPage() {
     const stages = stagesData?.helpRequestQuer.stages.items ?? []
     const events = logData?.helpRequestQuer.eventLog.items ?? []
     const hasLocation = hr.latitude !== null && hr.longitude !== null
+
+    const handleCopyId = () => {
+        navigator.clipboard.writeText(hr.id.slice(-6))
+        setCopied(true)
+        dispatch(addToast({ type: 'success', message: 'ID скопійовано' }))
+        setTimeout(() => setCopied(false), 2000)
+    }
 
     const TABS = [
         { key: 'stages', label: 'Етапи', icon: <MessageSquare size={16} />, count: stages.length },
@@ -283,7 +292,16 @@ export default function RequestDetailsPage() {
                                 {statusConfig.label}
                             </Badge>
                         )}
-                        <span className="text-xs font-bold text-ink-soft uppercase tracking-widest">#{hr.id.slice(-6)}</span>
+                        <button 
+                            onClick={handleCopyId}
+                            className={`text-xs font-black uppercase tracking-widest px-2 py-0.5 rounded-lg transition-all ${
+                                copied ? 'bg-success/10 text-success' : 'text-ink-soft hover:bg-surface-muted hover:text-primary'
+                            }`}
+                            title="Натисніть, щоб скопіювати"
+                        >
+                            #{hr.id.slice(-6)}
+                            {copied && <span className="ml-1">✓</span>}
+                        </button>
                     </div>
                     <h1 className="text-3xl md:text-4xl font-black text-ink leading-tight"
                         style={{ fontFamily: 'Jua, sans-serif' }}>

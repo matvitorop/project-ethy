@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using server.Application.Handlers.GetActiveRequests;
 using server.Application.IRepositories;
 using server.Domain.Primitives;
@@ -35,7 +35,9 @@ namespace server.Application.Handlers.GetHelpRequests
                 request.Statuses, 
                 request.CreatorId,
                 request.AssignedUserId,
-                request.HasNoReport);
+                request.HasNoReport,
+                request.SearchTerm,
+                request.ShortId);
 
             return Result<IReadOnlyList<HelpRequestListItemDto>>.Success(items);
         }

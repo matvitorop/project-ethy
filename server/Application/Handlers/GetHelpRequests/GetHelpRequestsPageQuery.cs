@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using server.Domain.HelpRequest;
 using server.Domain.Primitives;
 
@@ -14,6 +14,8 @@ namespace server.Application.Handlers.GetActiveRequests
         public Guid? CreatorId { get; } 
         public Guid? AssignedUserId { get; }
         public bool? HasNoReport { get; }
+        public string? SearchTerm { get; }
+        public string? ShortId { get; }
 
 
         public GetHelpRequestsPageQuery(
@@ -23,7 +25,9 @@ namespace server.Application.Handlers.GetActiveRequests
             IReadOnlyList<HelpRequestStatus>? statuses = null, 
             Guid? creatorId = null, 
             Guid? assignedUserId = null,
-            bool? hasNoReport = null)
+            bool? hasNoReport = null,
+            string? searchTerm = null,
+            string? shortId = null)
         {
             Page = page < 1 ? 1 : page;
             PageSize = pageSize is < 1 or > 50 ? 10 : pageSize;
@@ -32,6 +36,8 @@ namespace server.Application.Handlers.GetActiveRequests
             CreatorId = creatorId;
             AssignedUserId = assignedUserId;
             HasNoReport = hasNoReport;
+            SearchTerm = searchTerm;
+            ShortId = shortId;
         }
     }
 }

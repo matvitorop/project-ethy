@@ -1,4 +1,4 @@
-﻿using GraphQL;
+using GraphQL;
 using GraphQL.Types;
 using MediatR;
 using server.Application.Handlers.GetActiveRequests;
@@ -38,7 +38,9 @@ namespace server.Presentation.GraphQL.Queries
                 new QueryArgument<ListGraphType<HelpRequestStatusEnumType>> { Name = "statuses" },
                 new QueryArgument<IdGraphType> { Name = "creatorId" },  
                 new QueryArgument<IdGraphType> { Name = "assignedUserId" },
-                new QueryArgument<BooleanGraphType> { Name = "hasNoReport" }
+                new QueryArgument<BooleanGraphType> { Name = "hasNoReport" },
+                new QueryArgument<StringGraphType> { Name = "searchTerm" },
+                new QueryArgument<StringGraphType> { Name = "shortId" }
             )
             .ResolveAsync(async context =>
             {
@@ -50,7 +52,9 @@ namespace server.Presentation.GraphQL.Queries
                         context.GetArgument<List<HelpRequestStatus>?>("statuses"),
                         context.GetArgument<Guid?>("creatorId"),      
                         context.GetArgument<Guid?>("assignedUserId"),
-                        context.GetArgument<bool?>("hasNoReport")
+                        context.GetArgument<bool?>("hasNoReport"),
+                        context.GetArgument<string?>("searchTerm"),
+                        context.GetArgument<string?>("shortId")
                     ));
 
                 return result.ToPayload((value, error) =>
