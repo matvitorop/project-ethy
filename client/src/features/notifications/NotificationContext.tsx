@@ -3,7 +3,7 @@ import { useQuery, useMutation } from '@apollo/client/react';
 import { GET_NOTIFICATIONS, MARK_NOTIFICATION_AS_READ, MARK_ALL_NOTIFICATIONS_AS_READ } from '../../api/queries';
 import { getNotificationConnection, startNotificationConnection } from '../../api/notificationHub';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { addToast, openChat } from '../../store/uiSlice';
+import { addToast } from '../../store/uiSlice';
 
 export interface Notification {
     id: string;
@@ -40,7 +40,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const userId = useAppSelector(state => state.auth.userId);
     const activeChatId = useAppSelector(state => state.ui.activeChatId);
     const activeChatIdRef = React.useRef(activeChatId);
-    
+
     // Keep ref in sync
     useEffect(() => {
         activeChatIdRef.current = activeChatId;
@@ -48,7 +48,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     const dispatch = useAppDispatch();
     const [notifications, setNotifications] = useState<Notification[]>([]);
-    
+
     const { data, loading } = useQuery<GetNotificationsData>(GET_NOTIFICATIONS, {
         variables: { limit: 50 },
         skip: !userId,
@@ -65,19 +65,28 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     const unreadCount = notifications.filter(n => !n.isRead).length;
 
-    const handleNewNotification = useCallback((notification: Notification) => {
-        setNotifications(prev => [notification, ...prev]);
-        
-        // Use ref to check current active chat without re-registering listener
-        if (notification.type === 'Chat' && notification.relatedEntityId === activeChatIdRef.current) {
+    const handleNewNotification = useCallback((notification: any) => {
+        // Check for active chat silencing
+        const isChat = notification.type === 'Chat' || notification.type === 1 || notification.Type === 1;
+        const relatedId = notification.relatedEntityId || notification.RelatedEntityId;
+
+        if (isChat && relatedId && activeChatIdRef.current && relatedId.toLowerCase() === activeChatIdRef.current.toLowerCase()) {
+            // Mark as read on server immediately so it doesn't show up later
+            const id = notification.id || notification.Id;
+            if (id) {
+                markReadMutation({ variables: { id } }).catch(() => { });
+            }
             return;
         }
 
+        // Only add to list and show toast if not silenced
+        setNotifications(prev => [notification, ...prev]);
+
         dispatch(addToast({
             type: 'info',
-            message: `${notification.title}: ${notification.content.substring(0, 50)}${notification.content.length > 50 ? '...' : ''}`
+            message: `${notification.title || notification.Title}: ${(notification.content || notification.Content).substring(0, 50)}${(notification.content || notification.Content).length > 50 ? '...' : ''}`
         }));
-    }, [dispatch]);
+    }, [dispatch, markReadMutation]);
 
     useEffect(() => {
         if (!userId) {
@@ -106,7 +115,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const markAsRead = async (id: string) => {
         try {
             await markReadMutation({ variables: { id } });
-            setNotifications(prev => 
+            setNotifications(prev =>
                 prev.map(n => n.id === id ? { ...n, isRead: true } : n)
             );
         } catch (err) {

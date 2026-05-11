@@ -172,10 +172,10 @@ export default function ProfilePage() {
             }
         },
     })
-    
+
     const handleUpdateContacts = () => {
         let links = contactForm.socialLinks.trim()
-        
+
         // Blacklist check
         const forbidden = ["<script", "javascript:", "onerror", "onclick", "onload", "href=", "src="]
         if (forbidden.some(f => links.toLowerCase().includes(f))) {
@@ -247,7 +247,7 @@ export default function ProfilePage() {
     }
 
     return (
-        <motion.div 
+        <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="max-w-3xl mx-auto space-y-10"
@@ -256,7 +256,7 @@ export default function ProfilePage() {
                 <div>
                     <h1 className="text-3xl font-black text-ink" style={{ fontFamily: 'Jua, sans-serif' }}>
                         Мій Профіль
-                        <button 
+                        <button
                             onClick={handleCopyId}
                             className="ml-2 text-xs font-medium text-ink-soft opacity-60 hover:opacity-100 hover:text-primary transition-all"
                             title="Копіювати повний ID"
@@ -283,7 +283,7 @@ export default function ProfilePage() {
             {/* Основна інформація */}
             <Card padding="lg" className="relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full -z-10" />
-                
+
                 <div className="space-y-8">
                     {/* Username Edit */}
                     <div>
@@ -291,12 +291,12 @@ export default function ProfilePage() {
                         <div className="flex items-center gap-3">
                             <div className="flex-1 relative">
                                 <User className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-soft" size={16} />
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     value={editingUsername ? newUsername : profile.username}
-                                    onChange={e => setNewUsername(e.target.value)} 
+                                    onChange={e => setNewUsername(e.target.value)}
                                     disabled={!editingUsername}
-                                    className="w-full pl-11 pr-4 py-3 bg-surface-muted border border-border rounded-2xl text-ink font-bold disabled:opacity-70 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-inner" 
+                                    className="w-full pl-11 pr-4 py-3 bg-surface-muted border border-border rounded-2xl text-ink font-bold disabled:opacity-70 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-inner"
                                 />
                             </div>
                             {editingUsername ? (
@@ -505,7 +505,7 @@ export default function ProfilePage() {
                                         ? `Ваша заявка на розгляді. Ми повідомимо вас про результат.`
                                         : volApp?.status === 2
                                             ? `На жаль, вашу попередню заявку було відхилено. Ви можете спробувати ще раз.`
-                                            : `Подайте заявку на статус волонтера, щоб відгукуватись на запити та отримувати нагороди.`}
+                                            : `Отримайте статус верифікованого волонтера: більше довіри та жодних обмежень на допомогу.`}
                                 </p>
                             </div>
                         </div>
@@ -578,15 +578,15 @@ export default function ProfilePage() {
                     {([{ key: 'owner', label: 'Мої заявки' }, { key: 'assignee', label: 'Допомагаю' }] as const).map(tab => (
                         <button key={tab.key} onClick={() => { setActiveTab(tab.key); setCurrentPage(1); }}
                             className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 text-sm font-bold transition-all rounded-2xl ${activeTab === tab.key
-                                    ? 'bg-surface text-primary shadow-sm ring-1 ring-border'
-                                    : 'text-ink-soft hover:text-ink hover:bg-surface-muted'
+                                ? 'bg-surface text-primary shadow-sm ring-1 ring-border'
+                                : 'text-ink-soft hover:text-ink hover:bg-surface-muted'
                                 }`}>
                             {tab.key === 'owner' ? <FileText size={16} /> : <ThumbsUp size={16} />}
                             {tab.label}
                         </button>
                     ))}
                 </div>
-                
+
                 <div className="p-6">
                     <AnimatePresence mode="wait">
                         <motion.div
@@ -611,9 +611,9 @@ export default function ProfilePage() {
                                             <RequestCard item={item} />
                                             {activeTab === 'owner' && Number(item.status) === 2 && (
                                                 <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                                                    <Button 
-                                                        variant="success" 
-                                                        size="sm" 
+                                                    <Button
+                                                        variant="success"
+                                                        size="sm"
                                                         onClick={(e) => {
                                                             e.preventDefault();
                                                             e.stopPropagation();
@@ -628,9 +628,9 @@ export default function ProfilePage() {
                                             )}
                                             {activeTab === 'assignee' && Number(item.status) === 1 && (
                                                 <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                                                    <Button 
-                                                        variant="outline" 
-                                                        size="sm" 
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
                                                         onClick={(e) => {
                                                             e.preventDefault();
                                                             e.stopPropagation();
@@ -647,22 +647,22 @@ export default function ProfilePage() {
                                             )}
                                         </div>
                                     ))}
-                                    
+
                                     {(currentPage > 1 || currentItems.length === PAGE_SIZE) && (
                                         <div className="flex items-center justify-center gap-4 mt-8 pt-4 border-t border-border">
-                                            <Button 
-                                                variant="outline" 
-                                                size="sm" 
-                                                onClick={() => setCurrentPage(p => p - 1)} 
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => setCurrentPage(p => p - 1)}
                                                 disabled={currentPage === 1}
                                             >
                                                 <ChevronLeft size={16} />
                                             </Button>
                                             <span className="text-xs font-black text-ink-soft uppercase tracking-widest">Сторінка {currentPage}</span>
-                                            <Button 
-                                                variant="outline" 
-                                                size="sm" 
-                                                onClick={() => setCurrentPage(p => p + 1)} 
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => setCurrentPage(p => p + 1)}
                                                 disabled={currentItems.length < PAGE_SIZE}
                                             >
                                                 <ChevronRight size={16} />
@@ -704,21 +704,21 @@ export default function ProfilePage() {
                     )}
                     <div>
                         <label className="block text-[10px] font-black text-ink-soft uppercase tracking-[0.2em] mb-2">Назва організації / Ім'я</label>
-                        <input 
+                        <input
                             value={volForm.organizationName}
                             onChange={e => setVolForm(f => ({ ...f, organizationName: e.target.value }))}
                             placeholder="Наприклад: БФ 'Разом', Незалежний волонтер..."
-                            className="w-full px-4 py-3 bg-surface-muted border border-border rounded-xl text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-inner" 
+                            className="w-full px-4 py-3 bg-surface-muted border border-border rounded-xl text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-inner"
                         />
                     </div>
                     <div>
                         <label className="block text-[10px] font-black text-ink-soft uppercase tracking-[0.2em] mb-2">Опис діяльності</label>
-                        <textarea 
+                        <textarea
                             value={volForm.activityDescription}
                             onChange={e => setVolForm(f => ({ ...f, activityDescription: e.target.value }))}
-                            placeholder="Розкажіть про ваш досвід та чим ви займаєтесь..." 
+                            placeholder="Розкажіть про ваш досвід та чим ви займаєтесь..."
                             rows={4}
-                            className="w-full px-4 py-3 bg-surface-muted border border-border rounded-xl text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none shadow-inner" 
+                            className="w-full px-4 py-3 bg-surface-muted border border-border rounded-xl text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none shadow-inner"
                         />
                     </div>
                     <div>
@@ -761,9 +761,9 @@ export default function ProfilePage() {
                     </div>
                     <div className="flex gap-3">
                         <Button variant="outline" className="flex-1" onClick={() => setCancelModalOpen(false)} disabled={cancellingResponse}>Назад</Button>
-                        <Button 
-                            variant="error" 
-                            className="flex-1" 
+                        <Button
+                            variant="error"
+                            className="flex-1"
                             disabled={cancellingResponse}
                             onClick={() => selectedRequestId && cancelResponse({ variables: { helpRequestId: selectedRequestId } })}
                         >
