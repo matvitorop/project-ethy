@@ -1,4 +1,4 @@
-﻿using Dapper;
+using Dapper;
 using Microsoft.Data.SqlClient;
 using server.Application.Handlers.AdminHandlers.AdminGetHelpRequests;
 using server.Application.Handlers.GetActiveRequests;
@@ -814,13 +814,21 @@ namespace server.Infrastructure.Repositories
         }
 
         public async Task<List<AdminHelpRequestDto>> GetAllForAdminAsync(
-            int page, int pageSize, bool? isHidden, bool? isDeleted, CancellationToken ct)
+            int page, int pageSize, bool? isHidden, bool? isDeleted, 
+            IReadOnlyList<HelpRequestStatus>? statuses, 
+            string? searchTerm, CancellationToken ct)
         {
             using var conn = await _connectionFactory.CreateOpenConnectionAsync(ct);
 
             var conditions = new List<string>();
             if (isHidden.HasValue) conditions.Add("hr.IsHidden = @IsHidden");
             if (isDeleted.HasValue) conditions.Add("hr.IsDeleted = @IsDeleted");
+            
+            if (statuses != null && statuses.Count > 0)
+                conditions.Add("hr.Status IN @Statuses");
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+                conditions.Add("hr.Title LIKE @SearchTerm");
 
             var where = conditions.Count > 0 ? "WHERE " + string.Join(" AND ", conditions) : "";
 
@@ -838,6 +846,8 @@ namespace server.Infrastructure.Repositories
             {
                 IsHidden = isHidden,
                 IsDeleted = isDeleted,
+                Statuses = statuses?.Select(s => (int)s).ToArray(),
+                SearchTerm = $"%{searchTerm}%",
                 Offset = (page - 1) * pageSize,
                 PageSize = pageSize
             });

@@ -1,4 +1,7 @@
-﻿using GraphQL;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using GraphQL;
 using GraphQL.Types;
 using MediatR;
 using server.Application.Handlers.AdminHandlers.AdminGetHelpRequests;
@@ -16,17 +19,22 @@ namespace server.Presentation.GraphQL.Queries
         {
             Field<AdminHelpRequestsPayloadType>("helpRequests")
             .Authorize().AuthorizeWithRoles("Admin")
-            .Argument<IntGraphType>("page")
-            .Argument<IntGraphType>("pageSize")
-            .Argument<BooleanGraphType>("isHidden")
-            .Argument<BooleanGraphType>("isDeleted")
+            .Argument<AdminHelpRequestFilterInputType>("filter")
             .ResolveAsync(async ctx =>
             {
-                var q = new AdminGetHelpRequestsQuery(
-                    ctx.GetArgument<int?>("page") ?? 1,
-                    ctx.GetArgument<int?>("pageSize") ?? 20,
-                    ctx.GetArgument<bool?>("isHidden"),
-                    ctx.GetArgument<bool?>("isDeleted"));
+                var f = ctx.GetArgument<Dictionary<string, object>>("filter") ?? new();
+                
+                int page = f.ContainsKey("page") ? (int)f["page"] : 1;
+                int pageSize = f.ContainsKey("pageSize") ? (int)f["pageSize"] : 20;
+                bool? isHidden = f.ContainsKey("isHidden") ? (bool?)f["isHidden"] : null;
+                bool? isDeleted = f.ContainsKey("isDeleted") ? (bool?)f["isDeleted"] : null;
+                List<int>? statuses = f.ContainsKey("statuses") 
+                    ? ((IEnumerable<object>)f["statuses"]).Select(Convert.ToInt32).ToList() 
+                    : null;
+                string? searchTerm = f.ContainsKey("searchTerm") ? (string?)f["searchTerm"] : null;
+
+                var q = new AdminGetHelpRequestsQuery(page, pageSize, isHidden, isDeleted, statuses, searchTerm);
+
                 var result = await mediator.Send(q);
                 return result.ToPayload((val, err) => new AdminHelpRequestsPayload(val, err));
             });
