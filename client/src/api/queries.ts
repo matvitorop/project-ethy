@@ -639,6 +639,26 @@ export const GET_VOLUNTEER_APPLICATIONS = gql`
   }
 `
 
+export const GET_ADMIN_USERS = gql`
+  query GetAdminUsers($page: Int!, $pageSize: Int!, $searchTerm: String, $shortId: String) {
+    adminQuery {
+      users(page: $page, pageSize: $pageSize, searchTerm: $searchTerm, shortId: $shortId) {
+        items {
+          id
+          username
+          email
+          role
+          registeredAtUtc
+          isBlocked
+          blockedUntilUtc
+          isDeleted
+        }
+        error { code message }
+      }
+    }
+  }
+`;
+
 export const GET_BLOCK_HISTORY = gql`
   query GetBlockHistory($userId: ID!) {
     adminQuery {

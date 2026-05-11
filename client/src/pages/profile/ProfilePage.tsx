@@ -188,6 +188,12 @@ export default function ProfilePage() {
     const setCurrentPage = activeTab === 'owner' ? setOwnerPage : setAssigneePage
     const volApp = volAppData?.userQuery.getMyVolunteerApplication.application
 
+    const handleCopyId = () => {
+        if (!userId) return
+        navigator.clipboard.writeText(userId.slice(-6))
+        dispatch(addToast({ type: 'success', message: 'ID скопійовано' }))
+    }
+
     return (
         <motion.div 
             initial={{ opacity: 0 }}
@@ -196,7 +202,16 @@ export default function ProfilePage() {
         >
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-black text-ink" style={{ fontFamily: 'Jua, sans-serif' }}>Мій Профіль</h1>
+                    <h1 className="text-3xl font-black text-ink" style={{ fontFamily: 'Jua, sans-serif' }}>
+                        Мій Профіль
+                        <button 
+                            onClick={handleCopyId}
+                            className="ml-2 text-xs font-medium text-ink-soft opacity-60 hover:opacity-100 hover:text-primary transition-all"
+                            title="Копіювати повний ID"
+                        >
+                            #{userId?.slice(-6)}
+                        </button>
+                    </h1>
                     <p className="text-xs font-bold text-ink-soft uppercase tracking-widest mt-1">Особисті налаштування</p>
                 </div>
                 {profile.role === 'Volunteer' && (
