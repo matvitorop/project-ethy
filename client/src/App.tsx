@@ -18,10 +18,13 @@ import VerifyEmailPage from './pages/auth/VerifyEmailPage'
 import StatsPage from './pages/StatsPage'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 
+import { NotificationProvider } from './features/notifications/NotificationContext'
+
 export default function App() {
     return (
         <AuthInitializer>
-            <Routes>
+            <NotificationProvider>
+                <Routes>
                 <Route element={<PublicLayout />}>
                     <Route path="/" element={<HomePage />} />
                     <Route path="/login" element={<LoginPage />} />
@@ -44,6 +47,7 @@ export default function App() {
                 </Route>
             </Routes>
 
+            </NotificationProvider>
             <ToastContainer />
         </AuthInitializer>
     )

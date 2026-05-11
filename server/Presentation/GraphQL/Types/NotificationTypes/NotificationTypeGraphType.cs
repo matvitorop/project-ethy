@@ -8,13 +8,13 @@ namespace server.Presentation.GraphQL.Types.NotificationTypes
     {
         public NotificationTypeGraphType()
         {
-            Field(x => x.Id, type: typeof(IdGraphType));
+            Field<IdGraphType>("id").Resolve(context => context.Source.Id);
             Field(x => x.Title);
             Field(x => x.Content);
-            Field(x => x.Type, type: typeof(NotificationCategoryEnumType));
+            Field<NotificationCategoryEnumType>("type").Resolve(context => context.Source.Type);
             Field(x => x.IsRead);
             Field(x => x.CreatedAtUtc);
-            Field(x => x.RelatedEntityId, nullable: true, type: typeof(IdGraphType));
+            Field<IdGraphType>("relatedEntityId").Resolve(context => context.Source.RelatedEntityId);
             Field(x => x.RelatedEntityType, nullable: true);
         }
     }

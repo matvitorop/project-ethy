@@ -3,6 +3,7 @@ using GraphQL.Types;
 using MediatR;
 using server.Application.Handlers.Notifications.MarkAsRead;
 using server.Presentation.GraphQL.Extensions;
+using server.Presentation.GraphQL.Types.ErrorTypes;
 
 namespace server.Presentation.GraphQL.Mutations
 {
@@ -16,7 +17,7 @@ namespace server.Presentation.GraphQL.Mutations
                 .ResolveAsync(async context =>
                 {
                     var result = await mediator.Send(new MarkAsReadCommand(context.GetArgument<Guid>("id"), context.GetUserId()));
-                    return new MarkReadPayload(result.IsSuccess, result.Error);
+                    return new MarkReadPayload(result.IsSuccess, result.Error != null ? new ErrorPayload(result.Error.Message, result.Error.Code) : null);
                 });
 
             Field<MarkReadPayloadType>("markAllAsRead")
@@ -24,19 +25,20 @@ namespace server.Presentation.GraphQL.Mutations
                 .ResolveAsync(async context =>
                 {
                     var result = await mediator.Send(new MarkAllAsReadCommand(context.GetUserId()));
-                    return new MarkReadPayload(result.IsSuccess, result.Error);
+                    return new MarkReadPayload(result.IsSuccess, result.Error != null ? new ErrorPayload(result.Error.Message, result.Error.Code) : null);
                 });
         }
     }
 
-    public record MarkReadPayload(bool Success, server.Domain.Primitives.Error? Error);
+    public record MarkReadPayload(bool Success, ErrorPayload? Error);
 
     public class MarkReadPayloadType : ObjectGraphType<MarkReadPayload>
     {
         public MarkReadPayloadType()
         {
             Field(x => x.Success);
-            Field(x => x.Error, nullable: true, type: typeof(server.Presentation.GraphQL.Types.ErrorTypes.ErrorType));
+            Field<ErrorPayloadType>("error")
+                .Resolve(context => context.Source.Error);
         }
     }
 }

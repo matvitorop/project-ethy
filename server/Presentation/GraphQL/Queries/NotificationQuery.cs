@@ -4,6 +4,7 @@ using MediatR;
 using server.Application.Handlers.Notifications.GetNotifications;
 using server.Presentation.GraphQL.Extensions;
 using server.Presentation.GraphQL.Types.NotificationTypes;
+using server.Presentation.GraphQL.Types.ErrorTypes;
 
 namespace server.Presentation.GraphQL.Queries
 {
@@ -18,19 +19,22 @@ namespace server.Presentation.GraphQL.Queries
                 {
                     var userId = context.GetUserId();
                     var result = await mediator.Send(new GetNotificationsQuery(userId, context.GetArgument<int>("limit")));
-                    return result.ToPayload((v, e) => new NotificationsPayload(v, e));
+                    return result.ToPayload((v, e) => new NotificationsPayload(v, e != null ? new ErrorPayload(e.Message, e.Code) : null));
                 });
         }
     }
 
-    public record NotificationsPayload(IReadOnlyList<NotificationDto>? Data, server.Domain.Primitives.Error? Error);
+    public record NotificationsPayload(IReadOnlyList<NotificationDto>? Data, ErrorPayload? Error);
 
     public class NotificationsPayloadType : ObjectGraphType<NotificationsPayload>
     {
         public NotificationsPayloadType()
         {
-            Field(x => x.Data, nullable: true, type: typeof(ListGraphType<NotificationTypeGraphType>));
-            Field(x => x.Error, nullable: true, type: typeof(server.Presentation.GraphQL.Types.ErrorTypes.ErrorType));
+            Field<ListGraphType<NotificationTypeGraphType>>("data")
+                .Resolve(context => context.Source.Data);
+
+            Field<ErrorPayloadType>("error")
+                .Resolve(context => context.Source.Error);
         }
     }
 }

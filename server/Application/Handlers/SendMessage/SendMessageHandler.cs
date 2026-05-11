@@ -3,6 +3,7 @@ using server.Application.IRepositories;
 using server.Domain.Chat;
 using server.Domain.Exceptions;
 using server.Domain.Primitives;
+using server.Application.Events;
 
 namespace server.Application.Handlers.SendMessage
 {
@@ -47,7 +48,7 @@ namespace server.Application.Handlers.SendMessage
                 var receiverId = chat.OwnerId == request.SenderId ? chat.AssigneeId : chat.OwnerId;
                 var sender = await _userRepository.GetByIdAsync(request.SenderId, ct);
 
-                await _mediator.Publish(new server.Application.Events.ChatMessageSentEvent(
+                await _mediator.Publish(new ChatMessageSentEvent(
                     chat.Id,
                     request.SenderId,
                     receiverId,
