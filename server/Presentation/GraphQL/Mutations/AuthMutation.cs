@@ -1,4 +1,4 @@
-﻿using GraphQL;
+using GraphQL;
 using GraphQL.Types;
 using MediatR;
 using server.Application.Handlers.LoginUser;
@@ -128,7 +128,7 @@ namespace server.Presentation.GraphQL.Mutations
 
                 });
             Field<UpdateUsernamePayloadType>("updateUsername")
-            .Authorize()
+            .AuthorizeWithPolicy("Verified")
             .Arguments(
                 new QueryArgument<NonNullGraphType<StringGraphType>> { Name = "newUsername" }
             )
@@ -146,7 +146,7 @@ namespace server.Presentation.GraphQL.Mutations
             });
 
             Field<ChangePasswordPayloadType>("changePassword")
-            .Authorize()
+            .AuthorizeWithPolicy("Verified")
             .Arguments(
                 new QueryArgument<NonNullGraphType<StringGraphType>> { Name = "oldPassword" },
                 new QueryArgument<NonNullGraphType<StringGraphType>> { Name = "newPassword" },
@@ -168,7 +168,7 @@ namespace server.Presentation.GraphQL.Mutations
             });
 
             Field<SoftDeleteUserPayloadType>("deleteAccount")
-            .Authorize()
+            .AuthorizeWithPolicy("Verified")
             .Arguments(
                 // targetUserId необов'язковий — якщо не передано, видаляємо себе
                 // якщо адмін передає targetUserId — видаляє іншого

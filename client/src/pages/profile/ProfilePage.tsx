@@ -1,12 +1,13 @@
 import { useState } from 'react'
-import { useQuery, useMutation } from '@apollo/client/react'
+import { useQuery, useMutation, useApolloClient } from '@apollo/client/react'
 import { useNavigate } from 'react-router-dom'
 import { Shield, Pencil, Check, X, Eye, EyeOff, ThumbsUp, ThumbsDown, Phone, Link as LinkIcon, Upload, Calendar, Mail, User, Lock, Trash2, ChevronLeft, ChevronRight, FileText, AlertCircle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     GET_PROFILE, UPDATE_USERNAME, CHANGE_PASSWORD, DELETE_ACCOUNT,
     GET_MY_REQUESTS, GET_ASSIGNEE_REQUESTS,
-    UPDATE_PROFILE, GET_USER_REVIEWS, GET_MY_VOLUNTEER_APPLICATION, SUBMIT_VOLUNTEER_APPLICATION
+    UPDATE_PROFILE, GET_USER_REVIEWS, GET_MY_VOLUNTEER_APPLICATION, SUBMIT_VOLUNTEER_APPLICATION,
+    CHANGE_HELP_REQUEST_STATUS
 } from '../../api/queries'
 import type {
     ProfileData,
@@ -17,7 +18,8 @@ import type {
     UpdateProfileData,
     GetUserReviewsData,
     MyVolunteerApplicationData,
-    SubmitVolunteerApplicationData
+    SubmitVolunteerApplicationData,
+    ChangeHelpRequestStatusData
 } from '../../api/types'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { addToast } from '../../store/uiSlice'
@@ -40,6 +42,7 @@ export default function ProfilePage() {
     const navigate = useNavigate()
     const userId = useAppSelector(s => s.auth.userId)
     const role = useAppSelector(s => s.auth.role)
+    const client = useApolloClient()
 
     const [editingUsername, setEditingUsername] = useState(false)
     const [newUsername, setNewUsername] = useState('')
@@ -148,6 +151,20 @@ export default function ProfilePage() {
             } else {
                 dispatch(addToast({ type: 'success', message: 'Контакти збережено!' }))
                 setEditingContacts(false)
+            }
+        },
+    })
+    
+    const [changeStatus, { loading: changingStatus }] = useMutation<ChangeHelpRequestStatusData>(CHANGE_HELP_REQUEST_STATUS, {
+        onCompleted: (data) => {
+            const r = data.helpRequest.changeHelpRequestStatus
+            if (r.error) {
+                dispatch(addToast({ type: 'error', message: r.error.message }))
+            } else {
+                dispatch(addToast({ type: 'success', message: 'Статус змінено!' }))
+                activeTab === 'owner' ? ownerData?.helpRequestQuer.helpRequestQuery.items : assigneeData?.helpRequestQuer.helpRequestQuery.items
+                // Re-fetch active tab queries
+                client.refetchQueries({ include: [activeTab === 'owner' ? 'GetMyRequests' : 'GetAssigneeRequests'] })
             }
         },
     })
@@ -516,7 +533,28 @@ export default function ProfilePage() {
                                 </div>
                             ) : (
                                 <div className="space-y-4">
-                                    {currentItems.map(item => <RequestCard key={item.id} item={item} />)}
+                                    {currentItems.map(item => (
+                                        <div key={item.id} className="relative group">
+                                            <RequestCard item={item} />
+                                            {activeTab === 'owner' && Number(item.status) === 2 && (
+                                                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                                    <Button 
+                                                        variant="success" 
+                                                        size="sm" 
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            changeStatus({ variables: { helpRequestId: item.id, status: 'RESOLVED' } });
+                                                        }}
+                                                        disabled={changingStatus}
+                                                        className="shadow-lg py-1 px-3 h-auto text-[10px]"
+                                                    >
+                                                        Виконано
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
                                     
                                     {(currentPage > 1 || currentItems.length === PAGE_SIZE) && (
                                         <div className="flex items-center justify-center gap-4 mt-8 pt-4 border-t border-border">

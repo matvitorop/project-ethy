@@ -145,7 +145,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("Verified", policy => 
+        policy.RequireAuthenticatedUser().RequireClaim("email_verified", "true"));
+});
 
 // =====================
 // GRAPHQL AUTHORIZATION
@@ -156,6 +160,8 @@ builder.Services
     {
         var settings = new AuthorizationSettings();
         settings.AddPolicy("Authenticated", p => p.RequireAuthenticatedUser());
+        settings.AddPolicy("Verified", p => 
+            p.RequireAuthenticatedUser().RequireClaim("email_verified", "true"));
 
         //settings.AddPolicy("Admin", p =>
         //    p.RequireClaim(ClaimTypes.Role, UserRole.Admin.ToString()));
