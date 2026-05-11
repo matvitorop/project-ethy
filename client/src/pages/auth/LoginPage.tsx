@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Mail, Lock, LogIn } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useAppDispatch } from '../../store/hooks'
-import { setAuth } from '../../store/authSlice'
+
 import { addToast } from '../../store/uiSlice'
 import { LOGIN, RESEND_VERIFICATION_EMAIL } from '../../api/queries'
 import type { ResendVerificationEmailData } from '../../api/types'
@@ -39,6 +39,8 @@ export default function LoginPage() {
     )
 
     const [login, { loading }] = useMutation<LoginData, LoginVars>(LOGIN, {
+        refetchQueries: ['GetProfile'],
+        awaitRefetchQueries: true,
         onCompleted: (data) => {
             const result = data.auth.login
             if (result.error) {
@@ -49,7 +51,6 @@ export default function LoginPage() {
                     dispatch(addToast({ type: 'error', message: result.error.message }))
                 }
             } else {
-                dispatch(setAuth({ userId: '', username: '', email: form.email }))
                 dispatch(addToast({ type: 'success', message: 'Вхід успішний!' }))
                 navigate('/requests')
             }
