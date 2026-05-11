@@ -31,6 +31,7 @@ import Button from '../../components/ui/Button'
 import Card from '../../components/ui/Card'
 import Badge from '../../components/ui/Badge'
 import UserLink from '../../components/ui/UserLink'
+import SocialLink from '../../components/ui/SocialLink'
 
 const PAGE_SIZE = 5
 const API_BASE_URL = 'http://localhost:5274'
@@ -372,7 +373,7 @@ export default function ProfilePage() {
                                         <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-soft" size={14} />
                                         <input type="text" value={contactForm.socialLinks}
                                             onChange={e => setContactForm(f => ({ ...f, socialLinks: e.target.value }))}
-                                            placeholder="Соц. мережі..."
+                                            placeholder="t.me/username або instagram.com/..."
                                             className="w-full pl-9 pr-4 py-2.5 bg-surface border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-inner" />
                                     </div>
                                     <div className="flex gap-2 pt-1">
@@ -392,11 +393,14 @@ export default function ProfilePage() {
                                             {profile.phoneNumber || 'Номер не вказано'}
                                         </span>
                                     </div>
-                                    <div className="flex items-center gap-3 p-3 bg-surface-muted rounded-2xl border border-border shadow-inner">
-                                        <LinkIcon size={14} className="text-ink-soft" />
-                                        <span className={`text-sm font-bold truncate ${profile.socialLinks ? 'text-primary underline' : 'text-ink-soft italic'}`}>
-                                            {profile.socialLinks ? <a href={profile.socialLinks} target="_blank" rel="noopener noreferrer">{profile.socialLinks}</a> : 'Соц. мережі не вказано'}
-                                        </span>
+                                    <div className="flex items-center gap-3 p-1.5 bg-surface-muted rounded-2xl border border-border shadow-inner">
+                                        <SocialLink url={profile.socialLinks} className="w-full justify-start bg-transparent border-none p-1.5" />
+                                        {!profile.socialLinks && (
+                                            <>
+                                                <LinkIcon size={14} className="ml-1.5 text-ink-soft" />
+                                                <span className="text-sm font-bold text-ink-soft italic">Соц. мережі не вказано</span>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             )}
