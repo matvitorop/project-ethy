@@ -37,7 +37,8 @@ namespace server.Application.Handlers.GetHelpRequests
                 request.AssignedUserId,
                 request.HasNoReport,
                 request.SearchTerm,
-                request.ShortId);
+                request.ShortId,
+                request.ResponderId);
 
             return Result<IReadOnlyList<HelpRequestListItemDto>>.Success(items);
         }

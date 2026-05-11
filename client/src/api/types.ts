@@ -48,6 +48,8 @@ export interface ProfileData {
                 socialLinks: string | null
                 isEmailVerified: boolean
                 role: string
+                activeRequestsCount: number
+                activeResponsesCount: number
             } | null
             error: ApiError | null
         }

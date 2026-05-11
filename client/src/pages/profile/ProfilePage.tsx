@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useApolloClient } from '@apollo/client/react'
 import { useNavigate } from 'react-router-dom'
-import { Shield, Pencil, Check, X, Eye, EyeOff, ThumbsUp, ThumbsDown, Phone, Link as LinkIcon, Upload, Calendar, Mail, User, Lock, Trash2, ChevronLeft, ChevronRight, FileText, AlertCircle } from 'lucide-react'
+import { Shield, Pencil, Check, X, Eye, EyeOff, ThumbsUp, ThumbsDown, Phone, Link as LinkIcon, Upload, Calendar, Mail, User, Lock, Trash2, ChevronLeft, ChevronRight, FileText, AlertCircle, Ban } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     GET_PROFILE, UPDATE_USERNAME, CHANGE_PASSWORD, DELETE_ACCOUNT,
     GET_MY_REQUESTS, GET_ASSIGNEE_REQUESTS,
     UPDATE_PROFILE, GET_USER_REVIEWS, GET_MY_VOLUNTEER_APPLICATION, SUBMIT_VOLUNTEER_APPLICATION,
-    CHANGE_HELP_REQUEST_STATUS
+    CHANGE_HELP_REQUEST_STATUS, CANCEL_RESPONSE
 } from '../../api/queries'
 import type {
     ProfileData,
@@ -56,6 +56,8 @@ export default function ProfilePage() {
     const [activeTab, setActiveTab] = useState<ProfileTab>('owner')
     const [ownerPage, setOwnerPage] = useState(1)
     const [assigneePage, setAssigneePage] = useState(1)
+    const [cancelModalOpen, setCancelModalOpen] = useState(false)
+    const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null)
 
     // Volunteer modal
     const [volModalOpen, setVolModalOpen] = useState(false)
@@ -78,10 +80,25 @@ export default function ProfilePage() {
         fetchPolicy: 'cache-and-network',
     })
 
-    const { data: assigneeData, loading: assigneeLoading } = useQuery<HelpRequestsPageData>(GET_ASSIGNEE_REQUESTS, {
-        variables: { page: assigneePage, pageSize: PAGE_SIZE, assignedUserId: userId },
+    const { data: assigneeData, loading: assigneeLoading, refetch: assigneeRefetch } = useQuery<HelpRequestsPageData>(GET_ASSIGNEE_REQUESTS, {
+        variables: { page: assigneePage, pageSize: PAGE_SIZE, responderId: userId },
         skip: !userId || activeTab !== 'assignee',
         fetchPolicy: 'cache-and-network',
+    })
+
+    const [cancelResponse, { loading: cancellingResponse }] = useMutation(CANCEL_RESPONSE, {
+        onCompleted: (data: any) => {
+            const r = data.helpRequest.cancelResponse
+            if (r.error) {
+                dispatch(addToast({ type: 'error', message: r.error.message }))
+            } else {
+                dispatch(addToast({ type: 'success', message: 'Відгук скасовано!' }))
+                setCancelModalOpen(false)
+                setSelectedRequestId(null)
+                assigneeRefetch()
+            }
+        },
+        onError: () => dispatch(addToast({ type: 'error', message: 'Помилка скасування відгуку' })),
     })
 
     const { data: volAppData, refetch: refetchVolApp } = useQuery<MyVolunteerApplicationData>(GET_MY_VOLUNTEER_APPLICATION, {
@@ -156,6 +173,24 @@ export default function ProfilePage() {
         },
     })
     
+    const handleUpdateContacts = () => {
+        let links = contactForm.socialLinks.trim()
+        
+        // Blacklist check
+        const forbidden = ["<script", "javascript:", "onerror", "onclick", "onload", "href=", "src="]
+        if (forbidden.some(f => links.toLowerCase().includes(f))) {
+            dispatch(addToast({ type: 'error', message: 'Недопустимий формат посилання' }))
+            return
+        }
+
+        // Auto-fix @username
+        if (links.startsWith('@') && !links.includes(' ')) {
+            links = `https://t.me/${links.substring(1)}`
+        }
+
+        updateProfile({ variables: { ...contactForm, socialLinks: links } })
+    }
+
     const [changeStatus, { loading: changingStatus }] = useMutation<ChangeHelpRequestStatusData>(CHANGE_HELP_REQUEST_STATUS, {
         onCompleted: (data) => {
             const r = data.helpRequest.changeHelpRequestStatus
@@ -376,8 +411,13 @@ export default function ProfilePage() {
                                             placeholder="t.me/username або instagram.com/..."
                                             className="w-full pl-9 pr-4 py-2.5 bg-surface border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-inner" />
                                     </div>
+                                    {contactForm.socialLinks && (
+                                        <div className="px-1">
+                                            <SocialLink url={contactForm.socialLinks} />
+                                        </div>
+                                    )}
                                     <div className="flex gap-2 pt-1">
-                                        <Button size="sm" className="flex-1" onClick={() => updateProfile({ variables: contactForm })} disabled={updatingProfile}>
+                                        <Button size="sm" className="flex-1" onClick={handleUpdateContacts} disabled={updatingProfile}>
                                             Зберегти
                                         </Button>
                                         <Button variant="outline" size="sm" onClick={() => setEditingContacts(false)}>
@@ -419,6 +459,36 @@ export default function ProfilePage() {
                     </button>
                 </div>
             </Card>
+
+            {/* Ліміти та активність */}
+            {profile.role === 'User' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Card padding="md" className="flex items-center justify-between border-primary/10 shadow-sm">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                                <FileText size={20} />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-black text-ink-soft uppercase tracking-wider">Мої заявки</p>
+                                <p className="text-xl font-black text-ink">{profile.activeRequestsCount} <span className="text-sm font-medium opacity-40">/ 3</span></p>
+                            </div>
+                        </div>
+                        <div className="text-[10px] font-black text-ink-soft bg-surface-muted px-2 py-1 rounded-lg uppercase tracking-widest border border-border">Ліміт</div>
+                    </Card>
+                    <Card padding="md" className="flex items-center justify-between border-primary/10 shadow-sm">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                                <ThumbsUp size={20} />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-black text-ink-soft uppercase tracking-wider">Активні відгуки</p>
+                                <p className="text-xl font-black text-ink">{profile.activeResponsesCount} <span className="text-sm font-medium opacity-40">/ 1</span></p>
+                            </div>
+                        </div>
+                        <div className="text-[10px] font-black text-ink-soft bg-surface-muted px-2 py-1 rounded-lg uppercase tracking-widest border border-border">Ліміт</div>
+                    </Card>
+                </div>
+            )}
 
             {/* Волонтерський статус */}
             {profile.role !== 'Volunteer' && profile.role !== 'Admin' && (
@@ -556,6 +626,25 @@ export default function ProfilePage() {
                                                     </Button>
                                                 </div>
                                             )}
+                                            {activeTab === 'assignee' && Number(item.status) === 1 && (
+                                                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                                    <Button 
+                                                        variant="outline" 
+                                                        size="sm" 
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            setSelectedRequestId(item.id);
+                                                            setCancelModalOpen(true);
+                                                        }}
+                                                        disabled={cancellingResponse}
+                                                        className="shadow-lg py-1 px-3 h-auto text-[10px] bg-surface hover:bg-error/10 hover:text-error hover:border-error/30"
+                                                    >
+                                                        <Ban size={12} className="mr-1" />
+                                                        Скасувати відгук
+                                                    </Button>
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
                                     
@@ -655,6 +744,30 @@ export default function ProfilePage() {
                             disabled={submitting || !volForm.organizationName.trim() || !volForm.activityDescription.trim()}
                         >
                             {submitting ? 'Надсилання...' : 'Надіслати заявку'}
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* Скасування відгуку */}
+            <Modal isOpen={cancelModalOpen} onClose={() => { if (!cancellingResponse) setCancelModalOpen(false) }} title="Скасувати відгук">
+                <div className="space-y-6 p-2">
+                    <div className="bg-primary/5 p-4 rounded-xl border border-primary/10 flex gap-3">
+                        <Ban className="text-primary shrink-0" size={20} />
+                        <div>
+                            <p className="text-sm font-bold text-ink">Ви впевнені?</p>
+                            <p className="text-xs text-ink-soft mt-1">Ваша пропозиція допомоги буде видалена, і ви зможете відгукнутися на іншу заявку.</p>
+                        </div>
+                    </div>
+                    <div className="flex gap-3">
+                        <Button variant="outline" className="flex-1" onClick={() => setCancelModalOpen(false)} disabled={cancellingResponse}>Назад</Button>
+                        <Button 
+                            variant="error" 
+                            className="flex-1" 
+                            disabled={cancellingResponse}
+                            onClick={() => selectedRequestId && cancelResponse({ variables: { helpRequestId: selectedRequestId } })}
+                        >
+                            {cancellingResponse ? 'Скасування...' : 'Так, скасувати'}
                         </Button>
                     </div>
                 </div>
