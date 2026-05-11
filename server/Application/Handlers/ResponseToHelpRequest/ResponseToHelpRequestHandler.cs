@@ -11,13 +11,16 @@ namespace server.Application.Handlers.ResponseToHelpRequestHandler
 
         private readonly IHelpRequestRepository _repository;
         private readonly IUserRepository _userRepository;
+        private readonly IMediator _mediator;
 
         public ResponseToHelpRequestHandler(
             IHelpRequestRepository repository,
-            IUserRepository userRepository)
+            IUserRepository userRepository,
+            IMediator mediator)
         {
             _repository = repository;
             _userRepository = userRepository;
+            _mediator = mediator;
         }
 
         public async Task<Result<Guid>> Handle(ResponseToHelpRequestCommand request,
@@ -47,6 +50,12 @@ namespace server.Application.Handlers.ResponseToHelpRequestHandler
                 var newResponse = helpRequest.AddResponse(request.UserId, request.Message);
                 
                 await _repository.AddResponseAsync(helpRequest.Id, newResponse, ct);
+
+                await _mediator.Publish(new server.Application.Events.HelpRequestRespondedEvent(
+                    helpRequest.Id,
+                    helpRequest.CreatorId,
+                    request.UserId,
+                    request.Message), ct);
                 
                 return Result<Guid>.Success(newResponse.Id);
             }
