@@ -6,7 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
     GET_HELP_REQUEST_BY_ID, GET_STAGES, GET_EVENT_LOG, GET_REPORTS,
     CREATE_REPORT, CHANGE_HELP_REQUEST_STATUS,
-    SOFT_DELETE_HELP_REQUEST, CANCEL_HELP_REQUEST, RESTORE_HELP_REQUEST
+    SOFT_DELETE_HELP_REQUEST, CANCEL_HELP_REQUEST, RESTORE_HELP_REQUEST,
+    GET_HELP_REQUEST_RESPONSES
 } from '../../api/queries'
 import type {
     HelpRequestDetailData,
@@ -15,7 +16,8 @@ import type {
     ReportsData,
     CreateReportData,
     ChangeHelpRequestStatusData,
-    ApiError
+    ApiError,
+    HelpRequestResponsesData
 } from '../../api/types'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { addToast } from '../../store/uiSlice'
@@ -139,6 +141,13 @@ export default function RequestDetailsPage() {
     })
 
     const reports = reportsData?.helpRequestQuer.reports.items ?? []
+
+    const { data: responsesData } = useQuery<HelpRequestResponsesData>(
+        GET_HELP_REQUEST_RESPONSES,
+        { variables: { helpRequestId: id }, skip: !id, fetchPolicy: 'cache-and-network' }
+    )
+
+    const pendingCandidatesCount = responsesData?.helpRequestQuer.helpRequestResponses.items?.filter(r => r.status === 0).length ?? 0
 
     // Mutation створення звіту:
     const [reportComment, setReportComment] = useState('')
@@ -368,8 +377,13 @@ export default function RequestDetailsPage() {
                         <Button variant="ghost" size="sm" onClick={() => setDeleteModalOpen(true)} className="text-error hover:bg-error/5">
                             Видалити
                         </Button>
-                        <Button size="sm" onClick={() => setCandidatesModalOpen(true)}>
+                        <Button size="sm" onClick={() => setCandidatesModalOpen(true)} className="relative">
                             Кандидати
+                            {pendingCandidatesCount > 0 && (
+                                <span className="ml-2 px-1.5 py-0.5 bg-error text-white text-[10px] rounded-full font-black min-w-[18px] text-center">
+                                    {pendingCandidatesCount}
+                                </span>
+                            )}
                         </Button>
                         <Button variant="success" size="sm" onClick={() => changeStatus({
                             variables: { helpRequestId: hr.id, status: 'RESOLVED' }
