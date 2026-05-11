@@ -38,7 +38,7 @@ const uiSlice = createSlice({
             state.chatPanelOpen = !state.chatPanelOpen
             if (!state.chatPanelOpen) state.activeChatId = null
         },
-        openChat: (state, action: PayloadAction<string>) => {
+        openChat: (state, action: PayloadAction<string | null>) => {
             state.chatPanelOpen = true
             state.activeChatId = action.payload
         },
