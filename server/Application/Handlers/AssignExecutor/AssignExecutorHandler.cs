@@ -5,6 +5,7 @@ using server.Domain.Exceptions;
 using server.Domain.HelpRequest;
 using server.Domain.Primitives;
 using System.Text.Json;
+using server.Application.Events;
 
 namespace server.Application.Handlers.AssignExecutor
 {
@@ -68,7 +69,7 @@ namespace server.Application.Handlers.AssignExecutor
 
             await _repository.AssignExecutorAsync(helpRequest, chat, firstStage, logEvent, ct);
 
-            await _mediator.Publish(new server.Application.Events.HelpRequestAssignedEvent(
+            await _mediator.Publish(new HelpRequestAssignedEvent(
                 helpRequest.Id,
                 helpRequest.Title,
                 helpRequest.AssignedUserId!.Value), ct);

@@ -68,6 +68,17 @@ button {
     animation: slide-in 0.2s ease-out;
 }
 
+@keyframes wiggle {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-10deg); }
+    75% { transform: rotate(10deg); }
+}
+
+.animate-wiggle {
+    animation: wiggle 0.5s ease-in-out infinite;
+    transform-origin: top center;
+}
+
 [data-theme="dark"] {
     --color-surface: #111827;
     --color-surface-muted: #1F2937;

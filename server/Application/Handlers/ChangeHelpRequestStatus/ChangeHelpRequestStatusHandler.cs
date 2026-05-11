@@ -6,6 +6,7 @@ using server.Domain.Exceptions;
 using server.Domain.HelpRequest;
 using server.Domain.Primitives;
 using System.Text.Json;
+using server.Application.Events;
 
 namespace server.Application.Handlers.ChangeHelpRequestStatus
 {
@@ -92,7 +93,7 @@ namespace server.Application.Handlers.ChangeHelpRequestStatus
 
             if (helpRequest.AssignedUserId.HasValue)
             {
-                await _mediator.Publish(new server.Application.Events.HelpRequestStatusChangedEvent(
+                await _mediator.Publish(new HelpRequestStatusChangedEvent(
                     helpRequest.Id,
                     helpRequest.Title,
                     helpRequest.AssignedUserId.Value,

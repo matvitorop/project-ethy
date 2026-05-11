@@ -845,4 +845,55 @@ export const CANCEL_RESPONSE = gql`
       }
     }
   }
-`
+`;
+
+export const GET_NOTIFICATIONS = gql`
+  query GetNotifications($limit: Int) {
+    notificationQuery {
+      notifications(limit: $limit) {
+        data {
+          id
+          title
+          content
+          type
+          isRead
+          createdAtUtc
+          relatedEntityId
+          relatedEntityType
+        }
+        error {
+          code
+          message
+        }
+      }
+    }
+  }
+`;
+
+export const MARK_NOTIFICATION_AS_READ = gql`
+  mutation MarkAsRead($id: ID!) {
+    notification {
+      markAsRead(id: $id) {
+        success
+        error {
+          code
+          message
+        }
+      }
+    }
+  }
+`;
+
+export const MARK_ALL_NOTIFICATIONS_AS_READ = gql`
+  mutation MarkAllAsRead {
+    notification {
+      markAllAsRead {
+        success
+        error {
+          code
+          message
+        }
+      }
+    }
+  }
+`;

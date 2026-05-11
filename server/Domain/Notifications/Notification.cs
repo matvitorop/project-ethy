@@ -1,5 +1,3 @@
-using server.Domain.Primitives;
-
 namespace server.Domain.Notifications
 {
     public enum NotificationType
@@ -11,8 +9,9 @@ namespace server.Domain.Notifications
         Warning = 4
     }
 
-    public sealed class Notification : Entity
+    public sealed class Notification
     {
+        public Guid Id { get; private set; }
         public Guid UserId { get; private set; }
         public string Title { get; private set; }
         public string Content { get; private set; }

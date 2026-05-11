@@ -3,12 +3,12 @@ using server.Application.IRepositories;
 using server.Domain.Exceptions;
 using server.Domain.Primitives;
 using server.Domain;
+using server.Application.Events;
 
 namespace server.Application.Handlers.ResponseToHelpRequestHandler
 {
     public class ResponseToHelpRequestHandler : IRequestHandler<ResponseToHelpRequestCommand, Result<Guid>>
     {
-
         private readonly IHelpRequestRepository _repository;
         private readonly IUserRepository _userRepository;
         private readonly IMediator _mediator;
@@ -51,7 +51,7 @@ namespace server.Application.Handlers.ResponseToHelpRequestHandler
                 
                 await _repository.AddResponseAsync(helpRequest.Id, newResponse, ct);
 
-                await _mediator.Publish(new server.Application.Events.HelpRequestRespondedEvent(
+                await _mediator.Publish(new HelpRequestRespondedEvent(
                     helpRequest.Id,
                     helpRequest.CreatorId,
                     request.UserId,

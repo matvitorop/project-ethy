@@ -9,6 +9,7 @@ import { toggleTheme } from '../store/themeSlice'
 import { useLogout } from '../features/auth/useAuth'
 import ReportsPanel from '../features/reports/ReportsPanel'
 import Footer from '../components/Footer'
+import NotificationBell from '../features/notifications/NotificationBell'
 
 export default function AppLayout() {
     const dispatch = useAppDispatch()
@@ -66,6 +67,8 @@ export default function AppLayout() {
                             >
                                 <MessageCircle size={18} />
                             </button>
+
+                            <NotificationBell />
 
                             <button
                                 onClick={() => dispatch(toggleReportsPanel())}

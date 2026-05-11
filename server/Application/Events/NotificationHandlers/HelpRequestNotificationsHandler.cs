@@ -1,5 +1,6 @@
 using MediatR;
 using server.Application.IServices;
+using server.Domain.HelpRequest;
 using server.Domain.Notifications;
 
 namespace server.Application.Events.NotificationHandlers

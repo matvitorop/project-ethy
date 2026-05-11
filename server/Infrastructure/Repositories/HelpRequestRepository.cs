@@ -157,7 +157,7 @@ namespace server.Infrastructure.Repositories
             if (assignedUserId.HasValue) filters.Add("hr.AssignedUserId = @AssignedUserId");
             if (hasNoReport == true)
             {
-                filters.Add("NOT EXISTS (SELECT 1 FROM Reports r WHERE r.HelpRequestId = hr.Id)");
+                filters.Add("NOT EXISTS (SELECT 1 FROM HelpRequestReports r WHERE r.HelpRequestId = hr.Id)");
             }
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
