@@ -162,7 +162,6 @@ export default function ProfilePage() {
                 dispatch(addToast({ type: 'error', message: r.error.message }))
             } else {
                 dispatch(addToast({ type: 'success', message: 'Статус змінено!' }))
-                activeTab === 'owner' ? ownerData?.helpRequestQuer.helpRequestQuery.items : assigneeData?.helpRequestQuer.helpRequestQuery.items
                 // Re-fetch active tab queries
                 client.refetchQueries({ include: [activeTab === 'owner' ? 'GetMyRequests' : 'GetAssigneeRequests'] })
             }
