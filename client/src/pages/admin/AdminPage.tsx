@@ -131,7 +131,7 @@ export default function AdminPage() {
     }, [userShortId])
 
     const reqVariables = useMemo(() => {
-        const f: any = { page: 1, pageSize: 50, searchTerm: debouncedSearch || null }
+        const f: Record<string, unknown> = { page: 1, pageSize: 50, searchTerm: debouncedSearch || null }
         if (reqFilter === 'active') {
             f.statuses = ['Open', 'InProgress']
             f.isDeleted = false
@@ -147,14 +147,14 @@ export default function AdminPage() {
         return { filter: f }
     }, [reqFilter, debouncedSearch])
 
-    const { data: apps, loading: appsLoading } = useQuery<VolunteerApplicationsData>(GET_VOLUNTEER_APPLICATIONS)
-    const { data: complaints, loading: compLoading } = useQuery<ComplaintsData>(GET_COMPLAINTS)
-    const { data: requests, loading: reqLoading } = useQuery<AdminHelpRequestsData>(GET_ADMIN_HELP_REQUESTS, {
+    const { data: apps, loading: appsLoading, refetch: refetchApps } = useQuery<VolunteerApplicationsData>(GET_VOLUNTEER_APPLICATIONS)
+    const { data: complaints, loading: compLoading, refetch: refetchComp } = useQuery<ComplaintsData>(GET_COMPLAINTS)
+    const { data: requests, loading: reqLoading, refetch: refetchReq } = useQuery<AdminHelpRequestsData>(GET_ADMIN_HELP_REQUESTS, {
         variables: reqVariables
     })
     const { data: stats, loading: statsLoading } = useQuery<AdminAnalyticsData>(GET_ADMIN_ANALYTICS)
     
-    const { data: users, loading: usersLoading } = useQuery<AdminUsersData>(GET_ADMIN_USERS, {
+    const { data: users, loading: usersLoading, refetch: refetchUsers } = useQuery<AdminUsersData>(GET_ADMIN_USERS, {
         variables: {
             page: 1,
             pageSize: 50,
@@ -164,11 +164,36 @@ export default function AdminPage() {
         skip: activeTab !== 'users'
     })
 
-    useEffect(() => { if (apps && !appsLoading) setLastUpdated(p => ({ ...p, applications: new Date() })) }, [apps, appsLoading])
-    useEffect(() => { if (complaints && !compLoading) setLastUpdated(p => ({ ...p, complaints: new Date() })) }, [complaints, compLoading])
-    useEffect(() => { if (requests && !reqLoading) setLastUpdated(p => ({ ...p, requests: new Date() })) }, [requests, reqLoading])
-    useEffect(() => { if (stats && !statsLoading) setLastUpdated(p => ({ ...p, analytics: new Date() })) }, [stats, statsLoading])
-    useEffect(() => { if (users && !usersLoading) setLastUpdated(p => ({ ...p, users: new Date() })) }, [users, usersLoading])
+    useEffect(() => {
+        if (apps && !appsLoading) {
+            const t = setTimeout(() => setLastUpdated(p => ({ ...p, applications: new Date() })), 0)
+            return () => clearTimeout(t)
+        }
+    }, [apps, appsLoading])
+    useEffect(() => {
+        if (complaints && !compLoading) {
+            const t = setTimeout(() => setLastUpdated(p => ({ ...p, complaints: new Date() })), 0)
+            return () => clearTimeout(t)
+        }
+    }, [complaints, compLoading])
+    useEffect(() => {
+        if (requests && !reqLoading) {
+            const t = setTimeout(() => setLastUpdated(p => ({ ...p, requests: new Date() })), 0)
+            return () => clearTimeout(t)
+        }
+    }, [requests, reqLoading])
+    useEffect(() => {
+        if (stats && !statsLoading) {
+            const t = setTimeout(() => setLastUpdated(p => ({ ...p, analytics: new Date() })), 0)
+            return () => clearTimeout(t)
+        }
+    }, [stats, statsLoading])
+    useEffect(() => {
+        if (users && !usersLoading) {
+            const t = setTimeout(() => setLastUpdated(p => ({ ...p, users: new Date() })), 0)
+            return () => clearTimeout(t)
+        }
+    }, [users, usersLoading])
 
     const TAB_QUERIES: Record<string, string[]> = {
         analytics: ['GetAdminAnalytics'],
@@ -178,10 +203,6 @@ export default function AdminPage() {
         users: ['GetAdminUsers'],
     }
 
-    const refetchApps = useCallback(() => client.refetchQueries({ include: ['GetVolunteerApplications'] }), [client])
-    const refetchComp = useCallback(() => client.refetchQueries({ include: ['GetComplaints'] }), [client])
-    const refetchReq = useCallback(() => client.refetchQueries({ include: ['GetAdminHelpRequests'] }), [client])
-    const refetchUsers = useCallback(() => client.refetchQueries({ include: ['GetAdminUsers'] }), [client])
 
     const handleRefresh = useCallback(() =>
         client.refetchQueries({ include: TAB_QUERIES[activeTab] })
@@ -246,12 +267,12 @@ export default function AdminPage() {
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.2 }}
                 >
-                    {activeTab === 'analytics' && <AnalyticsTab data={stats?.statsQuery.adminAnalytics.data} loading={statsLoading} />}
-                    {activeTab === 'applications' && <ApplicationsTab items={apps?.adminQuery.volunteerApplications.items || []} loading={appsLoading} onRefresh={refetchApps} />}
-                    {activeTab === 'complaints' && <ComplaintsTab items={complaints?.adminQuery.complaints.items || []} loading={compLoading} onRefresh={refetchComp} />}
+                    {activeTab === 'analytics' && <AnalyticsTab data={stats?.statsQuery.adminAnalytics.data as AdminAnalyticsDto} loading={statsLoading} />}
+                    {activeTab === 'applications' && <ApplicationsTab items={(apps?.adminQuery.volunteerApplications.items || []) as VolunteerApplicationItem[]} loading={appsLoading} onRefresh={refetchApps} />}
+                    {activeTab === 'complaints' && <ComplaintsTab items={(complaints?.adminQuery.complaints.items || []) as AdminComplaintItem[]} loading={compLoading} onRefresh={refetchComp} />}
                     {activeTab === 'requests' && (
                         <RequestsTab 
-                            items={requests?.adminQuery.helpRequests.items || []} 
+                            items={(requests?.adminQuery.helpRequests.items || []) as AdminHelpRequestItem[]} 
                             loading={reqLoading} 
                             onRefresh={refetchReq} 
                             filter={reqFilter}
@@ -262,7 +283,7 @@ export default function AdminPage() {
                     )}
                     {activeTab === 'users' && (
                         <UsersTab 
-                            items={users?.adminQuery.users.items || []} 
+                            items={(users?.adminQuery.users.items || []) as AdminUserDto[]} 
                             loading={usersLoading} 
                             onRefresh={refetchUsers}
                             search={userSearch}
