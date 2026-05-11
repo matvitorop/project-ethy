@@ -6,6 +6,7 @@ import type { HelpRequestResponsesData, HelpRequestResponse, AssignExecutorData 
 import { PageSpinner } from '../../../components/Spinner'
 import { useAppDispatch } from '../../../store/hooks'
 import { addToast } from '../../../store/uiSlice'
+import UserLink from '../../../components/ui/UserLink'
 
 const RESPONSE_STATUS = {
     0: { label: 'Очікує', color: 'text-warning' },
@@ -38,7 +39,11 @@ function CandidateCard({ response, onAssign, canAssign, assigning }: CandidateCa
             <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2">
                     <UserCircle size={20} className="text-ink-muted flex-shrink-0" />
-                    <span className="font-medium text-ink text-sm">{response.username}</span>
+                    <UserLink 
+                        userId={response.userId} 
+                        username={response.username} 
+                        className="font-bold text-primary hover:underline text-sm" 
+                    />
                 </div>
                 <span className={`text-xs font-medium ${statusConfig?.color}`}>
                     {statusConfig?.label}
@@ -118,9 +123,10 @@ export default function CandidatesModal({
     }
 
     const items = data?.helpRequestQuer.helpRequestResponses.items ?? []
+    const pendingCount = items.filter(r => r.status === 0).length
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={`Кандидати (${items.length})`}>
+        <Modal isOpen={isOpen} onClose={onClose} title={`Кандидати (очікує: ${pendingCount})`}>
             <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
                 {loading && <PageSpinner />}
 
