@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using server.Application.IRepositories;
 using server.Domain.Chat;
 using server.Domain.Exceptions;
@@ -10,10 +10,17 @@ namespace server.Application.Handlers.SendMessage
         : IRequestHandler<SendMessageCommand, Result<Guid>>
     {
         private readonly IChatRepository _chatRepository;
+        private readonly IUserRepository _userRepository;
+        private readonly IMediator _mediator;
 
-        public SendMessageHandler(IChatRepository chatRepository)
+        public SendMessageHandler(
+            IChatRepository chatRepository, 
+            IUserRepository userRepository, 
+            IMediator mediator)
         {
             _chatRepository = chatRepository;
+            _userRepository = userRepository;
+            _mediator = mediator;
         }
 
         public async Task<Result<Guid>> Handle(
@@ -36,6 +43,17 @@ namespace server.Application.Handlers.SendMessage
             {
                 var message = new ChatMessage(chat.Id, request.SenderId, request.Content);
                 await _chatRepository.AddMessageAsync(message, ct);
+
+                var receiverId = chat.OwnerId == request.SenderId ? chat.AssigneeId : chat.OwnerId;
+                var sender = await _userRepository.GetByIdAsync(request.SenderId, ct);
+
+                await _mediator.Publish(new server.Application.Events.ChatMessageSentEvent(
+                    chat.Id,
+                    request.SenderId,
+                    receiverId,
+                    sender?.Username ?? "Користувач",
+                    request.Content), ct);
+
                 return Result<Guid>.Success(message.Id);
             }
             catch (DomainException ex)

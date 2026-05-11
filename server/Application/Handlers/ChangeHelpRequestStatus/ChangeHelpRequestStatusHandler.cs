@@ -14,13 +14,16 @@ namespace server.Application.Handlers.ChangeHelpRequestStatus
     {
         private readonly IHelpRequestRepository _repository;
         private readonly IStageRepository _stageRepository;
+        private readonly IMediator _mediator;
 
         public ChangeHelpRequestStatusHandler(
             IHelpRequestRepository repository,
-            IStageRepository stageRepository)
+            IStageRepository stageRepository,
+            IMediator mediator)
         {
             _repository = repository;
             _stageRepository = stageRepository;
+            _mediator = mediator;
         }
 
         public async Task<Result<ChangeHelpRequestStatusResult>> Handle(
@@ -85,6 +88,15 @@ namespace server.Application.Handlers.ChangeHelpRequestStatus
             if (request.NewStatus == HelpRequestStatus.Resolved)
             {
                 await _repository.SetResolvedAtAsync(helpRequest.Id, ct);
+            }
+
+            if (helpRequest.AssignedUserId.HasValue)
+            {
+                await _mediator.Publish(new server.Application.Events.HelpRequestStatusChangedEvent(
+                    helpRequest.Id,
+                    helpRequest.Title,
+                    helpRequest.AssignedUserId.Value,
+                    helpRequest.Status), ct);
             }
 
             return Result<ChangeHelpRequestStatusResult>.Success(
