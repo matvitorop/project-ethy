@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@apollo/client/react'
-import { ThumbsUp, ThumbsDown, CheckCircle, Shield, Phone, Link as LinkIcon, AlertCircle, ChevronLeft, Calendar, FileText, User } from 'lucide-react'
+import { ThumbsUp, ThumbsDown, CheckCircle, Shield, Phone, AlertCircle, ChevronLeft, Calendar, FileText, User } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { GET_PUBLIC_PROFILE, GET_USER_REVIEWS_PUBLIC } from '../../api/queries'
 import type { PublicProfileData, GetUserReviewsData } from '../../api/types'
@@ -12,6 +12,7 @@ import LeaveComplaintModal from '../../features/requests/components/LeaveComplai
 import Button from '../../components/ui/Button'
 import Card from '../../components/ui/Card'
 import Badge from '../../components/ui/Badge'
+import SocialLink from '../../components/ui/SocialLink'
 import UserLink from '../../components/ui/UserLink'
 
 
@@ -37,7 +38,7 @@ export default function PublicProfilePage() {
 
     if (error || data?.userQuery.getPublicProfile.error || !data?.userQuery.getPublicProfile.profile) {
         return (
-            <motion.div 
+            <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="max-w-2xl mx-auto py-20 text-center"
@@ -60,7 +61,7 @@ export default function PublicProfilePage() {
     const profile = data.userQuery.getPublicProfile.profile
     const reviews = reviewsData?.userQuery.getUserReviews.reviews ?? []
     const isOwn = currentUserId === profile.id
-    const positiveCount = reviews.filter(r => r.isPositive).length  
+    const positiveCount = reviews.filter(r => r.isPositive).length
     const negativeCount = reviews.filter(r => !r.isPositive).length
 
     const handleCopyId = () => {
@@ -70,7 +71,7 @@ export default function PublicProfilePage() {
     }
 
     return (
-        <motion.div 
+        <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="max-w-3xl mx-auto space-y-8 pb-20"
@@ -83,7 +84,7 @@ export default function PublicProfilePage() {
             {/* Основна інформація */}
             <Card padding="lg" className="relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-bl-full -z-10" />
-                
+
                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
                     <div className="flex items-start gap-5">
                         <div className="w-16 h-16 rounded-2xl bg-surface-muted border border-border flex items-center justify-center text-ink-soft shadow-inner shrink-0">
@@ -93,7 +94,7 @@ export default function PublicProfilePage() {
                             <div className="flex flex-wrap items-center gap-3 mb-2">
                                 <h1 className="text-3xl font-black text-ink" style={{ fontFamily: 'Jua, sans-serif' }}>
                                     {profile.username}
-                                    <button 
+                                    <button
                                         onClick={handleCopyId}
                                         className="ml-2 text-xs font-medium text-ink-soft opacity-60 hover:opacity-100 hover:text-primary transition-all"
                                         title="Копіювати повний ID"
@@ -142,7 +143,7 @@ export default function PublicProfilePage() {
                                 </div>
                             )}
                         </div>
-                        
+
                         <div className="space-y-2 mt-4">
                             {profile.phoneNumber && (
                                 <div className="flex items-center gap-3 p-3 bg-surface-muted rounded-2xl border border-border shadow-inner">
@@ -151,11 +152,8 @@ export default function PublicProfilePage() {
                                 </div>
                             )}
                             {profile.socialLinks && (
-                                <div className="flex items-center gap-3 p-3 bg-surface-muted rounded-2xl border border-border shadow-inner">
-                                    <LinkIcon size={14} className="text-ink-soft" />
-                                    <a href={profile.socialLinks} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-primary underline truncate">
-                                        {profile.socialLinks}
-                                    </a>
+                                <div className="flex items-center gap-3 p-1.5 bg-surface-muted rounded-2xl border border-border shadow-inner">
+                                    <SocialLink url={profile.socialLinks} className="w-full justify-start bg-transparent border-none p-1.5" />
                                 </div>
                             )}
                         </div>
