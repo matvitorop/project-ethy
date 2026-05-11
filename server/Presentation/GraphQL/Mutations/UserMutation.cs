@@ -1,4 +1,4 @@
-﻿using GraphQL;
+using GraphQL;
 using GraphQL.Types;
 using MediatR;
 using server.Application.Handlers.UserHandlers.LeaveComplaint;
@@ -22,7 +22,7 @@ namespace server.Presentation.GraphQL.Mutations
         public UserMutation(IMediator mediator)
         {
             Field<LeaveReviewPayloadType>("leaveReview")
-            .Authorize()
+            .AuthorizeWithPolicy("Verified")
             .Arguments(
                 new QueryArguments(
                     new QueryArgument<NonNullGraphType<IdGraphType>> { Name = "helpRequestId" },
@@ -46,7 +46,7 @@ namespace server.Presentation.GraphQL.Mutations
             });
 
             Field<LeaveComplaintPayloadType>("leaveComplaint")
-            .Authorize()
+            .AuthorizeWithPolicy("Verified")
             .Arguments(
                 new QueryArguments(
                     new QueryArgument<NonNullGraphType<IdGraphType>> { Name = "targetUserId" },
@@ -68,7 +68,7 @@ namespace server.Presentation.GraphQL.Mutations
             });
 
             Field<UpdateProfilePayloadType>("updateProfile")
-            .Authorize()
+            .AuthorizeWithPolicy("Verified")
             .Arguments(
                 new QueryArguments(
                     new QueryArgument<StringGraphType> { Name = "phoneNumber" },
@@ -110,7 +110,7 @@ namespace server.Presentation.GraphQL.Mutations
 
             // +++ Admin module: Volunteer application
             Field<SubmitVolunteerApplicationPayloadType>("submitVolunteerApplication")
-            .Authorize()
+            .AuthorizeWithPolicy("Verified")
             .Argument<NonNullGraphType<StringGraphType>>("organizationName")
             .Argument<NonNullGraphType<StringGraphType>>("activityDescription")
             .Argument<StringGraphType>("documentImageUrl")

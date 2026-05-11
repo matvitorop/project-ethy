@@ -384,11 +384,13 @@ export default function RequestDetailsPage() {
 
             {/* Кнопки дій */}
             <div className="flex flex-wrap gap-3 mb-12 p-1 bg-surface-muted rounded-2xl border border-border w-fit shadow-inner">
-                {isOwner && hr.status === 1 && (
+                {isOwner && (hr.status === 1 || hr.status === 2) && (
                     <>
-                        <Link to={`/requests/${hr.id}/edit`}>
-                            <Button variant="ghost" size="sm">Редагувати</Button>
-                        </Link>
+                        {hr.status === 1 && (
+                            <Link to={`/requests/${hr.id}/edit`}>
+                                <Button variant="ghost" size="sm">Редагувати</Button>
+                            </Link>
+                        )}
                         <Button variant="ghost" size="sm" onClick={() => setCancelModalOpen(true)} className="text-error hover:bg-error/5">
                             Скасувати
                         </Button>
@@ -403,11 +405,13 @@ export default function RequestDetailsPage() {
                                 </span>
                             )}
                         </Button>
-                        <Button variant="success" size="sm" onClick={() => changeStatus({
-                            variables: { helpRequestId: hr.id, status: 'RESOLVED' }
-                        })} disabled={changingStatus}>
-                            Виконано
-                        </Button>
+                        {Number(hr.status) === 2 && (
+                            <Button variant="success" size="sm" onClick={() => changeStatus({
+                                variables: { helpRequestId: hr.id, status: 'RESOLVED' }
+                            })} disabled={changingStatus}>
+                                Виконано
+                            </Button>
+                        )}
                     </>
                 )}
 

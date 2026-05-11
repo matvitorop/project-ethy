@@ -1,4 +1,4 @@
-﻿using GraphQL;
+using GraphQL;
 using GraphQL.Types;
 using MediatR;
 using server.Application.Handlers.AddHelpRequest;
@@ -36,7 +36,7 @@ namespace server.Presentation.GraphQL.Mutations
         public HelpRequestMutation(IMediator mediator)
         {
             Field<AddHelpRequestPayloadType>("createHelpRequest")
-            .Authorize()
+            .AuthorizeWithPolicy("Verified")
             .Arguments(
                 new QueryArguments(
                     new QueryArgument<NonNullGraphType<StringGraphType>> { Name = "title" },
@@ -96,7 +96,7 @@ namespace server.Presentation.GraphQL.Mutations
             });
 
             Field<ResponseToHelpRequestPayloadType>("respondToHelpRequest")
-            .Authorize()
+            .AuthorizeWithPolicy("Verified")
             .Arguments(
                 new QueryArgument<NonNullGraphType<IdGraphType>> { Name = "helpRequestId" },
                 new QueryArgument<NonNullGraphType<StringGraphType>> { Name = "message" }
@@ -117,7 +117,7 @@ namespace server.Presentation.GraphQL.Mutations
             });
 
             Field<AssignExecutorPayloadType>("assignExecutor")
-            .Authorize()
+            .AuthorizeWithPolicy("Verified")
             .Arguments(
                 new QueryArgument<NonNullGraphType<IdGraphType>> { Name = "helpRequestId" },
                 new QueryArgument<NonNullGraphType<IdGraphType>> { Name = "responseId" }
@@ -136,7 +136,7 @@ namespace server.Presentation.GraphQL.Mutations
             });
 
             Field<EditHelpRequestPayloadType>("editHelpRequest")
-            .Authorize()
+            .AuthorizeWithPolicy("Verified")
             .Arguments(
                 new QueryArgument<NonNullGraphType<IdGraphType>> { Name = "helpRequestId" },
                 new QueryArgument<NonNullGraphType<StringGraphType>> { Name = "title" },
@@ -163,7 +163,7 @@ namespace server.Presentation.GraphQL.Mutations
             });
 
             Field<SoftDeleteHelpRequestPayloadType>("softDeleteHelpRequest")
-            .Authorize()
+            .AuthorizeWithPolicy("Verified")
             .Arguments(
                 new QueryArgument<NonNullGraphType<IdGraphType>> { Name = "helpRequestId" }
             )
@@ -181,7 +181,7 @@ namespace server.Presentation.GraphQL.Mutations
             });
 
             Field<CancelHelpRequestPayloadType>("cancelHelpRequest")
-            .Authorize()
+            .AuthorizeWithPolicy("Verified")
             .Arguments(
                 new QueryArgument<NonNullGraphType<IdGraphType>> { Name = "helpRequestId" },
                 new QueryArgument<NonNullGraphType<StringGraphType>> { Name = "reason" }
@@ -201,7 +201,7 @@ namespace server.Presentation.GraphQL.Mutations
             });
 
             Field<RestoreHelpRequestPayloadType>("restoreHelpRequest")
-            .Authorize()
+            .AuthorizeWithPolicy("Verified")
             .Arguments(
                 new QueryArgument<NonNullGraphType<IdGraphType>> { Name = "helpRequestId" }
             )
@@ -219,7 +219,7 @@ namespace server.Presentation.GraphQL.Mutations
             });
 
             Field<CancelResponsePayloadType>("cancelResponse")
-            .Authorize()
+            .AuthorizeWithPolicy("Verified")
             .Arguments(
                 new QueryArgument<NonNullGraphType<IdGraphType>> { Name = "helpRequestId" }
             )
@@ -237,7 +237,7 @@ namespace server.Presentation.GraphQL.Mutations
             });
 
             Field<ResignAsExecutorPayloadType>("resignAsExecutor")
-            .Authorize()
+            .AuthorizeWithPolicy("Verified")
             .Arguments(
                 new QueryArgument<NonNullGraphType<IdGraphType>> { Name = "helpRequestId" },
                 new QueryArgument<NonNullGraphType<StringGraphType>> { Name = "reason" }
@@ -257,7 +257,7 @@ namespace server.Presentation.GraphQL.Mutations
             });
 
             Field<RemoveExecutorPayloadType>("removeExecutor")
-            .Authorize()
+            .AuthorizeWithPolicy("Verified")
             .Arguments(
                 new QueryArgument<NonNullGraphType<IdGraphType>> { Name = "helpRequestId" },
                 new QueryArgument<NonNullGraphType<StringGraphType>> { Name = "reason" }
@@ -277,7 +277,7 @@ namespace server.Presentation.GraphQL.Mutations
             });
 
             Field<CreateReportPayloadType>("createReport")
-            .Authorize()
+            .AuthorizeWithPolicy("Verified")
             .Arguments(
                 new QueryArgument<NonNullGraphType<IdGraphType>> { Name = "helpRequestId" },
                 new QueryArgument<NonNullGraphType<StringGraphType>> { Name = "comment" },

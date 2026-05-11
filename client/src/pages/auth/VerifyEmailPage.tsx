@@ -11,16 +11,15 @@ import Card from '../../components/ui/Card'
 export default function VerifyEmailPage() {
     const navigate = useNavigate()
     const [searchParams] = useSearchParams()
-    const userId = searchParams.get('userId')
     const token = searchParams.get('token')
 
     const [verifyEmail, { data, loading, error }] = useMutation<VerifyEmailData>(VERIFY_EMAIL)
 
     useEffect(() => {
-        if (userId && token) {
-            verifyEmail({ variables: { userId, token } })
+        if (token) {
+            verifyEmail({ variables: { token } })
         }
-    }, [userId, token, verifyEmail])
+    }, [token, verifyEmail])
 
     useEffect(() => {
         if (data?.user.verifyEmail.success) {
@@ -31,7 +30,7 @@ export default function VerifyEmailPage() {
         }
     }, [data, navigate])
 
-    const isPending = !userId || !token
+    const isPending = !token
 
     return (
         <div className="min-h-[80vh] flex items-center justify-center p-4">
