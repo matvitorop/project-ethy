@@ -40,7 +40,8 @@ namespace server.Presentation.GraphQL.Queries
                 new QueryArgument<IdGraphType> { Name = "assignedUserId" },
                 new QueryArgument<BooleanGraphType> { Name = "hasNoReport" },
                 new QueryArgument<StringGraphType> { Name = "searchTerm" },
-                new QueryArgument<StringGraphType> { Name = "shortId" }
+                new QueryArgument<StringGraphType> { Name = "shortId" },
+                new QueryArgument<IdGraphType> { Name = "responderId" }
             )
             .ResolveAsync(async context =>
             {
@@ -54,7 +55,8 @@ namespace server.Presentation.GraphQL.Queries
                         context.GetArgument<Guid?>("assignedUserId"),
                         context.GetArgument<bool?>("hasNoReport"),
                         context.GetArgument<string?>("searchTerm"),
-                        context.GetArgument<string?>("shortId")
+                        context.GetArgument<string?>("shortId"),
+                        context.GetArgument<Guid?>("responderId")
                     ));
 
                 return result.ToPayload((value, error) =>

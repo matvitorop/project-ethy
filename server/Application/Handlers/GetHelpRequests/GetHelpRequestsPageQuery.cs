@@ -16,6 +16,7 @@ namespace server.Application.Handlers.GetActiveRequests
         public bool? HasNoReport { get; }
         public string? SearchTerm { get; }
         public string? ShortId { get; }
+        public Guid? ResponderId { get; }
 
 
         public GetHelpRequestsPageQuery(
@@ -27,7 +28,8 @@ namespace server.Application.Handlers.GetActiveRequests
             Guid? assignedUserId = null,
             bool? hasNoReport = null,
             string? searchTerm = null,
-            string? shortId = null)
+            string? shortId = null,
+            Guid? responderId = null)
         {
             Page = page < 1 ? 1 : page;
             PageSize = pageSize is < 1 or > 50 ? 10 : pageSize;
@@ -38,6 +40,7 @@ namespace server.Application.Handlers.GetActiveRequests
             HasNoReport = hasNoReport;
             SearchTerm = searchTerm;
             ShortId = shortId;
+            ResponderId = responderId;
         }
     }
 }

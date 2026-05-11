@@ -35,6 +35,8 @@ export const GET_PROFILE = gql`
           socialLinks
           isEmailVerified
           role
+          activeRequestsCount
+          activeResponsesCount
         }
         error { code message }
       }
@@ -322,9 +324,9 @@ export const GET_MY_REQUESTS = gql`
 `
 
 export const GET_ASSIGNEE_REQUESTS = gql`
-  query GetAssigneeRequests($page: Int!, $pageSize: Int!, $assignedUserId: ID) {
+  query GetAssigneeRequests($page: Int!, $pageSize: Int!, $assignedUserId: ID, $responderId: ID) {
     helpRequestQuer {
-      helpRequestQuery(page: $page, pageSize: $pageSize, assignedUserId: $assignedUserId) {
+      helpRequestQuery(page: $page, pageSize: $pageSize, assignedUserId: $assignedUserId, responderId: $responderId) {
         items {
           id
           title
@@ -828,6 +830,17 @@ export const GET_ADMIN_ANALYTICS = gql`
           totalVolunteers
           totalAdmins
         }
+        error { code message }
+      }
+    }
+  }
+`
+
+export const CANCEL_RESPONSE = gql`
+  mutation CancelResponse($helpRequestId: ID!) {
+    helpRequest {
+      cancelResponse(helpRequestId: $helpRequestId) {
+        success
         error { code message }
       }
     }

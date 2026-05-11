@@ -1,4 +1,4 @@
-﻿namespace server.Application.Handlers.UserHandlers.GetProfile
+namespace server.Application.Handlers.UserHandlers.GetProfile
 {
     public sealed record ProfileDto(
         Guid Id,
@@ -10,7 +10,9 @@
         string? PhoneNumber,
         string? SocialLinks,
         bool IsEmailVerified,
-        string Role
+        string Role,
+        int ActiveRequestsCount,
+        int ActiveResponsesCount
     // ---
 
     );

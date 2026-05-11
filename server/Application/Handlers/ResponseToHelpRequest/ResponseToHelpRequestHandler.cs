@@ -1,7 +1,8 @@
-﻿using MediatR;
+using MediatR;
 using server.Application.IRepositories;
 using server.Domain.Exceptions;
 using server.Domain.Primitives;
+using server.Domain;
 
 namespace server.Application.Handlers.ResponseToHelpRequestHandler
 {
@@ -9,11 +10,14 @@ namespace server.Application.Handlers.ResponseToHelpRequestHandler
     {
 
         private readonly IHelpRequestRepository _repository;
+        private readonly IUserRepository _userRepository;
 
         public ResponseToHelpRequestHandler(
-            IHelpRequestRepository repository)
+            IHelpRequestRepository repository,
+            IUserRepository userRepository)
         {
             _repository = repository;
+            _userRepository = userRepository;
         }
 
         public async Task<Result<Guid>> Handle(ResponseToHelpRequestCommand request,
@@ -21,6 +25,20 @@ namespace server.Application.Handlers.ResponseToHelpRequestHandler
         {
             try
             {
+                var user = await _userRepository.GetByIdAsync(request.UserId, ct);
+                if (user != null && user.Role == UserRole.User)
+                {
+                    var activeResponsesCount = await _repository.CountActiveResponsesByUserAsync(request.UserId, ct);
+                    if (activeResponsesCount >= 1)
+                    {
+                        return Result<Guid>.Failure(
+                            new Error(
+                                "Regular users can have only one active response. Complete your current task or cancel your response to offer help elsewhere.",
+                                "HelpRequestResponse.LIMIT_EXCEEDED"
+                            ));
+                    }
+                }
+
                 var helpRequest = await _repository.GetAggregateByIdAsync(ct, request.HelpRequestId);
 
                 if (helpRequest is null)
