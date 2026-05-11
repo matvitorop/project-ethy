@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useApolloClient } from '@apollo/client/react'
-import { Shield, FileText, Flag, Eye, EyeOff, BarChart2, Users, TrendingUp, TrendingDown, Calendar, RefreshCw } from 'lucide-react'
+import { Shield, FileText, Flag, Eye, EyeOff, BarChart2, Users, TrendingUp, TrendingDown, Calendar, RefreshCw, Search, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     GET_VOLUNTEER_APPLICATIONS, GET_COMPLAINTS, GET_ADMIN_HELP_REQUESTS,
@@ -72,16 +73,58 @@ function RefreshBar({ onRefresh, loading, lastUpdated }: { onRefresh: () => void
 }
 
 export default function AdminPage() {
-    const [activeTab, setActiveTab] = useState<'applications' | 'complaints' | 'requests' | 'analytics'>('analytics')
+    const [searchParams, setSearchParams] = useSearchParams()
+    const activeTab = (searchParams.get('tab') as 'applications' | 'complaints' | 'requests' | 'analytics') || 'analytics'
+    const reqFilter = (searchParams.get('filter') as 'all' | 'active' | 'completed' | 'hidden') || 'all'
+    const reqSearch = searchParams.get('q') || ''
+
+    const setActiveTab = useCallback((tab: string) => {
+        setSearchParams(prev => { prev.set('tab', tab); return prev }, { replace: true })
+    }, [setSearchParams])
+
+    const setReqFilter = useCallback((f: string) => {
+        setSearchParams(prev => { prev.set('filter', f); return prev }, { replace: true })
+    }, [setSearchParams])
+
+    const setReqSearch = useCallback((q: string) => {
+        setSearchParams(prev => { if (q) prev.set('q', q); else prev.delete('q'); return prev }, { replace: true })
+    }, [setSearchParams])
+
     const [lastUpdated, setLastUpdated] = useState<Record<string, Date | null>>({
         analytics: null, applications: null, complaints: null, requests: null,
     })
 
     const client = useApolloClient()
 
+    const [debouncedSearch, setDebouncedSearch] = useState(reqSearch)
+
+    useEffect(() => {
+        const timer = setTimeout(() => setDebouncedSearch(reqSearch), 500)
+        return () => clearTimeout(timer)
+    }, [reqSearch])
+
+    const reqVariables = useMemo(() => {
+        const f: any = { page: 1, pageSize: 50, searchTerm: debouncedSearch || null }
+        if (reqFilter === 'active') {
+            f.statuses = ['Open', 'InProgress']
+            f.isDeleted = false
+        }
+        else if (reqFilter === 'completed') {
+            f.statuses = ['Resolved', 'Cancelled']
+            f.isDeleted = false
+        }
+        else if (reqFilter === 'hidden') {
+            f.isHidden = true
+            f.isDeleted = false
+        }
+        return { filter: f }
+    }, [reqFilter, debouncedSearch])
+
     const { data: apps, loading: appsLoading } = useQuery<VolunteerApplicationsData>(GET_VOLUNTEER_APPLICATIONS)
     const { data: complaints, loading: compLoading } = useQuery<ComplaintsData>(GET_COMPLAINTS)
-    const { data: requests, loading: reqLoading } = useQuery<AdminHelpRequestsData>(GET_ADMIN_HELP_REQUESTS)
+    const { data: requests, loading: reqLoading } = useQuery<AdminHelpRequestsData>(GET_ADMIN_HELP_REQUESTS, {
+        variables: reqVariables
+    })
     const { data: stats, loading: statsLoading } = useQuery<AdminAnalyticsData>(GET_ADMIN_ANALYTICS)
 
     useEffect(() => { if (apps && !appsLoading) setLastUpdated(p => ({ ...p, applications: new Date() })) }, [apps, appsLoading])
@@ -159,7 +202,17 @@ export default function AdminPage() {
                     {activeTab === 'analytics' && <AnalyticsTab data={stats?.statsQuery.adminAnalytics.data} loading={statsLoading} />}
                     {activeTab === 'applications' && <ApplicationsTab items={apps?.adminQuery.volunteerApplications.items || []} loading={appsLoading} onRefresh={refetchApps} />}
                     {activeTab === 'complaints' && <ComplaintsTab items={complaints?.adminQuery.complaints.items || []} loading={compLoading} onRefresh={refetchComp} />}
-                    {activeTab === 'requests' && <RequestsTab items={requests?.adminQuery.helpRequests.items || []} loading={reqLoading} onRefresh={refetchReq} />}
+                    {activeTab === 'requests' && (
+                        <RequestsTab 
+                            items={requests?.adminQuery.helpRequests.items || []} 
+                            loading={reqLoading} 
+                            onRefresh={refetchReq} 
+                            filter={reqFilter}
+                            onFilterChange={setReqFilter}
+                            search={reqSearch}
+                            onSearchChange={setReqSearch}
+                        />
+                    )}
                 </motion.div>
             </AnimatePresence>
         </div>
@@ -481,7 +534,29 @@ function ComplaintsTab({ items, loading, onRefresh }: { items: AdminComplaintIte
 }
 
 // ===================== REQUESTS TAB =====================
-function RequestsTab({ items, loading, onRefresh }: { items: AdminHelpRequestItem[]; loading: boolean; onRefresh: () => void }) {
+interface RequestsTabProps {
+    items: AdminHelpRequestItem[]
+    loading: boolean
+    onRefresh: () => void
+    filter: 'all' | 'active' | 'completed' | 'hidden'
+    onFilterChange: (f: 'all' | 'active' | 'completed' | 'hidden') => void
+    search: string
+    onSearchChange: (s: string) => void
+}
+
+// ===================== REQUESTS TAB =====================
+interface RequestsTabProps {
+    items: AdminHelpRequestItem[]
+    loading: boolean
+    onRefresh: () => void
+    filter: 'all' | 'active' | 'completed' | 'hidden'
+    onFilterChange: (f: 'all' | 'active' | 'completed' | 'hidden') => void
+    search: string
+    onSearchChange: (s: string) => void
+}
+
+function RequestsTab({ items, loading, onRefresh, filter, onFilterChange, search, onSearchChange }: RequestsTabProps) {
+    const navigate = useNavigate()
     const dispatch = useAppDispatch()
     const [hideReq] = useMutation<HideHelpRequestData>(HIDE_HELP_REQUEST, {
         onCompleted: (data) => {
@@ -491,40 +566,96 @@ function RequestsTab({ items, loading, onRefresh }: { items: AdminHelpRequestIte
         },
     })
 
-    if (loading) return <PageSpinner />
+    const filterOptions: { id: typeof filter; label: string }[] = [
+        { id: 'all', label: 'Всі' },
+        { id: 'active', label: 'Активні' },
+        { id: 'completed', label: 'Завершені' },
+        { id: 'hidden', label: 'Приховані' },
+    ]
 
     return (
-        <div className="space-y-4">
-            {items.length === 0 && (
-                <div className="text-center py-20 bg-surface rounded-3xl border border-dashed border-border">
-                    <FileText size={32} className="text-ink-soft mx-auto mb-4 opacity-50" />
-                    <p className="text-ink-soft font-bold uppercase text-xs tracking-widest">Запитів немає</p>
+        <div className="space-y-6">
+            <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-surface-muted/30 p-4 rounded-3xl border border-border/50">
+                <div className="flex flex-wrap gap-1.5 p-1 bg-surface-muted rounded-2xl border border-border/50">
+                    {filterOptions.map(opt => (
+                        <button
+                            key={opt.id}
+                            onClick={() => onFilterChange(opt.id)}
+                            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${filter === opt.id
+                                ? 'bg-surface text-primary shadow-sm ring-1 ring-border'
+                                : 'text-ink-soft hover:text-ink hover:bg-surface'
+                                }`}
+                        >
+                            {opt.label}
+                        </button>
+                    ))}
                 </div>
-            )}
-            {items.map((hr: AdminHelpRequestItem) => (
-                <Card key={hr.id} padding="sm" className={hr.isHidden ? 'opacity-60 grayscale-[0.5]' : ''}>
-                    <div className="flex items-center justify-between gap-4">
-                        <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-3 mb-1">
-                                <span className="font-bold text-ink truncate text-base">{hr.title}</span>
-                                {hr.isHidden && <Badge variant="error">Приховано</Badge>}
-                                {hr.isDeleted && <Badge variant="default">Видалено</Badge>}
-                            </div>
-                            <div className="flex items-center gap-3 text-[10px] font-black text-ink-soft uppercase tracking-widest">
-                                <span className="text-primary font-bold">{hr.creatorUsername}</span>
-                                <span className="w-1 h-1 bg-border rounded-full" />
-                                <span>{REQUEST_STATUS[hr.status]}</span>
-                                <span className="w-1 h-1 bg-border rounded-full" />
-                                <span>{new Date(hr.createdAtUtc).toLocaleDateString('uk-UA')}</span>
-                            </div>
-                        </div>
-                        <Button variant="ghost" size="sm" className="shrink-0" onClick={() => hideReq({ variables: { helpRequestId: hr.id, hide: !hr.isHidden } })}>
-                            {hr.isHidden ? <Eye size={14} className="mr-2" /> : <EyeOff size={14} className="mr-2" />}
-                            {hr.isHidden ? 'Показати' : 'Приховати'}
-                        </Button>
+
+                <div className="relative w-full md:w-72 group">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-soft group-focus-within:text-primary transition-colors" size={16} />
+                    <input
+                        type="text"
+                        value={search}
+                        onChange={e => onSearchChange(e.target.value)}
+                        placeholder="Пошук за назвою..."
+                        className="w-full pl-11 pr-10 py-3 bg-surface border border-border rounded-2xl text-sm text-ink placeholder:text-ink-soft focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-inner"
+                    />
+                    {search && (
+                        <button 
+                            onClick={() => onSearchChange('')}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-ink-soft hover:text-error transition-colors"
+                        >
+                            <X size={14} />
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            <div className="space-y-4">
+                {loading ? (
+                    <PageSpinner />
+                ) : items.length === 0 ? (
+                    <div className="text-center py-20 bg-surface rounded-3xl border border-dashed border-border">
+                        <FileText size={32} className="text-ink-soft mx-auto mb-4 opacity-50" />
+                        <p className="text-ink-soft font-bold uppercase text-xs tracking-widest">
+                            {search ? 'За вашим запитом нічого не знайдено' : 'Запитів немає'}
+                        </p>
                     </div>
-                </Card>
-            ))}
+                ) : (
+                    items.map((hr: AdminHelpRequestItem) => (
+                        <Card key={hr.id} padding="sm" className={hr.isHidden ? 'opacity-60 grayscale-[0.5]' : ''}>
+                            <div className="flex items-center justify-between gap-4">
+                                <div 
+                                    className="min-w-0 flex-1 cursor-pointer group/item"
+                                    onClick={() => navigate(`/requests/${hr.id}`)}
+                                >
+                                    <div className="flex items-center gap-3 mb-1">
+                                        <span className="font-bold text-ink truncate text-base group-hover/item:text-primary transition-colors">{hr.title}</span>
+                                        {hr.isHidden && <Badge variant="error">Приховано</Badge>}
+                                        {hr.isDeleted && <Badge variant="error" className="bg-error text-black font-black">Видалено</Badge>}
+                                    </div>
+                                    <div className="flex items-center gap-3 text-[10px] font-black text-ink-soft uppercase tracking-widest">
+                                        <span className="text-primary font-bold">{hr.creatorUsername}</span>
+                                        <span className="w-1 h-1 bg-border rounded-full" />
+                                        <span>{REQUEST_STATUS[hr.status]}</span>
+                                        <span className="w-1 h-1 bg-border rounded-full" />
+                                        <span>{new Date(hr.createdAtUtc).toLocaleDateString('uk-UA')}</span>
+                                    </div>
+                                </div>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="shrink-0"
+                                    onClick={() => hideReq({ variables: { helpRequestId: hr.id, hide: !hr.isHidden } })}
+                                >
+                                    {hr.isHidden ? <Eye size={14} className="mr-2" /> : <EyeOff size={14} className="mr-2" />}
+                                    {hr.isHidden ? 'Показати' : 'Приховати'}
+                                </Button>
+                            </div>
+                        </Card>
+                    ))
+                )}
+            </div>
         </div>
     )
 }

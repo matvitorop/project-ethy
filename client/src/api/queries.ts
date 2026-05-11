@@ -575,9 +575,9 @@ export const GET_USER_REVIEWS_PUBLIC = gql`
 `
 
 export const GET_ADMIN_HELP_REQUESTS = gql`
-  query GetAdminHelpRequests($page: Int, $pageSize: Int, $isHidden: Boolean, $isDeleted: Boolean) {
+  query GetAdminHelpRequests($filter: AdminHelpRequestFilterInput) {
     adminQuery {
-      helpRequests(page: $page, pageSize: $pageSize, isHidden: $isHidden, isDeleted: $isDeleted) {
+      helpRequests(filter: $filter) {
         items {
           id
           title

@@ -1,4 +1,4 @@
-﻿using server.Application.Handlers.AdminHandlers.AdminGetHelpRequests;
+using server.Application.Handlers.AdminHandlers.AdminGetHelpRequests;
 using server.Application.Handlers.GetActiveRequests;
 using server.Application.Handlers.GetFullHelpRequest;
 using server.Application.Handlers.GetHelpRequestResponses;
@@ -31,7 +31,7 @@ namespace server.Application.IRepositories
         
         // +++ Admin module
         Task SetHiddenAsync(Guid helpRequestId, bool isHidden, CancellationToken ct);
-        Task<List<AdminHelpRequestDto>> GetAllForAdminAsync(int page, int pageSize, bool? isHidden, bool? isDeleted, CancellationToken ct);
+        Task<List<AdminHelpRequestDto>> GetAllForAdminAsync(int page, int pageSize, bool? isHidden, bool? isDeleted, IReadOnlyList<HelpRequestStatus>? statuses, string? searchTerm, CancellationToken ct);
         // ---
 
         Task SetResolvedAtAsync(Guid helpRequestId, CancellationToken ct);
