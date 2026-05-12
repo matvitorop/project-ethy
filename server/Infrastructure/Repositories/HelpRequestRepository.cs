@@ -144,7 +144,8 @@ namespace server.Infrastructure.Repositories
             Guid? assignedUserId = null,
             bool? hasNoReport = null,
             string? searchTerm = null,
-            string? shortId = null)
+            string? shortId = null,
+            Guid? responderId = null)
         {
             using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
             var offset = (page - 1) * pageSize;
@@ -156,7 +157,7 @@ namespace server.Infrastructure.Repositories
             if (assignedUserId.HasValue) filters.Add("hr.AssignedUserId = @AssignedUserId");
             if (hasNoReport == true)
             {
-                filters.Add("NOT EXISTS (SELECT 1 FROM Reports r WHERE r.HelpRequestId = hr.Id)");
+                filters.Add("NOT EXISTS (SELECT 1 FROM HelpRequestReports r WHERE r.HelpRequestId = hr.Id)");
             }
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
@@ -165,6 +166,10 @@ namespace server.Infrastructure.Repositories
             if (!string.IsNullOrWhiteSpace(shortId))
             {
                 filters.Add("RIGHT(CAST(hr.Id AS NVARCHAR(36)), 6) = @ShortId");
+            }
+            if (responderId.HasValue)
+            {
+                filters.Add("EXISTS (SELECT 1 FROM HelpRequestResponses hrr WHERE hrr.HelpRequestId = hr.Id AND hrr.UserId = @ResponderId AND hrr.Status IN (0, 1))");
             }
 
             var filterClause = string.Join(" AND ", filters);
@@ -190,7 +195,8 @@ namespace server.Infrastructure.Repositories
                     CreatorId = creatorId,
                     AssignedUserId = assignedUserId,
                     SearchTerm = $"%{searchTerm}%",
-                    ShortId = shortId
+                    ShortId = shortId,
+                    ResponderId = responderId
                 }
             );
 
@@ -853,6 +859,41 @@ namespace server.Infrastructure.Repositories
             await conn.ExecuteAsync(
                 "UPDATE HelpRequests SET ResolvedAtUtc = @Now WHERE Id = @Id",
                 new { Id = helpRequestId, Now = DateTime.UtcNow });
+        }
+
+        public async Task<int> CountActiveRequestsByCreatorAsync(Guid creatorId, CancellationToken ct)
+        {
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
+
+            const string sql = """
+                SELECT COUNT(1) FROM HelpRequests
+                WHERE CreatorId = @CreatorId
+                  AND Status IN (1, 2)   -- 1 = Open, 2 = InProgress
+                  AND IsDeleted = 0;
+                """;
+
+            return await connection.ExecuteScalarAsync<int>(
+                new CommandDefinition(sql, new { CreatorId = creatorId }, cancellationToken: ct));
+        }
+
+        public async Task<int> CountActiveResponsesByUserAsync(Guid userId, CancellationToken ct)
+        {
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
+
+            const string sql = """
+                SELECT COUNT(1) 
+                FROM HelpRequestResponses r
+                JOIN HelpRequests hr ON hr.Id = r.HelpRequestId
+                WHERE r.UserId = @UserId
+                  AND (
+                    r.Status = 0 -- Pending
+                    OR 
+                    (r.Status = 1 AND hr.Status = 2) -- Accepted AND InProgress
+                  );
+                """;
+
+            return await connection.ExecuteScalarAsync<int>(
+                new CommandDefinition(sql, new { UserId = userId }, cancellationToken: ct));
         }
     }
 }

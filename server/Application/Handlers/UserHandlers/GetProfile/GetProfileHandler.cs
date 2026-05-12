@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using server.Application.IRepositories;
 using server.Domain.Primitives;
 
@@ -8,10 +8,12 @@ namespace server.Application.Handlers.UserHandlers.GetProfile
         : IRequestHandler<GetProfileQuery, Result<ProfileDto>>
     {
         private readonly IUserRepository _repository;
+        private readonly IHelpRequestRepository _helpRequestRepository;
 
-        public GetProfileHandler(IUserRepository repository)
+        public GetProfileHandler(IUserRepository repository, IHelpRequestRepository helpRequestRepository)
         {
             _repository = repository;
+            _helpRequestRepository = helpRequestRepository;
         }
 
         public async Task<Result<ProfileDto>> Handle(
@@ -24,6 +26,9 @@ namespace server.Application.Handlers.UserHandlers.GetProfile
                 return Result<ProfileDto>.Failure(
                     new Error("User not found", "User.NOT_FOUND"));
 
+            var activeRequestsCount = await _helpRequestRepository.CountActiveRequestsByCreatorAsync(user.Id, ct);
+            var activeResponsesCount = await _helpRequestRepository.CountActiveResponsesByUserAsync(user.Id, ct);
+
             return Result<ProfileDto>.Success(
                 new ProfileDto(
                     user.Id,
@@ -33,7 +38,9 @@ namespace server.Application.Handlers.UserHandlers.GetProfile
                     user.PhoneNumber,
                     user.SocialLinks,
                     user.IsEmailVerified,
-                    user.Role.ToString()));
+                    user.Role.ToString(),
+                    activeRequestsCount,
+                    activeResponsesCount));
         }
     }
 }

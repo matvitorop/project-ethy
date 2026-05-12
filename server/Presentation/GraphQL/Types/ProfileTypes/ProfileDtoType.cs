@@ -1,4 +1,4 @@
-﻿using GraphQL.Types;
+using GraphQL.Types;
 using server.Application.Handlers.UserHandlers.GetProfile;
 
 namespace server.Presentation.GraphQL.Types.ProfileTypes
@@ -16,6 +16,8 @@ namespace server.Presentation.GraphQL.Types.ProfileTypes
             Field(x => x.SocialLinks, nullable: true);
             Field(x => x.IsEmailVerified);
             Field(x => x.Role);
+            Field(x => x.ActiveRequestsCount);
+            Field(x => x.ActiveResponsesCount);
             // ---
 
         }

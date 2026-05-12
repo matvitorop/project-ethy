@@ -94,6 +94,7 @@ builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 builder.Services.AddScoped<IEmailVerificationTokenRepository, EmailVerificationTokenRepository>();
 builder.Services.AddScoped<IVolunteerApplicationRepository, VolunteerApplicationRepository>();
 builder.Services.AddScoped<IBlockHistoryRepository, BlockHistoryRepository>();
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 
 // --- Admin seeder ---
 builder.Services.AddHostedService<AdminSeeder>();
@@ -108,6 +109,7 @@ builder.Services.AddScoped<IStatisticsRepository, StatisticsRepository>();
 builder.Services.AddScoped<IPasswordHasher, Pbkdf2PasswordHasher>();
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
 builder.Services.AddTransient<AuthMutation>();
+builder.Services.AddScoped<INotificationService, server.Infrastructure.Notifications.NotificationService>();
 builder.Services.AddScoped<IImageStorageService, LocalImageStorageService>();
 builder.Services.AddSignalR();
 
@@ -230,6 +232,7 @@ app.UseGraphQLPlayground("/graphql/playground");
 // Chat endpoint for SignalR
 // =====================
 app.MapHub<ChatHub>("/hubs/chat");
+app.MapHub<NotificationHub>("/hubs/notifications");
 
 app.Run();
 public partial class Program { }

@@ -676,8 +676,10 @@ function ApplicationsTab({ items, loading, onRefresh }: { items: VolunteerApplic
 // ===================== COMPLAINTS TAB =====================
 function ComplaintsTab({ items, loading, onRefresh }: { items: AdminComplaintItem[]; loading: boolean; onRefresh: () => void }) {
     const dispatch = useAppDispatch()
-    const [blockModal, setBlockModal] = useState<{ userId: string; username: string } | null>(null)
-    const [blockForm, setBlockForm] = useState({ reason: '', hours: '24', adminComment: '' })
+    const [blockModal, setBlockModal] = useState<{ userId: string; username: string; complaintId?: string } | null>(null)
+    const [resolveModal, setResolveModal] = useState<string | null>(null)
+    const [comment, setComment] = useState('')
+    const [blockForm, setBlockForm] = useState({ reason: '', hours: '24' })
 
     const BLOCK_PRESETS = [
         { label: '1 д', hours: 24 }, { label: '3 д', hours: 72 },
@@ -685,11 +687,16 @@ function ComplaintsTab({ items, loading, onRefresh }: { items: AdminComplaintIte
         { label: '∞', hours: 0 },
     ]
 
-    const [resolve] = useMutation<ResolveComplaintData>(RESOLVE_COMPLAINT, {
+    const [resolve, { loading: resolving }] = useMutation<ResolveComplaintData>(RESOLVE_COMPLAINT, {
         onCompleted: (data) => {
             const r = data.admin.resolveComplaint
             if (r.error) dispatch(addToast({ type: 'error', message: r.error.message }))
-            else { dispatch(addToast({ type: 'success', message: 'Скаргу розглянуто' })); onRefresh() }
+            else { 
+                dispatch(addToast({ type: 'success', message: 'Скаргу розглянуто' }))
+                setResolveModal(null)
+                setComment('')
+                onRefresh() 
+            }
         },
     })
 
@@ -700,6 +707,17 @@ function ComplaintsTab({ items, loading, onRefresh }: { items: AdminComplaintIte
                 dispatch(addToast({ type: 'error', message: r.error.message }))
             } else {
                 dispatch(addToast({ type: 'success', message: 'Користувача заблоковано' }))
+                
+                // Якщо блокування було через скаргу - резолвимо її
+                if (blockModal?.complaintId) {
+                    resolve({ 
+                        variables: { 
+                            complaintId: blockModal.complaintId, 
+                            adminComment: `Користувача заблоковано: ${blockForm.reason}` 
+                        } 
+                    })
+                }
+                
                 setBlockModal(null)
             }
         },
@@ -740,8 +758,8 @@ function ComplaintsTab({ items, loading, onRefresh }: { items: AdminComplaintIte
                         <div className="flex flex-row md:flex-col gap-2">
                             {!c.isResolved && (
                                 <>
-                                    <Button size="sm" onClick={() => resolve({ variables: { complaintId: c.id } })}>Розглянуто</Button>
-                                    <Button variant="error" size="sm" onClick={() => setBlockModal({ userId: c.targetUserId, username: c.targetUsername })}>Заблокувати</Button>
+                                    <Button size="sm" onClick={() => setResolveModal(c.id)}>Розглянуто</Button>
+                                    <Button variant="error" size="sm" onClick={() => setBlockModal({ userId: c.targetUserId, username: c.targetUsername, complaintId: c.id })}>Заблокувати</Button>
                                 </>
                             )}
                             {c.isResolved && <Badge variant="outline">Розглянуто</Badge>}
@@ -787,16 +805,45 @@ function ComplaintsTab({ items, loading, onRefresh }: { items: AdminComplaintIte
                             variant="error"
                             className="flex-1"
                             disabled={blocking || !blockForm.reason}
-                            onClick={() => blockUser({
-                                variables: {
-                                    userId: blockModal!.userId,
-                                    reason: blockForm.reason,
-                                    hours: parseInt(blockForm.hours),
-                                    adminComment: blockForm.adminComment
-                                }
-                            })}
+                            onClick={() => {
+                                const until = blockForm.hours === '0' ? null : new Date(Date.now() + parseInt(blockForm.hours) * 60 * 60 * 1000).toISOString()
+                                blockUser({
+                                    variables: {
+                                        targetUserId: blockModal!.userId,
+                                        reason: blockForm.reason,
+                                        blockedUntilUtc: until
+                                    }
+                                })
+                            }}
                         >
                             {blocking ? 'Блокування...' : 'Підтвердити'}
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
+
+            <Modal isOpen={!!resolveModal} onClose={() => { setResolveModal(null); setComment(''); }} title="Розгляд скарги">
+                <div className="space-y-5 p-2">
+                    <p className="text-sm text-ink-muted">
+                        Вкажіть коментар щодо розгляду скарги. Користувач, який залишив скаргу, отримає сповіщення.
+                    </p>
+                    <textarea 
+                        value={comment} 
+                        onChange={e => setComment(e.target.value)} 
+                        rows={3}
+                        placeholder="Ваша відповідь (необов'язково)..."
+                        className="w-full px-4 py-3 bg-surface-muted border border-border rounded-xl text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-inner resize-none" 
+                    />
+                    <div className="flex gap-3">
+                        <Button variant="outline" className="flex-1" onClick={() => { setResolveModal(null); setComment(''); }}>
+                            Скасувати
+                        </Button>
+                        <Button
+                            onClick={() => resolve({ variables: { complaintId: resolveModal!, adminComment: comment || null } })}
+                            disabled={resolving}
+                            className="flex-1 shadow-md"
+                        >
+                            {resolving ? 'Обробка...' : 'Підтвердити'}
                         </Button>
                     </div>
                 </div>

@@ -1,10 +1,11 @@
-﻿using MediatR;
+using MediatR;
 using server.Application.IRepositories;
 using server.Domain.Chat;
 using server.Domain.Exceptions;
 using server.Domain.HelpRequest;
 using server.Domain.Primitives;
 using System.Text.Json;
+using server.Application.Events;
 
 namespace server.Application.Handlers.AssignExecutor
 {
@@ -12,10 +13,12 @@ namespace server.Application.Handlers.AssignExecutor
         : IRequestHandler<AssignExecutorCommand, Result<AssignExecutorResult>>
     {
         private readonly IHelpRequestRepository _repository;
+        private readonly IMediator _mediator;
 
-        public AssignExecutorHandler(IHelpRequestRepository repository)
+        public AssignExecutorHandler(IHelpRequestRepository repository, IMediator mediator)
         {
             _repository = repository;
+            _mediator = mediator;
         }
 
         public async Task<Result<AssignExecutorResult>> Handle(
@@ -65,6 +68,11 @@ namespace server.Application.Handlers.AssignExecutor
                 }));
 
             await _repository.AssignExecutorAsync(helpRequest, chat, firstStage, logEvent, ct);
+
+            await _mediator.Publish(new HelpRequestAssignedEvent(
+                helpRequest.Id,
+                helpRequest.Title,
+                helpRequest.AssignedUserId!.Value), ct);
 
             return Result<AssignExecutorResult>.Success(
                 new AssignExecutorResult(
