@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { Bell, Check, Info, MessageCircle, AlertTriangle, HandHelping } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNotifications } from './NotificationContext';
-import type { Notification } from './NotificationContext';
+import { useNotifications } from './useNotifications';
+import type { Notification } from '../../api/types';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '../../store/hooks';
 import { openChat } from '../../store/uiSlice';
