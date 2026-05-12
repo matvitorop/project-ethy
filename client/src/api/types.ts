@@ -633,3 +633,32 @@ export interface AdminAnalyticsData {
         }
     }
 }
+
+export interface Notification {
+    id: string
+    title: string
+    content: string
+    type: string | number
+    isRead: boolean
+    createdAtUtc: string
+    relatedEntityId?: string
+    relatedEntityType?: string
+}
+
+export interface GetNotificationsData {
+    notificationQuery: {
+        notifications: {
+            data: Notification[] | null
+            error: ApiError | null
+        }
+    }
+}
+
+export interface CancelResponseData {
+    helpRequest: {
+        cancelResponse: {
+            success: boolean
+            error: ApiError | null
+        }
+    }
+}

@@ -18,7 +18,7 @@ import VerifyEmailPage from './pages/auth/VerifyEmailPage'
 import StatsPage from './pages/StatsPage'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 
-import { NotificationProvider } from './features/notifications/NotificationContext'
+import { NotificationProvider } from './features/notifications/NotificationProvider'
 
 export default function App() {
     return (

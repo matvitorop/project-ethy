@@ -19,7 +19,8 @@ import type {
     GetUserReviewsData,
     MyVolunteerApplicationData,
     SubmitVolunteerApplicationData,
-    ChangeHelpRequestStatusData
+    ChangeHelpRequestStatusData,
+    CancelResponseData
 } from '../../api/types'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { addToast } from '../../store/uiSlice'
@@ -86,8 +87,8 @@ export default function ProfilePage() {
         fetchPolicy: 'cache-and-network',
     })
 
-    const [cancelResponse, { loading: cancellingResponse }] = useMutation(CANCEL_RESPONSE, {
-        onCompleted: (data: any) => {
+    const [cancelResponse, { loading: cancellingResponse }] = useMutation<CancelResponseData>(CANCEL_RESPONSE, {
+        onCompleted: (data) => {
             const r = data.helpRequest.cancelResponse
             if (r.error) {
                 dispatch(addToast({ type: 'error', message: r.error.message }))
