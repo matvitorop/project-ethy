@@ -1,4 +1,4 @@
-﻿using GraphQL;
+using GraphQL;
 using GraphQL.Resolvers;
 using GraphQL.Types;
 using server.Presentation.GraphQL.Mutations;
@@ -53,6 +53,14 @@ namespace server.Presentation.GraphQL.Schemas
                 Resolver = new FuncFieldResolver<object>(_ => new object())
             });
             // ---
+
+            AddField(new FieldType
+            {
+                Name = "notificationQuery",
+                Description = "Queries for notifications",
+                ResolvedType = provider.GetRequiredService<NotificationQuery>(),
+                Resolver = new FuncFieldResolver<object>(_ => new object())
+            });
         }
     }
 }

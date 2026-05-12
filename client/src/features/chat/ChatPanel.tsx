@@ -3,7 +3,7 @@ import { useQuery } from '@apollo/client/react'
 import { X, Send, ArrowLeft, MessageCircle, ListChecks, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
-import { closeChatPanel } from '../../store/uiSlice'
+import { closeChatPanel, openChat } from '../../store/uiSlice'
 import { GET_MY_CHATS, GET_CHAT_MESSAGES, GET_STAGES_FOR_CHAT } from '../../api/queries'
 import type { MyChatsData, ChatMessagesData, ChatMessage, ChatListItem, StagesData, StageItem, StageEvent } from '../../api/types'
 import { startChatConnection, getChatConnection, stopChatConnection } from '../../api/chatHub'
@@ -87,7 +87,6 @@ function ChatConversation({ chat, onBack }: { chat: ChatListItem; onBack: () => 
     const userId = useAppSelector(s => s.auth.userId)
     const dispatch = useAppDispatch()
     
-    // Стан тільки для живих оновлень через SignalR
     const [liveMessages, setLiveMessages] = useState<ChatMessage[]>([])
     const [liveStages, setLiveStages] = useState<StageItem[]>([])
     
@@ -100,7 +99,6 @@ function ChatConversation({ chat, onBack }: { chat: ChatListItem; onBack: () => 
     const [confirming, setConfirming] = useState(false)
     const bottomRef = useRef<HTMLDivElement>(null)
 
-    // Дані з бази
     const { data: messagesData } = useQuery<ChatMessagesData>(GET_CHAT_MESSAGES, {
         variables: { helpRequestId: chat.helpRequestId },
         fetchPolicy: 'network-only'
@@ -111,7 +109,6 @@ function ChatConversation({ chat, onBack }: { chat: ChatListItem; onBack: () => 
         fetchPolicy: 'network-only'
     })
 
-    // Об'єднуємо дані з бази та живі оновлення, видаляючи дублікати за ID
     const messages = useMemo(() => {
         const initial = messagesData?.helpRequestQuer.chatMessages.messages || []
         const initialIds = new Set(initial.map(m => m.id))
@@ -255,7 +252,6 @@ function ChatConversation({ chat, onBack }: { chat: ChatListItem; onBack: () => 
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
     }
 
-    // Готуємо список елементів для відображення
     const chatItems = useMemo(() => {
         return [
             ...messages.map(m => ({ type: 'message' as const, data: m })),
@@ -265,7 +261,6 @@ function ChatConversation({ chat, onBack }: { chat: ChatListItem; onBack: () => 
 
     return (
         <div className="flex flex-col h-full bg-surface-muted/30">
-            {/* Header */}
             <div className="px-4 py-3 bg-surface border-b border-border flex items-center gap-3 shadow-sm">
                 <button onClick={onBack} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-surface-muted text-ink-soft hover:text-primary transition-all">
                     <ArrowLeft size={16} />
@@ -281,7 +276,6 @@ function ChatConversation({ chat, onBack }: { chat: ChatListItem; onBack: () => 
                 </div>
             </div>
 
-            {/* Messages Area */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
                 {chatItems.length === 0 && (
                     <div className="text-center py-10">
@@ -297,7 +291,7 @@ function ChatConversation({ chat, onBack }: { chat: ChatListItem; onBack: () => 
                             <motion.div
                                 initial={{ opacity: 0, y: 5, scale: 0.95 }}
                                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                                key={msg.id}
+                                key={`msg-${msg.id}`}
                                 className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
                             >
                                 <div className={`max-w-[85%] px-4 py-2.5 rounded-2xl shadow-sm relative group ${isMe ? 'bg-primary text-white rounded-br-none' : 'bg-surface border border-border text-ink rounded-bl-none'
@@ -313,7 +307,7 @@ function ChatConversation({ chat, onBack }: { chat: ChatListItem; onBack: () => 
 
                     const stage = item.data
                     return (
-                        <div key={stage.id} className="px-1">
+                        <div key={`stage-${stage.id}`} className="px-1">
                             <StageCard
                                 stageId={stage.id}
                                 content={stage.content}
@@ -331,7 +325,6 @@ function ChatConversation({ chat, onBack }: { chat: ChatListItem; onBack: () => 
                 <div ref={bottomRef} />
             </div>
 
-            {/* Input Area */}
             <div className="p-4 bg-surface border-t border-border shadow-[0_-4px_12px_rgba(0,0,0,0.02)]">
                 <div className="flex items-end gap-2 bg-surface-muted border border-border rounded-2xl p-1.5 focus-within:border-primary/50 transition-colors shadow-inner">
                     <button
@@ -380,8 +373,16 @@ export default function ChatPanel() {
 
     const handleBack = () => {
         const conn = getChatConnection()
-        if (selectedChat) conn.invoke('LeaveChat', selectedChat.helpRequestId).catch(() => { })
+        if (selectedChat) {
+            conn.invoke('LeaveChat', selectedChat.helpRequestId).catch(() => { })
+            dispatch(openChat(null))
+        }
         setSelectedChat(null)
+    }
+
+    const handleSelectChat = (chat: ChatListItem) => {
+        setSelectedChat(chat)
+        dispatch(openChat(chat.chatId))
     }
 
     return (
@@ -402,7 +403,6 @@ export default function ChatPanel() {
                         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
                         className="fixed right-0 top-0 h-full w-full max-w-[360px] bg-surface border-l border-border z-[70] flex flex-col shadow-2xl overflow-hidden"
                     >
-                        {/* Header */}
                         <div className="px-6 py-5 border-b border-border flex items-center justify-between bg-surface relative z-10">
                             <h2 className="text-xl font-black text-ink" style={{ fontFamily: 'Jua, sans-serif' }}>
                                 {selectedChat ? 'Переписка' : 'Повідомлення'}
@@ -415,7 +415,6 @@ export default function ChatPanel() {
                             </button>
                         </div>
 
-                        {/* Content */}
                         <div className="flex-1 overflow-hidden relative">
                             <AnimatePresence mode="wait">
                                 {selectedChat ? (
@@ -436,7 +435,7 @@ export default function ChatPanel() {
                                         exit={{ opacity: 0, x: -20 }}
                                         className="h-full overflow-y-auto"
                                     >
-                                        <ChatList onSelectChat={setSelectedChat} />
+                                        <ChatList onSelectChat={handleSelectChat} />
                                     </motion.div>
                                 )}
                             </AnimatePresence>

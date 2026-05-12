@@ -1,4 +1,4 @@
-﻿using server.Domain.Exceptions;
+using server.Domain.Exceptions;
 
 namespace server.Domain
 {
@@ -89,10 +89,28 @@ namespace server.Domain
                     "Phone number is too long", 
                     "User.PHONE_TOO_LONG");
 
-            if (socialLinks is not null && socialLinks.Length > 500)
-                throw new DomainException(
-                    "Social links value is too long", 
-                    "User.SOCIAL_LINKS_TOO_LONG");
+            if (socialLinks is not null)
+            {
+                if (socialLinks.Length > 500)
+                    throw new DomainException(
+                        "Social links value is too long", 
+                        "User.SOCIAL_LINKS_TOO_LONG");
+
+                // Basic sanitization/blacklist
+                var forbidden = new[] { "<script", "javascript:", "onerror", "onclick", "onload", "href=", "src=" };
+                foreach (var f in forbidden)
+                {
+                    if (socialLinks.Contains(f, StringComparison.OrdinalIgnoreCase))
+                        throw new DomainException("Invalid social link format", "User.SOCIAL_LINKS_FORBIDDEN");
+                }
+
+                // Auto-fix @username (if it's a single word starting with @)
+                var trimmed = socialLinks.Trim();
+                if (trimmed.StartsWith("@") && !trimmed.Contains(" "))
+                {
+                    socialLinks = $"https://t.me/{trimmed.Substring(1)}";
+                }
+            }
 
             PhoneNumber = phoneNumber;
             SocialLinks = socialLinks;

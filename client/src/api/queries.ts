@@ -35,6 +35,8 @@ export const GET_PROFILE = gql`
           socialLinks
           isEmailVerified
           role
+          activeRequestsCount
+          activeResponsesCount
         }
         error { code message }
       }
@@ -322,9 +324,9 @@ export const GET_MY_REQUESTS = gql`
 `
 
 export const GET_ASSIGNEE_REQUESTS = gql`
-  query GetAssigneeRequests($page: Int!, $pageSize: Int!, $assignedUserId: ID) {
+  query GetAssigneeRequests($page: Int!, $pageSize: Int!, $assignedUserId: ID, $responderId: ID) {
     helpRequestQuer {
-      helpRequestQuery(page: $page, pageSize: $pageSize, assignedUserId: $assignedUserId) {
+      helpRequestQuery(page: $page, pageSize: $pageSize, assignedUserId: $assignedUserId, responderId: $responderId) {
         items {
           id
           title
@@ -833,3 +835,65 @@ export const GET_ADMIN_ANALYTICS = gql`
     }
   }
 `
+
+export const CANCEL_RESPONSE = gql`
+  mutation CancelResponse($helpRequestId: ID!) {
+    helpRequest {
+      cancelResponse(helpRequestId: $helpRequestId) {
+        success
+        error { code message }
+      }
+    }
+  }
+`;
+
+export const GET_NOTIFICATIONS = gql`
+  query GetNotifications($limit: Int) {
+    notificationQuery {
+      notifications(limit: $limit) {
+        data {
+          id
+          title
+          content
+          type
+          isRead
+          createdAtUtc
+          relatedEntityId
+          relatedEntityType
+        }
+        error {
+          code
+          message
+        }
+      }
+    }
+  }
+`;
+
+export const MARK_NOTIFICATION_AS_READ = gql`
+  mutation MarkAsRead($id: ID!) {
+    notification {
+      markAsRead(id: $id) {
+        success
+        error {
+          code
+          message
+        }
+      }
+    }
+  }
+`;
+
+export const MARK_ALL_NOTIFICATIONS_AS_READ = gql`
+  mutation MarkAllAsRead {
+    notification {
+      markAllAsRead {
+        success
+        error {
+          code
+          message
+        }
+      }
+    }
+  }
+`;

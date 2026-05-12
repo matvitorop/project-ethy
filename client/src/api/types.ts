@@ -48,6 +48,8 @@ export interface ProfileData {
                 socialLinks: string | null
                 isEmailVerified: boolean
                 role: string
+                activeRequestsCount: number
+                activeResponsesCount: number
             } | null
             error: ApiError | null
         }
@@ -627,6 +629,35 @@ export interface AdminAnalyticsData {
     statsQuery: {
         adminAnalytics: {
             data: AdminAnalyticsDto | null
+            error: ApiError | null
+        }
+    }
+}
+
+export interface Notification {
+    id: string
+    title: string
+    content: string
+    type: string | number
+    isRead: boolean
+    createdAtUtc: string
+    relatedEntityId?: string
+    relatedEntityType?: string
+}
+
+export interface GetNotificationsData {
+    notificationQuery: {
+        notifications: {
+            data: Notification[] | null
+            error: ApiError | null
+        }
+    }
+}
+
+export interface CancelResponseData {
+    helpRequest: {
+        cancelResponse: {
+            success: boolean
             error: ApiError | null
         }
     }

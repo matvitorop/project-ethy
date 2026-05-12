@@ -1,4 +1,4 @@
-﻿using Dapper;
+using Dapper;
 using server.Application.Handlers.UserHandlers.GetComplaints;
 using server.Application.IRepositories;
 using server.Application.IServices;
@@ -65,6 +65,13 @@ namespace server.Infrastructure.Repositories
                 new { Id = complaintId, AdminComment = adminComment });
             return affected > 0;
         }
-    }
 
+        public async Task<UserComplaint?> GetByIdAsync(Guid complaintId, CancellationToken ct)
+        {
+            using var conn = await _connectionFactory.CreateOpenConnectionAsync(ct);
+            return await conn.QueryFirstOrDefaultAsync<UserComplaint>(
+                "SELECT * FROM UserComplaints WHERE Id = @Id",
+                new { Id = complaintId });
+        }
+    }
 }
