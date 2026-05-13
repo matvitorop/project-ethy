@@ -19,13 +19,14 @@ export default function ImageUploader({ value, onChange }: ImageUploaderProps) {
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return
 
-    const remaining = MAX_IMAGES - value.length
-    if (remaining <= 0) {
-      dispatch(addToast({ type: 'error', message: `Максимум ${MAX_IMAGES} зображень` }))
-      return
+    if (files.length > MAX_IMAGES) {
+        dispatch(addToast({ 
+            type: 'info', 
+            message: `Можна завантажити не більше ${MAX_IMAGES} фото за раз` 
+        }))
     }
 
-    const toUpload = Array.from(files).slice(0, remaining)
+    const toUpload = Array.from(files).slice(0, MAX_IMAGES)
     setUploading(true)
 
     try {
@@ -48,11 +49,16 @@ export default function ImageUploader({ value, onChange }: ImageUploaderProps) {
           urls.push(...fullUrls)
       }
 
-      onChange([...value, ...urls])
+      const combined = [...value, ...urls]
+      const latest = combined.slice(-MAX_IMAGES)
+      onChange(latest)
     } catch {
       dispatch(addToast({ type: 'error', message: 'Помилка завантаження зображення' }))
     } finally {
       setUploading(false)
+      if (inputRef.current) {
+        inputRef.current.value = ''
+      }
     }
   }
 
@@ -85,24 +91,22 @@ export default function ImageUploader({ value, onChange }: ImageUploaderProps) {
           </div>
         ))}
 
-        {/* Кнопка додавання */}
-        {value.length < MAX_IMAGES && (
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            disabled={uploading}
-            className="w-20 h-20 rounded-lg border-2 border-dashed border-border hover:border-primary flex flex-col items-center justify-center gap-1 transition-colors disabled:opacity-50"
-          >
-            {uploading ? (
-              <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <>
-                <Upload size={16} className="text-ink-muted" />
-                <span className="text-xs text-ink-muted">Додати</span>
-              </>
-            )}
-          </button>
-        )}
+        {/* Кнопка додавання - завжди доступна для FIFO ротації */}
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+          className="w-20 h-20 rounded-lg border-2 border-dashed border-border hover:border-primary flex flex-col items-center justify-center gap-1 transition-colors disabled:opacity-50"
+        >
+          {uploading ? (
+            <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <>
+              <Upload size={16} className="text-ink-muted" />
+              <span className="text-xs text-ink-muted">Додати</span>
+            </>
+          )}
+        </button>
       </div>
 
       <input

@@ -88,6 +88,7 @@ export default function ProfilePage() {
     })
 
     const [cancelResponse, { loading: cancellingResponse }] = useMutation<CancelResponseData>(CANCEL_RESPONSE, {
+        refetchQueries: [{ query: GET_PROFILE }],
         onCompleted: (data) => {
             const r = data.helpRequest.cancelResponse
             if (r.error) {
@@ -193,6 +194,7 @@ export default function ProfilePage() {
     }
 
     const [changeStatus, { loading: changingStatus }] = useMutation<ChangeHelpRequestStatusData>(CHANGE_HELP_REQUEST_STATUS, {
+        refetchQueries: [{ query: GET_PROFILE }],
         onCompleted: (data) => {
             const r = data.helpRequest.changeHelpRequestStatus
             if (r.error) {
