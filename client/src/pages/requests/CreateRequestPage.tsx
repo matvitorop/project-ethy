@@ -59,7 +59,9 @@ export default function CreateRequestPage() {
                 description: form.description.trim(),
                 latitude: location?.lat ?? null,
                 longitude: location?.lng ?? null,
-                imageUrls: imageUrls.length > 0 ? imageUrls : null,
+                imageUrls: imageUrls.length > 0 
+                    ? imageUrls.map(url => url.split('/').pop()).filter(Boolean).slice(0, 5) 
+                    : null,
             },
         })
     }
