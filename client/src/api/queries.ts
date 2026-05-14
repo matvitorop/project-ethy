@@ -37,6 +37,10 @@ export const GET_PROFILE = gql`
           role
           activeRequestsCount
           activeResponsesCount
+          totalRequests
+          completedRequests
+          helpedRequests
+          rejectedRequests
         }
         error { code message }
       }
@@ -554,6 +558,8 @@ export const GET_PUBLIC_PROFILE = gql`
           negativeReviews
           totalRequests
           completedRequests
+          helpedRequests
+          rejectedRequests
           phoneNumber
           socialLinks
         }

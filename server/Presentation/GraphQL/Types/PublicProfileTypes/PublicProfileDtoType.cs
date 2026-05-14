@@ -1,4 +1,4 @@
-﻿using GraphQL.Types;
+using GraphQL.Types;
 using server.Application.Handlers.UserHandlers.GetPublicProfile;
 
 namespace server.Presentation.GraphQL.Types.PublicProfileTypes
@@ -20,6 +20,8 @@ namespace server.Presentation.GraphQL.Types.PublicProfileTypes
             Field(x => x.NegativeReviews);
             Field(x => x.TotalRequests);
             Field(x => x.CompletedRequests);
+            Field(x => x.HelpedRequests);
+            Field(x => x.RejectedRequests);
         }
     }
 }
