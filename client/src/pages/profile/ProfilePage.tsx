@@ -529,8 +529,15 @@ export default function ProfilePage() {
                             className="w-full px-4 py-3 bg-surface-muted border border-border rounded-xl text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none shadow-inner"
                         />
                     </div>
+                    <div className="bg-primary/5 rounded-xl p-4 border border-primary/10">
+                        <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-2">Важливо</p>
+                        <p className="text-xs text-ink-soft font-medium leading-relaxed">
+                            Для підтвердження статусу волонтера завантажте фото одного з документів: 
+                            <span className="font-bold text-ink"> посвідчення волонтера, офіційну довідку від благодійного фонду або ГО, або інший документ, що засвідчує вашу діяльність.</span>
+                        </p>
+                    </div>
                     <div>
-                        <label className="block text-[10px] font-black text-ink-soft uppercase tracking-[0.2em] mb-3">Документ (необов'язково)</label>
+                        <label className="block text-[10px] font-black text-ink-soft uppercase tracking-[0.2em] mb-3">Скан/Фото документа (обов'язково)</label>
                         <div className="flex flex-wrap items-center gap-4">
                             <label className="flex items-center gap-3 px-5 py-2.5 bg-surface border-2 border-dashed border-border rounded-2xl text-xs font-black text-ink-soft hover:border-primary hover:text-primary cursor-pointer transition-all shadow-sm">
                                 <Upload size={16} />
@@ -548,8 +555,8 @@ export default function ProfilePage() {
                         <Button variant="outline" className="flex-1" onClick={() => setVolModalOpen(false)}>Скасувати</Button>
                         <Button
                             className="flex-1"
-                            onClick={() => submitApplication({ variables: { ...volForm, documentImageUrl: volForm.documentImageUrl || null } })}
-                            disabled={submitting || !volForm.organizationName.trim() || !volForm.activityDescription.trim()}
+                            onClick={() => submitApplication({ variables: { ...volForm, documentImageUrl: volForm.documentImageUrl } })}
+                            disabled={submitting || !volForm.organizationName.trim() || !volForm.activityDescription.trim() || !volForm.documentImageUrl}
                         >
                             {submitting ? 'Надсилання...' : 'Надіслати заявку'}
                         </Button>
