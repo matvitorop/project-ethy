@@ -1,15 +1,15 @@
 using server.Domain.Exceptions;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace server.Domain.HelpRequest
 {
     public enum HelpRequestStatus
     {
-        Draft = 0,
+        Moderation = 0,
         Open = 1,
         InProgress = 2,
         Resolved = 3,
-        Cancelled = 4
+        Cancelled = 4,
+        Rejected = 5
     }
 
     public class HelpRequest
@@ -55,7 +55,7 @@ namespace server.Domain.HelpRequest
 
             Location = location;
 
-            Status = HelpRequestStatus.Open;
+            Status = HelpRequestStatus.Moderation;
             CreatedAtUtc = DateTime.UtcNow;
         }
         internal HelpRequest(
@@ -115,7 +115,7 @@ namespace server.Domain.HelpRequest
 
         public void AddImage(string url)
         {
-            if (Status != HelpRequestStatus.Open)
+            if (Status != HelpRequestStatus.Open && Status != HelpRequestStatus.Moderation)
                 throw new DomainException("Wrong help request status for adding image", "HelpRequest.CANNOT_ADD_IMAGE_IN_CURRENT_STATUS");
 
             if (_images.Count >= 5)
@@ -241,7 +241,7 @@ namespace server.Domain.HelpRequest
             double? latitude,
             double? longitude)
         {
-            if (Status != HelpRequestStatus.Open)
+            if (Status != HelpRequestStatus.Open && Status != HelpRequestStatus.Moderation)
                 throw new DomainException(
                     "Cannot edit current request",
                     "HelpRequest.CANNOT_EDIT");
@@ -258,7 +258,7 @@ namespace server.Domain.HelpRequest
 
         public void Delete()
         {
-            if (Status != HelpRequestStatus.Open)
+            if (Status != HelpRequestStatus.Open && Status != HelpRequestStatus.Moderation)
                 throw new DomainException(
                     "Cannot delete inactive request",
                     "HelpRequest.CANNOT_DELETE");
@@ -356,6 +356,28 @@ namespace server.Domain.HelpRequest
         
             Status = HelpRequestStatus.Open;
             AssignedUserId = null;
+        }
+
+        public void Approve()
+        {
+            if (Status != HelpRequestStatus.Moderation)
+                throw new DomainException("Only requests in moderation can be approved", "HelpRequest.NOT_IN_MODERATION");
+
+            Status = HelpRequestStatus.Open;
+            UpdatedAtUtc = DateTime.UtcNow;
+        }
+
+        public void RejectModeration(string reason)
+        {
+            if (Status != HelpRequestStatus.Moderation)
+                throw new DomainException("Only requests in moderation can be rejected", "HelpRequest.NOT_IN_MODERATION");
+
+            if (string.IsNullOrWhiteSpace(reason))
+                throw new DomainException("Rejection reason is required", "HelpRequest.REASON_REQUIRED");
+
+            Status = HelpRequestStatus.Rejected;
+            CancellationReason = $"Moderation rejected: {reason}";
+            UpdatedAtUtc = DateTime.UtcNow;
         }
     }
 }

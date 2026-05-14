@@ -152,7 +152,9 @@ namespace server.Infrastructure.Repositories
 
             var filters = new List<string> { "hr.IsDeleted = 0" };
             if (status.HasValue) filters.Add("hr.Status = @Status");
-            if (statuses != null && statuses.Count > 0) filters.Add("hr.Status IN @Statuses");
+            else if (statuses != null && statuses.Count > 0) filters.Add("hr.Status IN @Statuses");
+            else if (!creatorId.HasValue) filters.Add("hr.Status != 0"); // Hide Moderation (0) from public list
+
             if (creatorId.HasValue) filters.Add("hr.CreatorId = @CreatorId");
             if (assignedUserId.HasValue) filters.Add("hr.AssignedUserId = @AssignedUserId");
             if (hasNoReport == true)
@@ -846,7 +848,7 @@ namespace server.Infrastructure.Repositories
             const string sql = """
                 SELECT COUNT(1) FROM HelpRequests
                 WHERE CreatorId = @CreatorId
-                  AND Status IN (1, 2)   -- 1 = Open, 2 = InProgress
+                  AND Status IN (0, 1, 2)   -- 0 = Moderation, 1 = Open, 2 = InProgress
                   AND IsDeleted = 0;
                 """;
 

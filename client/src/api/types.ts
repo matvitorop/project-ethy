@@ -578,11 +578,12 @@ export interface MyVolunteerApplicationData {
 
 export interface PlatformStatsDto {
     totalRequests: number
-    draftRequests: number
+    moderationRequests: number
     openRequests: number
     inProgressRequests: number
     resolvedRequests: number
     cancelledRequests: number
+    rejectedRequests: number
     totalUsers: number
     totalVolunteers: number
     completionRate: number

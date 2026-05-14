@@ -426,6 +426,17 @@ export const SOFT_DELETE_HELP_REQUEST = gql`
   }
 `
 
+export const DELETE_HELP_REQUEST = gql`
+  mutation SoftDeleteHelpRequest($helpRequestId: ID!) {
+    helpRequest {
+      softDeleteHelpRequest(helpRequestId: $helpRequestId) {
+        success
+        error { code message }
+      }
+    }
+  }
+`
+
 export const CANCEL_HELP_REQUEST = gql`
   mutation CancelHelpRequest($helpRequestId: ID!, $reason: String!) {
     helpRequest {
@@ -803,11 +814,12 @@ export const GET_PLATFORM_STATS = gql`
       platformStats {
         stats {
           totalRequests
-          draftRequests
+          moderationRequests
           openRequests
           inProgressRequests
           resolvedRequests
           cancelledRequests
+          rejectedRequests
           totalUsers
           totalVolunteers
           completionRate
@@ -922,6 +934,28 @@ export const MARK_ALL_NOTIFICATIONS_AS_READ = gql`
           code
           message
         }
+      }
+    }
+  }
+`;
+
+export const APPROVE_HELP_REQUEST = gql`
+  mutation ApproveHelpRequest($helpRequestId: ID!) {
+    admin {
+      approveHelpRequest(helpRequestId: $helpRequestId) {
+        success
+        error { code message }
+      }
+    }
+  }
+`;
+
+export const REJECT_HELP_REQUEST = gql`
+  mutation RejectHelpRequest($helpRequestId: ID!, $reason: String!) {
+    admin {
+      rejectHelpRequest(helpRequestId: $helpRequestId, reason: $reason) {
+        success
+        error { code message }
       }
     }
   }
