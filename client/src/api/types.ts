@@ -359,6 +359,23 @@ export interface UpdateProfileData {
     }
 }
 
+export interface ResignAsExecutorData {
+    helpRequest: {
+        resignAsExecutor: {
+            success: boolean
+            error: ApiError | null
+        }
+    }
+}
+
+export interface RemoveExecutorData {
+    helpRequest: {
+        removeExecutor: {
+            success: boolean
+            error: ApiError | null
+        }
+    }
+}
 
 // ========================
 // Admin module types

@@ -721,18 +721,7 @@ namespace server.Infrastructure.Repositories
 
             try
             {
-                const string updateRequest = """
-                    UPDATE HelpRequests
-                    SET Status         = @Status,
-                        AssignedUserId = NULL
-                    WHERE Id = @Id;
-                    """;
-
-                await connection.ExecuteAsync(new CommandDefinition(
-                    updateRequest,
-                    new { request.Id, Status = (int)request.Status },
-                    transaction: tx,
-                    cancellationToken: ct));
+                await UpdateHelpRequestCoreAsync(connection, tx, request, ct);
 
                 const string deactivateChat = """
                     UPDATE Chats
@@ -768,18 +757,7 @@ namespace server.Infrastructure.Repositories
 
             try
             {
-                const string updateRequest = """
-                    UPDATE HelpRequests
-                    SET Status         = @Status,
-                        AssignedUserId = NULL
-                    WHERE Id = @Id;
-                    """;
-
-                await connection.ExecuteAsync(new CommandDefinition(
-                    updateRequest,
-                    new { request.Id, Status = (int)request.Status },
-                    transaction: tx,
-                    cancellationToken: ct));
+                await UpdateHelpRequestCoreAsync(connection, tx, request, ct);
 
                 const string deactivateChat = """
                     UPDATE Chats

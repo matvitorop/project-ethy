@@ -1,7 +1,9 @@
-﻿using MediatR;
+using MediatR;
 using server.Application.IRepositories;
+using server.Application.IServices;
 using server.Domain.Exceptions;
 using server.Domain.HelpRequest;
+using server.Domain.Notifications;
 using server.Domain.Primitives;
 using System.Text.Json;
 
@@ -12,13 +14,19 @@ namespace server.Application.Handlers.HelpRequestResponseHandlers.ResignAsExecut
     {
         private readonly IHelpRequestRepository _helpRequestRepository;
         private readonly IChatRepository _chatRepository;
+        private readonly INotificationService _notificationService;
+        private readonly IUserRepository _userRepository;
 
         public ResignAsExecutorHandler(
             IHelpRequestRepository helpRequestRepository,
-            IChatRepository chatRepository)
+            IChatRepository chatRepository,
+            INotificationService notificationService,
+            IUserRepository userRepository)
         {
             _helpRequestRepository = helpRequestRepository;
             _chatRepository = chatRepository;
+            _notificationService = notificationService;
+            _userRepository = userRepository;
         }
 
         public async Task<Result> Handle(
@@ -38,6 +46,9 @@ namespace server.Application.Handlers.HelpRequestResponseHandlers.ResignAsExecut
             if (chat is null)
                 return Result.Failure(
                     new Error("Chat not found", "Chat.NOT_FOUND"));
+
+            var resigningUser = await _userRepository.GetByIdAsync(request.CurrentUserId, ct);
+            var resigningUsername = resigningUser?.Username ?? "Помічник";
 
             try
             {
@@ -62,6 +73,17 @@ namespace server.Application.Handlers.HelpRequestResponseHandlers.ResignAsExecut
 
             await _helpRequestRepository.ResignAsExecutorAsync(
                 helpRequest, chat, logEvent, ct);
+
+            // Send notification to owner via service (SignalR + DB)
+            await _notificationService.SendNotificationAsync(
+                helpRequest.CreatorId,
+                "Відмова від виконання",
+                $"{resigningUsername} припинив допомогу у вашій заявці \"{helpRequest.Title}\". Причина: {request.Reason}",
+                NotificationType.HelpRequest,
+                helpRequest.Id,
+                "HelpRequest",
+                ct
+            );
 
             return Result.Success();
         }

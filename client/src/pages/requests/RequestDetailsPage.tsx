@@ -7,7 +7,7 @@ import {
     GET_HELP_REQUEST_BY_ID, GET_STAGES, GET_EVENT_LOG, GET_REPORTS,
     CREATE_REPORT, CHANGE_HELP_REQUEST_STATUS,
     SOFT_DELETE_HELP_REQUEST, CANCEL_HELP_REQUEST, RESTORE_HELP_REQUEST,
-    GET_HELP_REQUEST_RESPONSES
+    GET_HELP_REQUEST_RESPONSES, RESIGN_AS_EXECUTOR, REMOVE_EXECUTOR
 } from '../../api/queries'
 import type {
     HelpRequestDetailData,
@@ -17,7 +17,9 @@ import type {
     CreateReportData,
     ChangeHelpRequestStatusData,
     ApiError,
-    HelpRequestResponsesData
+    HelpRequestResponsesData,
+    ResignAsExecutorData,
+    RemoveExecutorData
 } from '../../api/types'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { addToast } from '../../store/uiSlice'
@@ -33,6 +35,7 @@ import RespondModal from '../../features/requests/components/RespondModal'
 import CandidatesModal from '../../features/requests/components/CandidatesModal'
 import LeaveReviewModal from '../../features/requests/components/LeaveReviewModal'
 import LeaveComplaintModal from '../../features/requests/components/LeaveComplaintModal'
+import ReasonModal from '../../components/ReasonModal'
 
 const API_BASE_URL = 'http://localhost:5274'
 
@@ -66,10 +69,11 @@ export default function RequestDetailsPage() {
     const [respondModalOpen, setRespondModalOpen] = useState(false)
     const [candidatesModalOpen, setCandidatesModalOpen] = useState(false)
     const [cancelModalOpen, setCancelModalOpen] = useState(false)
-    const [cancelReason, setCancelReason] = useState('')
     const [deleteModalOpen, setDeleteModalOpen] = useState(false)
     const [reviewModalOpen, setReviewModalOpen] = useState(false)
     const [complaintModalOpen, setComplaintModalOpen] = useState(false)
+    const [resignModalOpen, setResignModalOpen] = useState(false)
+    const [removeExecutorModalOpen, setRemoveExecutorModalOpen] = useState(false)
 
     const dispatch = useAppDispatch()
 
@@ -100,6 +104,34 @@ export default function RequestDetailsPage() {
             window.location.reload()
         },
         onError: () => dispatch(addToast({ type: 'error', message: 'Помилка відновлення' })),
+    })
+
+    const [resign, { loading: resigning }] = useMutation<ResignAsExecutorData>(RESIGN_AS_EXECUTOR, {
+        onCompleted: (data) => {
+            const result = data.helpRequest.resignAsExecutor
+            if (result.error) {
+                dispatch(addToast({ type: 'error', message: result.error.message }))
+            } else {
+                dispatch(addToast({ type: 'success', message: 'Ви відмовились від виконання' }))
+                setResignModalOpen(false)
+                window.location.reload()
+            }
+        },
+        onError: () => dispatch(addToast({ type: 'error', message: 'Помилка при спробі відмовитись' })),
+    })
+
+    const [removeExecutor, { loading: removingExecutor }] = useMutation<RemoveExecutorData>(REMOVE_EXECUTOR, {
+        onCompleted: (data) => {
+            const result = data.helpRequest.removeExecutor
+            if (result.error) {
+                dispatch(addToast({ type: 'error', message: result.error.message }))
+            } else {
+                dispatch(addToast({ type: 'success', message: 'Помічника видалено' }))
+                setRemoveExecutorModalOpen(false)
+                window.location.reload()
+            }
+        },
+        onError: () => dispatch(addToast({ type: 'error', message: 'Помилка видалення помічника' })),
     })
 
     const [softDelete, { loading: deleting }] = useMutation(SOFT_DELETE_HELP_REQUEST, {
@@ -406,11 +438,16 @@ export default function RequestDetailsPage() {
                             )}
                         </Button>
                         {Number(hr.status) === 2 && (
-                            <Button variant="success" size="sm" onClick={() => changeStatus({
-                                variables: { helpRequestId: hr.id, status: 'RESOLVED' }
-                            })} disabled={changingStatus}>
-                                Виконано
-                            </Button>
+                            <>
+                                <Button variant="success" size="sm" onClick={() => changeStatus({
+                                    variables: { helpRequestId: hr.id, status: 'RESOLVED' }
+                                })} disabled={changingStatus}>
+                                    Виконано
+                                </Button>
+                                <Button variant="ghost" size="sm" onClick={() => setRemoveExecutorModalOpen(true)} className="text-error hover:bg-error/5">
+                                    Вигнати помічника
+                                </Button>
+                            </>
                         )}
                     </>
                 )}
@@ -424,6 +461,12 @@ export default function RequestDetailsPage() {
                 {!isOwner && hr.status === 1 && (
                     <Button size="sm" onClick={() => setRespondModalOpen(true)}>
                         Відгукнутись на допомогу
+                    </Button>
+                )}
+
+                {isAssignee && hr.status === 2 && (
+                    <Button variant="ghost" size="sm" onClick={() => setResignModalOpen(true)} className="text-error hover:bg-error/5">
+                        Відмовитись від виконання
                     </Button>
                 )}
 
@@ -586,35 +629,17 @@ export default function RequestDetailsPage() {
                 onAssign={() => setCandidatesModalOpen(false)}
             />
 
-            <Modal
+            <ReasonModal
                 isOpen={cancelModalOpen}
                 onClose={() => setCancelModalOpen(false)}
+                onConfirm={(reason) => cancelRequest({ variables: { helpRequestId: hr.id, reason } })}
                 title="Скасувати заявку"
-            >
-                <div className="space-y-5 p-2">
-                    <p className="text-sm text-ink-muted">Ви впевнені, що хочете скасувати цю заявку? Будь ласка, вкажіть причину.</p>
-                    <textarea
-                        value={cancelReason}
-                        onChange={e => setCancelReason(e.target.value)}
-                        placeholder="Вкажіть причину скасування..."
-                        rows={3}
-                        className="w-full px-4 py-3 bg-surface-muted border border-border rounded-xl text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none"
-                    />
-                    <div className="flex gap-3">
-                        <Button variant="outline" className="flex-1" onClick={() => setCancelModalOpen(false)}>Назад</Button>
-                        <Button
-                            variant="error"
-                            className="flex-1"
-                            onClick={() => cancelRequest({
-                                variables: { helpRequestId: hr.id, reason: cancelReason.trim() }
-                            })}
-                            disabled={cancelling || !cancelReason.trim()}
-                        >
-                            {cancelling ? 'Скасування...' : 'Скасувати'}
-                        </Button>
-                    </div>
-                </div>
-            </Modal>
+                description="Ви впевнені, що хочете скасувати цю заявку? Це діло неможливо буде відмінити самостійно."
+                confirmText="Скасувати заявку"
+                confirmVariant="error"
+                isLoading={cancelling}
+                placeholder="Вкажіть причину скасування..."
+            />
 
             <Modal
                 isOpen={deleteModalOpen}
@@ -656,6 +681,28 @@ export default function RequestDetailsPage() {
                     targetUsername={isOwner ? 'виконавця' : 'власника заявки'}
                 />
             )}
+
+            <ReasonModal
+                isOpen={resignModalOpen}
+                onClose={() => setResignModalOpen(false)}
+                onConfirm={(reason) => resign({ variables: { helpRequestId: hr.id, reason } })}
+                title="Відмова від виконання"
+                description="Ви впевнені, що хочете припинити допомогу? Будь ласка, вкажіть причину для власника заявки."
+                confirmText="Припинити допомогу"
+                confirmVariant="error"
+                isLoading={resigning}
+            />
+
+            <ReasonModal
+                isOpen={removeExecutorModalOpen}
+                onClose={() => setRemoveExecutorModalOpen(false)}
+                onConfirm={(reason) => removeExecutor({ variables: { helpRequestId: hr.id, reason } })}
+                title="Видалення помічника"
+                description="Ви впевнені, що хочете видалити цього помічника? Заявка знову стане відкритою для інших."
+                confirmText="Видалити"
+                confirmVariant="error"
+                isLoading={removingExecutor}
+            />
         </motion.div>
     )
 }

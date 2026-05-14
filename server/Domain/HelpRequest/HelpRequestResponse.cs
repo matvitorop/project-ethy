@@ -1,4 +1,4 @@
-﻿using server.Domain.Exceptions;
+using server.Domain.Exceptions;
 
 namespace server.Domain.HelpRequest
 {
@@ -55,7 +55,7 @@ namespace server.Domain.HelpRequest
 
         internal void Reject()
         {
-            if (Status != HelpRequestResponseStatus.Pending)
+            if (Status != HelpRequestResponseStatus.Pending && Status != HelpRequestResponseStatus.Accepted)
                 return;
 
             Status = HelpRequestResponseStatus.Rejected;
@@ -63,7 +63,7 @@ namespace server.Domain.HelpRequest
 
         internal void Cancel()
         {
-            if (Status != HelpRequestResponseStatus.Pending)
+            if (Status != HelpRequestResponseStatus.Pending && Status != HelpRequestResponseStatus.Accepted)
                 throw new DomainException("Cannot cancel processed response", "HelpRequestResponse.CANNOT_CANCEL");
 
             Status = HelpRequestResponseStatus.Cancelled;
