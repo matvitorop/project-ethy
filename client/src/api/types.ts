@@ -54,6 +54,7 @@ export interface ProfileData {
                 completedRequests: number
                 helpedRequests: number
                 rejectedRequests: number
+                dailyComplaintsCount: number
             } | null
             error: ApiError | null
         }

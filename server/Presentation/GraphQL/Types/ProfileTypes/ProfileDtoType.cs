@@ -22,6 +22,7 @@ namespace server.Presentation.GraphQL.Types.ProfileTypes
             Field(x => x.CompletedRequests);
             Field(x => x.HelpedRequests);
             Field(x => x.RejectedRequests);
+            Field(x => x.DailyComplaintsCount);
             // ---
 
         }
