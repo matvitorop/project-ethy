@@ -1,4 +1,4 @@
-﻿using server.Domain.Exceptions;
+using server.Domain.Exceptions;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace server.Domain.HelpRequest
@@ -319,6 +319,9 @@ namespace server.Domain.HelpRequest
                     "You are not the assigned executor",
                     "HelpRequest.NOT_EXECUTOR");
 
+            var response = _responses.FirstOrDefault(r => r.UserId == userId && r.Status == HelpRequestResponseStatus.Accepted);
+            response?.Reject();
+
             Status = HelpRequestStatus.Open;
             AssignedUserId = null;
         }
@@ -344,6 +347,12 @@ namespace server.Domain.HelpRequest
                 throw new DomainException(
                     "Reason is too long",
                     "HelpRequest.REASON_TOO_LONG");
+
+            if (AssignedUserId.HasValue)
+            {
+                var response = _responses.FirstOrDefault(r => r.UserId == AssignedUserId.Value && r.Status == HelpRequestResponseStatus.Accepted);
+                response?.Reject();
+            }
         
             Status = HelpRequestStatus.Open;
             AssignedUserId = null;

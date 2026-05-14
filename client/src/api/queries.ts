@@ -488,6 +488,28 @@ export const LEAVE_COMPLAINT = gql`
   }
 `
 
+export const RESIGN_AS_EXECUTOR = gql`
+  mutation ResignAsExecutor($helpRequestId: ID!, $reason: String!) {
+    helpRequest {
+      resignAsExecutor(helpRequestId: $helpRequestId, reason: $reason) {
+        success
+        error { code message }
+      }
+    }
+  }
+`
+
+export const REMOVE_EXECUTOR = gql`
+  mutation RemoveExecutor($helpRequestId: ID!, $reason: String!) {
+    helpRequest {
+      removeExecutor(helpRequestId: $helpRequestId, reason: $reason) {
+        success
+        error { code message }
+      }
+    }
+  }
+`
+
 export const UPDATE_PROFILE = gql`
   mutation UpdateProfile($phoneNumber: String, $socialLinks: String) {
     user {

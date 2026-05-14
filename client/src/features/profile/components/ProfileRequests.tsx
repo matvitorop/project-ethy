@@ -2,14 +2,15 @@ import { useState } from 'react'
 import { useQuery, useMutation, useApolloClient } from '@apollo/client/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FileText, ThumbsUp, ChevronLeft, ChevronRight, Ban, CheckCircle } from 'lucide-react'
-import { GET_MY_REQUESTS, GET_ASSIGNEE_REQUESTS, CHANGE_HELP_REQUEST_STATUS, CANCEL_RESPONSE, GET_PROFILE } from '../../../api/queries'
-import type { HelpRequestsPageData, ChangeHelpRequestStatusData, CancelResponseData } from '../../../api/types'
+import { GET_MY_REQUESTS, GET_ASSIGNEE_REQUESTS, CHANGE_HELP_REQUEST_STATUS, CANCEL_RESPONSE, GET_PROFILE, RESIGN_AS_EXECUTOR } from '../../../api/queries'
+import type { HelpRequestsPageData, ChangeHelpRequestStatusData, CancelResponseData, ResignAsExecutorData } from '../../../api/types'
 import { useAppDispatch } from '../../../store/hooks'
 import { addToast } from '../../../store/uiSlice'
 import { PageSpinner } from '../../../components/Spinner'
 import RequestCard from '../../requests/RequestCard'
 import Button from '../../../components/ui/Button'
 import Modal from '../../../components/Modal'
+import ReasonModal from '../../../components/ReasonModal'
 
 const PAGE_SIZE = 5
 
@@ -27,6 +28,7 @@ export default function ProfileRequests({ userId, isOwn = false }: ProfileReques
     const [ownerPage, setOwnerPage] = useState(1)
     const [assigneePage, setAssigneePage] = useState(1)
     const [cancelModalOpen, setCancelModalOpen] = useState(false)
+    const [resignModalOpen, setResignModalOpen] = useState(false)
     const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null)
 
     const { data: ownerData, loading: ownerLoading } = useQuery<HelpRequestsPageData>(GET_MY_REQUESTS, {
@@ -68,6 +70,21 @@ export default function ProfileRequests({ userId, isOwn = false }: ProfileReques
             }
         },
         onError: () => dispatch(addToast({ type: 'error', message: 'Помилка скасування відгуку' })),
+    })
+
+    const [resign, { loading: resigning }] = useMutation<ResignAsExecutorData>(RESIGN_AS_EXECUTOR, {
+        onCompleted: (data) => {
+            const r = data.helpRequest.resignAsExecutor
+            if (r.error) {
+                dispatch(addToast({ type: 'error', message: r.error.message }))
+            } else {
+                dispatch(addToast({ type: 'success', message: 'Ви припинили допомогу' }))
+                setResignModalOpen(false)
+                setSelectedRequestId(null)
+                assigneeRefetch()
+            }
+        },
+        onError: () => dispatch(addToast({ type: 'error', message: 'Помилка при спробі відмовитись' })),
     })
 
     const ownerItems = ownerData?.helpRequestQuer.helpRequestQuery.items ?? []
@@ -160,6 +177,26 @@ export default function ProfileRequests({ userId, isOwn = false }: ProfileReques
                                                 </Button>
                                             </div>
                                         )}
+
+                                        {isOwn && activeTab === 'assignee' && Number(item.status) === 2 && (
+                                            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        setSelectedRequestId(item.id);
+                                                        setResignModalOpen(true);
+                                                    }}
+                                                    disabled={resigning}
+                                                    className="shadow-lg py-1 px-3 h-auto text-[10px] text-error hover:bg-error/5"
+                                                >
+                                                    <Ban size={12} className="mr-1" />
+                                                    Відмовитись
+                                                </Button>
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
 
@@ -215,6 +252,17 @@ export default function ProfileRequests({ userId, isOwn = false }: ProfileReques
                     </div>
                 </Modal>
             )}
+
+            <ReasonModal
+                isOpen={resignModalOpen}
+                onClose={() => setResignModalOpen(false)}
+                onConfirm={(reason) => selectedRequestId && resign({ variables: { helpRequestId: selectedRequestId, reason } })}
+                title="Відмова від виконання"
+                description="Ви впевнені, що хочете припинити допомогу? Будь ласка, вкажіть причину для власника заявки."
+                confirmText="Припинити допомогу"
+                confirmVariant="error"
+                isLoading={resigning}
+            />
         </div>
     )
 }
