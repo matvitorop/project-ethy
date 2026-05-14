@@ -50,6 +50,10 @@ export interface ProfileData {
                 role: string
                 activeRequestsCount: number
                 activeResponsesCount: number
+                totalRequests: number
+                completedRequests: number
+                helpedRequests: number
+                rejectedRequests: number
             } | null
             error: ApiError | null
         }
@@ -371,6 +375,8 @@ export interface PublicProfileDto {
     negativeReviews: number
     totalRequests: number
     completedRequests: number
+    helpedRequests: number
+    rejectedRequests: number
     phoneNumber: string | null
     socialLinks: string | null
 }

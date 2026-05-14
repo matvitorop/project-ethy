@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@apollo/client/react'
-import { ThumbsUp, ThumbsDown, CheckCircle, Shield, Phone, AlertCircle, ChevronLeft, Calendar, FileText, User } from 'lucide-react'
+import { CheckCircle, Shield, Phone, AlertCircle, ChevronLeft, Calendar, User } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { GET_PUBLIC_PROFILE, GET_USER_REVIEWS_PUBLIC } from '../../api/queries'
 import type { PublicProfileData, GetUserReviewsData } from '../../api/types'
@@ -9,12 +9,14 @@ import { useAppSelector, useAppDispatch } from '../../store/hooks'
 import { addToast } from '../../store/uiSlice'
 import { PageSpinner } from '../../components/Spinner'
 import LeaveComplaintModal from '../../features/requests/components/LeaveComplaintModal'
+import ProfileReputation from '../../features/profile/components/ProfileReputation'
+import ProfileReviews from '../../features/profile/components/ProfileReviews'
+import ProfileStatsCards from '../../features/profile/components/ProfileStatsCards'
+import ProfileRequests from '../../features/profile/components/ProfileRequests'
 import Button from '../../components/ui/Button'
 import Card from '../../components/ui/Card'
 import Badge from '../../components/ui/Badge'
 import SocialLink from '../../components/ui/SocialLink'
-import UserLink from '../../components/ui/UserLink'
-
 
 export default function PublicProfilePage() {
     const { userId } = useParams<{ userId: string }>()
@@ -126,7 +128,7 @@ export default function PublicProfilePage() {
                 </div>
 
                 {/* Контакти та верифікація */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-10 pt-8 border-t border-border">
+                <div className="mt-10 pt-8 border-t border-border">
                     <div className="space-y-3">
                         <label className="block text-[10px] font-black text-ink-soft uppercase tracking-[0.2em] mb-4">Статус та контакти</label>
                         <div className="flex flex-wrap gap-2">
@@ -144,7 +146,7 @@ export default function PublicProfilePage() {
                             )}
                         </div>
 
-                        <div className="space-y-2 mt-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
                             {profile.phoneNumber && (
                                 <div className="flex items-center gap-3 p-3 bg-surface-muted rounded-2xl border border-border shadow-inner">
                                     <Phone size={14} className="text-ink-soft" />
@@ -158,78 +160,37 @@ export default function PublicProfilePage() {
                             )}
                         </div>
                     </div>
-
-                    <div className="space-y-3">
-                        <label className="block text-[10px] font-black text-ink-soft uppercase tracking-[0.2em] mb-4">Статистика активності</label>
-                        <div className="grid grid-cols-2 gap-4">
-                            <Card padding="md" className="bg-primary/5 border-primary/10 text-center">
-                                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary mx-auto mb-2">
-                                    <FileText size={20} />
-                                </div>
-                                <p className="text-2xl font-black text-primary">{profile.totalRequests}</p>
-                                <p className="text-[10px] font-black text-primary/70 uppercase tracking-widest">Запитів</p>
-                            </Card>
-                            <Card padding="md" className="bg-success/5 border-success/10 text-center">
-                                <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center text-success mx-auto mb-2">
-                                    <CheckCircle size={20} />
-                                </div>
-                                <p className="text-2xl font-black text-success">{profile.completedRequests}</p>
-                                <p className="text-[10px] font-black text-success/70 uppercase tracking-widest">Виконано</p>
-                            </Card>
-                        </div>
-                    </div>
                 </div>
             </Card>
 
+            <div className="space-y-4">
+                <h2 className="text-[10px] font-black text-ink-soft uppercase tracking-[0.2em] mb-2 px-1">Статистика активності</h2>
+                <ProfileStatsCards 
+                    totalRequests={profile.totalRequests}
+                    completedRequests={profile.completedRequests}
+                    helpedRequests={profile.helpedRequests}
+                    rejectedRequests={profile.rejectedRequests}
+                />
+            </div>
+
             {/* Репутація та відгуки */}
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-                <div className="lg:col-span-2 space-y-4">
-                    <h2 className="text-[10px] font-black text-ink-soft uppercase tracking-[0.2em] mb-2 px-1">Репутація</h2>
-                    <div className="grid grid-cols-2 gap-4">
-                        <Card padding="md" className="bg-success/5 border-success/10 text-center shadow-sm">
-                            <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center text-success mx-auto mb-2">
-                                <ThumbsUp size={20} />
-                            </div>
-                            <p className="text-2xl font-black text-success">{positiveCount}</p>
-                            <p className="text-[10px] font-black text-success/70 uppercase tracking-widest">Позитивних</p>
-                        </Card>
-                        <Card padding="md" className="bg-error/5 border-error/10 text-center shadow-sm">
-                            <div className="w-10 h-10 rounded-full bg-error/10 flex items-center justify-center text-error mx-auto mb-2">
-                                <ThumbsDown size={20} />
-                            </div>
-                            <p className="text-2xl font-black text-error">{negativeCount}</p>
-                            <p className="text-[10px] font-black text-error/70 uppercase tracking-widest">Негативних</p>
-                        </Card>
-                    </div>
+                <div className="lg:col-span-2">
+                    <ProfileReputation 
+                        positiveCount={positiveCount}
+                        negativeCount={negativeCount}
+                    />
                 </div>
 
-                <div className="lg:col-span-3 space-y-4">
-                    <h2 className="text-[10px] font-black text-ink-soft uppercase tracking-[0.2em] mb-2 px-1">Відгуки користувачів</h2>
-                    <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                        {reviews.length > 0 ? (
-                            reviews.map(review => (
-                                <Card key={review.id} padding="sm" className="bg-surface-muted/50 border-none shadow-sm">
-                                    <div className="flex gap-4">
-                                        <div className={`mt-1 shrink-0 ${review.isPositive ? 'text-success' : 'text-error'}`}>
-                                            {review.isPositive ? <ThumbsUp size={14} /> : <ThumbsDown size={14} />}
-                                        </div>
-                                        <div className="flex-1">
-                                            <div className="flex items-center justify-between mb-1">
-                                                <UserLink userId={review.reviewerUserId} username={review.reviewerUsername} className="text-xs font-bold" />
-                                                <span className="text-[10px] font-bold text-ink-soft uppercase">{new Date(review.createdAtUtc).toLocaleDateString('uk-UA')}</span>
-                                            </div>
-                                            {review.comment && <p className="text-sm text-ink leading-relaxed">{review.comment}</p>}
-                                        </div>
-                                    </div>
-                                </Card>
-                            ))
-                        ) : (
-                            <div className="text-center py-16 bg-surface-muted/30 rounded-3xl border border-dashed border-border">
-                                <p className="text-xs font-bold text-ink-soft uppercase tracking-widest">Відгуків ще немає</p>
-                            </div>
-                        )}
-                    </div>
+                <div className="lg:col-span-3">
+                    <ProfileReviews reviews={reviews} />
                 </div>
+            </div>
+
+            {/* Заявки користувача */}
+            <div className="space-y-4">
+                <h2 className="text-[10px] font-black text-ink-soft uppercase tracking-[0.2em] mb-2 px-1">Активність</h2>
+                <ProfileRequests userId={profile.id} isOwn={isOwn} />
             </div>
 
             {!isOwn && currentUserId && (

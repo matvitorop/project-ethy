@@ -28,6 +28,7 @@ namespace server.Application.Handlers.UserHandlers.GetProfile
 
             var activeRequestsCount = await _helpRequestRepository.CountActiveRequestsByCreatorAsync(user.Id, ct);
             var activeResponsesCount = await _helpRequestRepository.CountActiveResponsesByUserAsync(user.Id, ct);
+            var stats = await _repository.GetUserStatisticsAsync(user.Id, ct);
 
             return Result<ProfileDto>.Success(
                 new ProfileDto(
@@ -40,7 +41,11 @@ namespace server.Application.Handlers.UserHandlers.GetProfile
                     user.IsEmailVerified,
                     user.Role.ToString(),
                     activeRequestsCount,
-                    activeResponsesCount));
+                    activeResponsesCount,
+                    TotalRequests: stats?.TotalRequests ?? 0,
+                    CompletedRequests: stats?.CompletedRequests ?? 0,
+                    HelpedRequests: stats?.HelpedRequests ?? 0,
+                    RejectedRequests: stats?.RejectedRequests ?? 0));
         }
     }
 }

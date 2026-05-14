@@ -1,4 +1,4 @@
-﻿namespace server.Application.Handlers.UserHandlers.GetPublicProfile
+namespace server.Application.Handlers.UserHandlers.GetPublicProfile
 {
     public record PublicProfileDto(
         Guid Id,
@@ -13,6 +13,8 @@
         int PositiveReviews,
         int NegativeReviews,
         int TotalRequests,
-        int CompletedRequests
+        int CompletedRequests,
+        int HelpedRequests,
+        int RejectedRequests
     );
 }

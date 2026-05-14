@@ -12,7 +12,11 @@ namespace server.Application.Handlers.UserHandlers.GetProfile
         bool IsEmailVerified,
         string Role,
         int ActiveRequestsCount,
-        int ActiveResponsesCount
+        int ActiveResponsesCount,
+        int TotalRequests,
+        int CompletedRequests,
+        int HelpedRequests,
+        int RejectedRequests
     // ---
 
     );
