@@ -41,6 +41,7 @@ export const GET_PROFILE = gql`
           completedRequests
           helpedRequests
           rejectedRequests
+          dailyComplaintsCount
         }
         error { code message }
       }

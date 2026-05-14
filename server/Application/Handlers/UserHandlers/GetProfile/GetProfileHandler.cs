@@ -9,11 +9,13 @@ namespace server.Application.Handlers.UserHandlers.GetProfile
     {
         private readonly IUserRepository _repository;
         private readonly IHelpRequestRepository _helpRequestRepository;
+        private readonly IComplaintRepository _complaintRepository;
 
-        public GetProfileHandler(IUserRepository repository, IHelpRequestRepository helpRequestRepository)
+        public GetProfileHandler(IUserRepository repository, IHelpRequestRepository helpRequestRepository, IComplaintRepository complaintRepository)
         {
             _repository = repository;
             _helpRequestRepository = helpRequestRepository;
+            _complaintRepository = complaintRepository;
         }
 
         public async Task<Result<ProfileDto>> Handle(
@@ -29,6 +31,7 @@ namespace server.Application.Handlers.UserHandlers.GetProfile
             var activeRequestsCount = await _helpRequestRepository.CountActiveRequestsByCreatorAsync(user.Id, ct);
             var activeResponsesCount = await _helpRequestRepository.CountActiveResponsesByUserAsync(user.Id, ct);
             var stats = await _repository.GetUserStatisticsAsync(user.Id, ct);
+            var dailyComplaintsCount = await _complaintRepository.GetCountByUserInLast24HoursAsync(user.Id, ct);
 
             return Result<ProfileDto>.Success(
                 new ProfileDto(
@@ -45,7 +48,8 @@ namespace server.Application.Handlers.UserHandlers.GetProfile
                     TotalRequests: stats?.TotalRequests ?? 0,
                     CompletedRequests: stats?.CompletedRequests ?? 0,
                     HelpedRequests: stats?.HelpedRequests ?? 0,
-                    RejectedRequests: stats?.RejectedRequests ?? 0));
+                    RejectedRequests: stats?.RejectedRequests ?? 0,
+                    DailyComplaintsCount: dailyComplaintsCount));
         }
     }
 }

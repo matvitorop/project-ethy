@@ -16,8 +16,7 @@ namespace server.Application.Handlers.UserHandlers.GetProfile
         int TotalRequests,
         int CompletedRequests,
         int HelpedRequests,
-        int RejectedRequests
-    // ---
-
+        int RejectedRequests,
+        int DailyComplaintsCount
     );
 }

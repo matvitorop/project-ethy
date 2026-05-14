@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { useMutation } from '@apollo/client/react'
+import { useMutation, useQuery } from '@apollo/client/react'
 import { Flag } from 'lucide-react'
 import Modal from '../../../components/Modal'
-import { LEAVE_COMPLAINT } from '../../../api/queries'
-import type { LeaveComplaintData } from '../../../api/types'
+import { GET_PROFILE, LEAVE_COMPLAINT } from '../../../api/queries'
+import type { LeaveComplaintData, ProfileData } from '../../../api/types'
 import { useAppDispatch } from '../../../store/hooks'
 import { addToast } from '../../../store/uiSlice'
 
@@ -22,8 +22,13 @@ export default function LeaveComplaintModal({
 }: LeaveComplaintModalProps) {
     const dispatch = useAppDispatch()
     const [reason, setReason] = useState('')
+    const { data: profileData } = useQuery<ProfileData>(GET_PROFILE)
+    
+    const dailyComplaintsCount = profileData?.userQuery.profile.profile?.dailyComplaintsCount ?? 0
+    const limitReached = dailyComplaintsCount >= 15
 
     const [leaveComplaint, { loading }] = useMutation<LeaveComplaintData>(LEAVE_COMPLAINT, {
+        refetchQueries: [{ query: GET_PROFILE }],
         onCompleted: (data) => {
             const result = data.user.leaveComplaint
             if (result.error) {
@@ -72,6 +77,17 @@ export default function LeaveComplaintModal({
                     <p className="text-xs text-ink-soft mt-1 text-right">{reason.length}/1000</p>
                 </div>
 
+                <div className="flex items-center justify-between px-1">
+                    <p className="text-[10px] font-bold text-ink-soft uppercase tracking-widest">
+                        Скарг на сьогодні: <span className={limitReached ? 'text-error' : 'text-ink'}>{dailyComplaintsCount}/15</span>
+                    </p>
+                    {limitReached && (
+                        <p className="text-[10px] font-bold text-error uppercase tracking-widest animate-pulse">
+                            Ліміт вичерпано
+                        </p>
+                    )}
+                </div>
+
                 <div className="flex gap-3">
                     <button
                         onClick={onClose}
@@ -81,7 +97,7 @@ export default function LeaveComplaintModal({
                     </button>
                     <button
                         onClick={handleSubmit}
-                        disabled={loading || !reason.trim()}
+                        disabled={loading || !reason.trim() || limitReached}
                         className="flex-1 py-2.5 bg-error text-white rounded-lg text-sm font-semibold hover:opacity-90 disabled:opacity-60 transition-colors"
                     >
                         {loading ? 'Надсилання...' : 'Надіслати скаргу'}
