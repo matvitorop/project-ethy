@@ -6,7 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
     GET_VOLUNTEER_APPLICATIONS, GET_COMPLAINTS, GET_ADMIN_HELP_REQUESTS,
     REVIEW_VOLUNTEER_APPLICATION, RESOLVE_COMPLAINT, HIDE_HELP_REQUEST,
-    BLOCK_USER, GET_ADMIN_ANALYTICS, GET_ADMIN_USERS, UNBLOCK_USER
+    BLOCK_USER, GET_ADMIN_ANALYTICS, GET_ADMIN_USERS, UNBLOCK_USER,
+    APPROVE_HELP_REQUEST, REJECT_HELP_REQUEST
 } from '../../api/queries'
 import type {
     VolunteerApplicationsData, ComplaintsData, AdminHelpRequestsData,
@@ -36,18 +37,20 @@ interface HideHelpRequestData {
     admin: { hideHelpRequest: { success: boolean; error: ApiError | null } }
 }
 
-const REQUEST_STATUS: Record<number, string> = {
-    0: 'Чернетка',
-    1: 'Відкрита',
-    2: 'В процесі',
-    3: 'Виконана',
-    4: 'Скасована',
-}
 
-const STATUS_CONFIG: Record<number, { label: string; variant: string }> = {
+const VOLUNTEER_STATUS_CONFIG: Record<number, { label: string; variant: string }> = {
     0: { label: 'Очікує', variant: 'warning' },
     1: { label: 'Схвалено', variant: 'success' },
     2: { label: 'Відхилено', variant: 'error' },
+}
+
+const HELP_REQUEST_STATUS_CONFIG: Record<number, { label: string; variant: string }> = {
+    0: { label: 'На модерації', variant: 'info' },
+    1: { label: 'Відкрита', variant: 'success' },
+    2: { label: 'В процесі', variant: 'warning' },
+    3: { label: 'Виконана', variant: 'default' },
+    4: { label: 'Скасована', variant: 'error' },
+    5: { label: 'Відхилена', variant: 'error' },
 }
 
 
@@ -78,9 +81,9 @@ function RefreshBar({ onRefresh, loading, lastUpdated }: { onRefresh: () => void
 export default function AdminPage() {
     const [searchParams, setSearchParams] = useSearchParams()
     const activeTab = (searchParams.get('tab') as 'applications' | 'complaints' | 'requests' | 'analytics' | 'users') || 'analytics'
-    const reqFilter = (searchParams.get('filter') as 'all' | 'active' | 'completed' | 'hidden') || 'all'
+    const reqFilter = (searchParams.get('filter') as 'all' | 'moderation' | 'active' | 'completed' | 'hidden') || 'all'
     const reqSearch = searchParams.get('q') || ''
-    
+
     // User search state
     const userSearch = searchParams.get('uq') || ''
     const userShortId = searchParams.get('uid') || ''
@@ -144,6 +147,10 @@ export default function AdminPage() {
             f.isHidden = true
             f.isDeleted = false
         }
+        else if (reqFilter === 'moderation') {
+            f.statuses = ['Moderation']
+            f.isDeleted = false
+        }
         return { filter: f }
     }, [reqFilter, debouncedSearch])
 
@@ -153,7 +160,7 @@ export default function AdminPage() {
         variables: reqVariables
     })
     const { data: stats, loading: statsLoading } = useQuery<AdminAnalyticsData>(GET_ADMIN_ANALYTICS)
-    
+
     const { data: users, loading: usersLoading, refetch: refetchUsers } = useQuery<AdminUsersData>(GET_ADMIN_USERS, {
         variables: {
             page: 1,
@@ -206,14 +213,14 @@ export default function AdminPage() {
 
     const handleRefresh = useCallback(() =>
         client.refetchQueries({ include: TAB_QUERIES[activeTab] })
-    , [client, activeTab]) // eslint-disable-line react-hooks/exhaustive-deps
+        , [client, activeTab]) // eslint-disable-line react-hooks/exhaustive-deps
 
-    const activeLoading = { 
-        analytics: statsLoading, 
-        applications: appsLoading, 
-        complaints: compLoading, 
+    const activeLoading = {
+        analytics: statsLoading,
+        applications: appsLoading,
+        complaints: compLoading,
         requests: reqLoading,
-        users: usersLoading 
+        users: usersLoading
     }[activeTab]
 
     const tabs = [
@@ -271,10 +278,10 @@ export default function AdminPage() {
                     {activeTab === 'applications' && <ApplicationsTab items={(apps?.adminQuery.volunteerApplications.items || []) as VolunteerApplicationItem[]} loading={appsLoading} onRefresh={refetchApps} />}
                     {activeTab === 'complaints' && <ComplaintsTab items={(complaints?.adminQuery.complaints.items || []) as AdminComplaintItem[]} loading={compLoading} onRefresh={refetchComp} />}
                     {activeTab === 'requests' && (
-                        <RequestsTab 
-                            items={(requests?.adminQuery.helpRequests.items || []) as AdminHelpRequestItem[]} 
-                            loading={reqLoading} 
-                            onRefresh={refetchReq} 
+                        <RequestsTab
+                            items={(requests?.adminQuery.helpRequests.items || []) as AdminHelpRequestItem[]}
+                            loading={reqLoading}
+                            onRefresh={refetchReq}
                             filter={reqFilter}
                             onFilterChange={setReqFilter}
                             search={reqSearch}
@@ -282,9 +289,9 @@ export default function AdminPage() {
                         />
                     )}
                     {activeTab === 'users' && (
-                        <UsersTab 
-                            items={(users?.adminQuery.users.items || []) as AdminUserDto[]} 
-                            loading={usersLoading} 
+                        <UsersTab
+                            items={(users?.adminQuery.users.items || []) as AdminUserDto[]}
+                            loading={usersLoading}
                             onRefresh={refetchUsers}
                             search={userSearch}
                             onSearchChange={setUserSearch}
@@ -412,7 +419,7 @@ function UsersTab({ items, loading, onRefresh, search, onSearchChange, shortId, 
                                     <div className="flex items-center gap-3 text-[10px] font-black text-ink-soft uppercase tracking-widest">
                                         <span>{u.email}</span>
                                         <span className="w-1 h-1 bg-border rounded-full" />
-                                        <button 
+                                        <button
                                             onClick={() => handleCopyId(u.id)}
                                             className="hover:text-primary transition-colors"
                                             title="Копіювати повний ID"
@@ -473,9 +480,9 @@ function UsersTab({ items, loading, onRefresh, search, onSearchChange, shortId, 
                     </div>
                     <div className="flex gap-3">
                         <Button variant="outline" className="flex-1" onClick={() => setBlockModal(null)}>Скасувати</Button>
-                        <Button 
-                            variant="error" 
-                            className="flex-1" 
+                        <Button
+                            variant="error"
+                            className="flex-1"
                             disabled={blocking || !blockForm.reason}
                             onClick={() => {
                                 const until = blockForm.hours === '0' ? null : new Date(Date.now() + parseInt(blockForm.hours) * 60 * 60 * 1000).toISOString()
@@ -586,8 +593,8 @@ function ApplicationsTab({ items, loading, onRefresh }: { items: VolunteerApplic
                             <div>
                                 <div className="flex items-center gap-3 mb-2">
                                     <span className="font-black text-xl text-ink leading-none">{app.username}</span>
-                                    <Badge variant={(STATUS_CONFIG[app.status]?.variant as 'default' | 'success' | 'warning' | 'error' | 'info' | 'outline') || 'default'}>
-                                        {STATUS_CONFIG[app.status]?.label}
+                                    <Badge variant={(VOLUNTEER_STATUS_CONFIG[app.status]?.variant as 'default' | 'success' | 'warning' | 'error' | 'info' | 'outline') || 'default'}>
+                                        {VOLUNTEER_STATUS_CONFIG[app.status]?.label}
                                     </Badge>
                                 </div>
                                 <div className="flex items-center gap-4 text-[10px] font-black text-ink-soft uppercase tracking-widest">
@@ -643,16 +650,16 @@ function ApplicationsTab({ items, loading, onRefresh }: { items: VolunteerApplic
                 title={reviewModal?.approve ? 'Схвалити заявку' : 'Відхилити заявку'}>
                 <div className="space-y-5 p-2">
                     <p className="text-sm text-ink-muted">
-                        {reviewModal?.approve 
-                            ? 'Ви збираєтесь надати користувачу статус волонтера. Він зможе брати завдання в роботу.' 
+                        {reviewModal?.approve
+                            ? 'Ви збираєтесь надати користувачу статус волонтера. Він зможе брати завдання в роботу.'
                             : 'Ви відхиляєте заявку. Бажано вказати причину.'}
                     </p>
-                    <textarea 
-                        value={comment} 
-                        onChange={e => setComment(e.target.value)} 
+                    <textarea
+                        value={comment}
+                        onChange={e => setComment(e.target.value)}
                         rows={3}
                         placeholder="Коментар для користувача..."
-                        className="w-full px-4 py-3 bg-surface-muted border border-border rounded-xl text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none shadow-inner" 
+                        className="w-full px-4 py-3 bg-surface-muted border border-border rounded-xl text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none shadow-inner"
                     />
                     <div className="flex gap-3">
                         <Button variant="outline" className="flex-1" onClick={() => { setReviewModal(null); setComment('') }}>
@@ -691,11 +698,11 @@ function ComplaintsTab({ items, loading, onRefresh }: { items: AdminComplaintIte
         onCompleted: (data) => {
             const r = data.admin.resolveComplaint
             if (r.error) dispatch(addToast({ type: 'error', message: r.error.message }))
-            else { 
+            else {
                 dispatch(addToast({ type: 'success', message: 'Скаргу розглянуто' }))
                 setResolveModal(null)
                 setComment('')
-                onRefresh() 
+                onRefresh()
             }
         },
     })
@@ -707,17 +714,17 @@ function ComplaintsTab({ items, loading, onRefresh }: { items: AdminComplaintIte
                 dispatch(addToast({ type: 'error', message: r.error.message }))
             } else {
                 dispatch(addToast({ type: 'success', message: 'Користувача заблоковано' }))
-                
+
                 // Якщо блокування було через скаргу - резолвимо її
                 if (blockModal?.complaintId) {
-                    resolve({ 
-                        variables: { 
-                            complaintId: blockModal.complaintId, 
-                            adminComment: `Користувача заблоковано: ${blockForm.reason}` 
-                        } 
+                    resolve({
+                        variables: {
+                            complaintId: blockModal.complaintId,
+                            adminComment: `Користувача заблоковано: ${blockForm.reason}`
+                        }
                     })
                 }
-                
+
                 setBlockModal(null)
             }
         },
@@ -827,12 +834,12 @@ function ComplaintsTab({ items, loading, onRefresh }: { items: AdminComplaintIte
                     <p className="text-sm text-ink-muted">
                         Вкажіть коментар щодо розгляду скарги. Користувач, який залишив скаргу, отримає сповіщення.
                     </p>
-                    <textarea 
-                        value={comment} 
-                        onChange={e => setComment(e.target.value)} 
+                    <textarea
+                        value={comment}
+                        onChange={e => setComment(e.target.value)}
                         rows={3}
                         placeholder="Ваша відповідь (необов'язково)..."
-                        className="w-full px-4 py-3 bg-surface-muted border border-border rounded-xl text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-inner resize-none" 
+                        className="w-full px-4 py-3 bg-surface-muted border border-border rounded-xl text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-inner resize-none"
                     />
                     <div className="flex gap-3">
                         <Button variant="outline" className="flex-1" onClick={() => { setResolveModal(null); setComment(''); }}>
@@ -857,19 +864,8 @@ interface RequestsTabProps {
     items: AdminHelpRequestItem[]
     loading: boolean
     onRefresh: () => void
-    filter: 'all' | 'active' | 'completed' | 'hidden'
-    onFilterChange: (f: 'all' | 'active' | 'completed' | 'hidden') => void
-    search: string
-    onSearchChange: (s: string) => void
-}
-
-// ===================== REQUESTS TAB =====================
-interface RequestsTabProps {
-    items: AdminHelpRequestItem[]
-    loading: boolean
-    onRefresh: () => void
-    filter: 'all' | 'active' | 'completed' | 'hidden'
-    onFilterChange: (f: 'all' | 'active' | 'completed' | 'hidden') => void
+    filter: 'all' | 'moderation' | 'active' | 'completed' | 'hidden'
+    onFilterChange: (f: 'all' | 'moderation' | 'active' | 'completed' | 'hidden') => void
     search: string
     onSearchChange: (s: string) => void
 }
@@ -877,6 +873,30 @@ interface RequestsTabProps {
 function RequestsTab({ items, loading, onRefresh, filter, onFilterChange, search, onSearchChange }: RequestsTabProps) {
     const navigate = useNavigate()
     const dispatch = useAppDispatch()
+    const [rejectModal, setRejectModal] = useState<{ id: string; title: string } | null>(null)
+    const [rejectReason, setRejectReason] = useState('')
+
+    const [approveReq] = useMutation(APPROVE_HELP_REQUEST, {
+        onCompleted: (data: any) => {
+            const r = data.admin.approveHelpRequest
+            if (r.error) dispatch(addToast({ type: 'error', message: r.error.message }))
+            else { dispatch(addToast({ type: 'success', message: 'Заявку схвалено' })); onRefresh() }
+        }
+    })
+
+    const [rejectReq, { loading: rejecting }] = useMutation(REJECT_HELP_REQUEST, {
+        onCompleted: (data: any) => {
+            const r = data.admin.rejectHelpRequest
+            if (r.error) dispatch(addToast({ type: 'error', message: r.error.message }))
+            else {
+                dispatch(addToast({ type: 'success', message: 'Заявку відхилено' }))
+                setRejectModal(null)
+                setRejectReason('')
+                onRefresh()
+            }
+        }
+    })
+
     const [hideReq] = useMutation<HideHelpRequestData>(HIDE_HELP_REQUEST, {
         onCompleted: (data) => {
             const r = data.admin.hideHelpRequest
@@ -887,6 +907,7 @@ function RequestsTab({ items, loading, onRefresh, filter, onFilterChange, search
 
     const filterOptions: { id: typeof filter; label: string }[] = [
         { id: 'all', label: 'Всі' },
+        { id: 'moderation', label: 'На модерації' },
         { id: 'active', label: 'Активні' },
         { id: 'completed', label: 'Завершені' },
         { id: 'hidden', label: 'Приховані' },
@@ -920,7 +941,7 @@ function RequestsTab({ items, loading, onRefresh, filter, onFilterChange, search
                         className="w-full pl-11 pr-10 py-3 bg-surface border border-border rounded-2xl text-sm text-ink placeholder:text-ink-soft focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-inner"
                     />
                     {search && (
-                        <button 
+                        <button
                             onClick={() => onSearchChange('')}
                             className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-ink-soft hover:text-error transition-colors"
                         >
@@ -944,7 +965,7 @@ function RequestsTab({ items, loading, onRefresh, filter, onFilterChange, search
                     items.map((hr: AdminHelpRequestItem) => (
                         <Card key={hr.id} padding="sm" className={hr.isHidden ? 'opacity-60 grayscale-[0.5]' : ''}>
                             <div className="flex items-center justify-between gap-4">
-                                <div 
+                                <div
                                     className="min-w-0 flex-1 cursor-pointer group/item"
                                     onClick={() => navigate(`/requests/${hr.id}`)}
                                 >
@@ -956,25 +977,90 @@ function RequestsTab({ items, loading, onRefresh, filter, onFilterChange, search
                                     <div className="flex items-center gap-3 text-[10px] font-black text-ink-soft uppercase tracking-widest">
                                         <span className="text-primary font-bold">{hr.creatorUsername}</span>
                                         <span className="w-1 h-1 bg-border rounded-full" />
-                                        <span>{REQUEST_STATUS[hr.status]}</span>
+                                        <Badge variant={(HELP_REQUEST_STATUS_CONFIG[hr.status]?.variant as 'default' | 'success' | 'warning' | 'error' | 'info' | 'outline') || 'default'}>
+                                            {HELP_REQUEST_STATUS_CONFIG[hr.status]?.label}
+                                        </Badge>
                                         <span className="w-1 h-1 bg-border rounded-full" />
                                         <span>{new Date(hr.createdAtUtc).toLocaleDateString('uk-UA')}</span>
                                     </div>
                                 </div>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="shrink-0"
-                                    onClick={() => hideReq({ variables: { helpRequestId: hr.id, hide: !hr.isHidden } })}
-                                >
-                                    {hr.isHidden ? <Eye size={14} className="mr-2" /> : <EyeOff size={14} className="mr-2" />}
-                                    {hr.isHidden ? 'Показати' : 'Приховати'}
-                                </Button>
+                                <div className="flex gap-2">
+                                    {hr.status === 0 && (
+                                        <div className="flex gap-2 mr-2 pr-4 border-r border-border">
+                                            <Button
+                                                variant="success"
+                                                size="sm"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    approveReq({ variables: { helpRequestId: hr.id } });
+                                                }}
+                                            >
+                                                Схвалити
+                                            </Button>
+                                            <Button
+                                                variant="error"
+                                                size="sm"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setRejectModal({ id: hr.id, title: hr.title });
+                                                }}
+                                            >
+                                                Відхилити
+                                            </Button>
+                                        </div>
+                                    )}
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="shrink-0"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            hideReq({ variables: { helpRequestId: hr.id, hide: !hr.isHidden } });
+                                        }}
+                                    >
+                                        {hr.isHidden ? <Eye size={14} className="mr-2" /> : <EyeOff size={14} className="mr-2" />}
+                                        {hr.isHidden ? 'Показати' : 'Приховати'}
+                                    </Button>
+                                </div>
                             </div>
                         </Card>
                     ))
                 )}
             </div>
+
+            <Modal
+                isOpen={!!rejectModal}
+                onClose={() => { setRejectModal(null); setRejectReason(''); }}
+                title="Відхилити заявку"
+            >
+                <div className="space-y-6 p-2">
+                    <div className="bg-error/5 p-4 rounded-2xl border border-error/10">
+                        <p className="text-sm font-bold text-ink mb-1">Ви відхиляєте заявку:</p>
+                        <p className="text-xs text-ink-soft italic">"{rejectModal?.title}"</p>
+                    </div>
+                    <div>
+                        <label className="block text-[10px] font-black text-ink-soft uppercase tracking-widest mb-3">Причина відхилення (буде надіслана автору)</label>
+                        <textarea
+                            value={rejectReason}
+                            onChange={e => setRejectReason(e.target.value)}
+                            placeholder="Напр: Недостовірна інформація, нецензурна лексика тощо..."
+                            className="w-full px-4 py-3 bg-surface-muted border border-border rounded-xl text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-inner resize-none"
+                            rows={4}
+                        />
+                    </div>
+                    <div className="flex gap-3">
+                        <Button variant="outline" className="flex-1" onClick={() => setRejectModal(null)}>Скасувати</Button>
+                        <Button
+                            variant="error"
+                            className="flex-1"
+                            disabled={rejecting || !rejectReason.trim()}
+                            onClick={() => rejectReq({ variables: { helpRequestId: rejectModal!.id, reason: rejectReason } })}
+                        >
+                            {rejecting ? 'Обробка...' : 'Підтвердити'}
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     )
 }

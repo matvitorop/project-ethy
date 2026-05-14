@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useApolloClient } from '@apollo/client/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FileText, ThumbsUp, ChevronLeft, ChevronRight, Ban, CheckCircle } from 'lucide-react'
-import { GET_MY_REQUESTS, GET_ASSIGNEE_REQUESTS, CHANGE_HELP_REQUEST_STATUS, CANCEL_RESPONSE, GET_PROFILE, RESIGN_AS_EXECUTOR } from '../../../api/queries'
+import { GET_MY_REQUESTS, GET_ASSIGNEE_REQUESTS, CHANGE_HELP_REQUEST_STATUS, CANCEL_RESPONSE, GET_PROFILE, RESIGN_AS_EXECUTOR, DELETE_HELP_REQUEST } from '../../../api/queries'
 import type { HelpRequestsPageData, ChangeHelpRequestStatusData, CancelResponseData, ResignAsExecutorData } from '../../../api/types'
 import { useAppDispatch } from '../../../store/hooks'
 import { addToast } from '../../../store/uiSlice'
@@ -29,6 +29,7 @@ export default function ProfileRequests({ userId, isOwn = false }: ProfileReques
     const [assigneePage, setAssigneePage] = useState(1)
     const [cancelModalOpen, setCancelModalOpen] = useState(false)
     const [resignModalOpen, setResignModalOpen] = useState(false)
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false)
     const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null)
 
     const { data: ownerData, loading: ownerLoading } = useQuery<HelpRequestsPageData>(GET_MY_REQUESTS, {
@@ -87,6 +88,20 @@ export default function ProfileRequests({ userId, isOwn = false }: ProfileReques
         onError: () => dispatch(addToast({ type: 'error', message: 'Помилка при спробі відмовитись' })),
     })
 
+    const [deleteRequest, { loading: deleting }] = useMutation(DELETE_HELP_REQUEST, {
+        refetchQueries: [{ query: GET_PROFILE }],
+        onCompleted: (data: any) => {
+            const r = data.helpRequest.softDeleteHelpRequest
+            if (r.error) dispatch(addToast({ type: 'error', message: r.error.message }))
+            else {
+                dispatch(addToast({ type: 'success', message: 'Заявку видалено' }))
+                setDeleteModalOpen(false)
+                setSelectedRequestId(null)
+                client.refetchQueries({ include: ['GetMyRequests'] })
+            }
+        }
+    })
+
     const ownerItems = ownerData?.helpRequestQuer.helpRequestQuery.items ?? []
     const assigneeItems = assigneeData?.helpRequestQuer.helpRequestQuery.items ?? []
     const currentItems = activeTab === 'owner' ? ownerItems : assigneeItems
@@ -98,7 +113,7 @@ export default function ProfileRequests({ userId, isOwn = false }: ProfileReques
         <div className="bg-surface rounded-3xl border border-border overflow-hidden shadow-xl">
             <div className="flex bg-surface-muted/30 p-1">
                 {([
-                    { key: 'owner', label: isOwn ? 'Мої заявки' : 'Заявки' }, 
+                    { key: 'owner', label: isOwn ? 'Мої заявки' : 'Заявки' },
                     { key: 'assignee', label: isOwn ? 'Допомагаю' : 'Допомога' }
                 ] as const).map(tab => (
                     <button key={tab.key} onClick={() => { setActiveTab(tab.key); setCurrentPage(1); }}
@@ -126,8 +141,8 @@ export default function ProfileRequests({ userId, isOwn = false }: ProfileReques
                         ) : currentItems.length === 0 ? (
                             <div className="text-center py-16 bg-surface-muted/20 rounded-2xl border border-dashed border-border">
                                 <p className="text-sm font-bold text-ink-soft uppercase tracking-widest">
-                                    {activeTab === 'owner' 
-                                        ? (isOwn ? 'Ви ще не створювали запитів' : 'Користувач ще не створював запитів') 
+                                    {activeTab === 'owner'
+                                        ? (isOwn ? 'Ви ще не створювали запитів' : 'Користувач ще не створював запитів')
                                         : (isOwn ? 'Ви ще не допомагали іншим' : 'Користувач ще не допомагав іншим')}
                                 </p>
                             </div>
@@ -136,7 +151,7 @@ export default function ProfileRequests({ userId, isOwn = false }: ProfileReques
                                 {currentItems.map(item => (
                                     <div key={item.id} className="relative group">
                                         <RequestCard item={item} />
-                                        
+
                                         {/* Owner controls - visible only to owner */}
                                         {isOwn && activeTab === 'owner' && Number(item.status) === 2 && (
                                             <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity z-10">
@@ -153,6 +168,26 @@ export default function ProfileRequests({ userId, isOwn = false }: ProfileReques
                                                 >
                                                     <CheckCircle size={12} className="mr-1" />
                                                     Виконано
+                                                </Button>
+                                            </div>
+                                        )}
+
+                                        {isOwn && activeTab === 'owner' && Number(item.status) === 0 && (
+                                            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                                <Button
+                                                    variant="error"
+                                                    size="sm"
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        setSelectedRequestId(item.id);
+                                                        setDeleteModalOpen(true);
+                                                    }}
+                                                    disabled={deleting}
+                                                    className="shadow-lg py-1 px-3 h-auto text-[10px]"
+                                                >
+                                                    <Ban size={12} className="mr-1" />
+                                                    Видалити
                                                 </Button>
                                             </div>
                                         )}
@@ -263,6 +298,23 @@ export default function ProfileRequests({ userId, isOwn = false }: ProfileReques
                 confirmVariant="error"
                 isLoading={resigning}
             />
+
+            <Modal isOpen={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} title="Видалити заявку">
+                <div className="space-y-6 p-2">
+                    <div className="bg-error/10 p-4 rounded-xl border border-error/20 flex gap-3">
+                        <Ban className="text-error shrink-0" size={20} />
+                        <p className="text-sm text-error font-medium leading-relaxed">
+                            Ви впевнені, що хочете видалити цю заявку? Вона ще не пройшла модерацію, але ви можете видалити її зараз.
+                        </p>
+                    </div>
+                    <div className="flex gap-3">
+                        <Button variant="outline" className="flex-1" onClick={() => setDeleteModalOpen(false)}>Скасувати</Button>
+                        <Button variant="error" className="flex-1" onClick={() => selectedRequestId && deleteRequest({ variables: { helpRequestId: selectedRequestId } })} disabled={deleting}>
+                            {deleting ? 'Видалення...' : 'Видалити'}
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     )
 }
