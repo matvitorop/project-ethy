@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using server.Application.IRepositories;
 using server.Application.IServices;
 using server.Domain;
@@ -59,11 +59,11 @@ namespace server.Application.Handlers.UserHandlers.SubmitVolunteerApplication
                     "You already have a pending application",
                     "Volunteer.PENDING_EXISTS"));
 
-            if (!string.IsNullOrEmpty(request.DocumentImageUrl))
-            {
-                await _imageStorage.MoveVolunteerDocumentFromTempAsync(
-                    request.DocumentImageUrl, ct);
-            }
+            if (string.IsNullOrWhiteSpace(request.DocumentImageUrl))
+                return Result<Guid>.Failure(new Error("Document image is required", "Volunteer.DOCUMENT_REQUIRED"));
+
+            await _imageStorage.MoveVolunteerDocumentFromTempAsync(
+                request.DocumentImageUrl, ct);
 
             // Потім створюємо заявку
             var application = new VolunteerApplication(
