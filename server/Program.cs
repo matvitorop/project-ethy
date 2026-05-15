@@ -220,6 +220,7 @@ app.UseCors();
 app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<server.Presentation.Middlewares.LastActivityMiddleware>();
 
 // ROUTING TO CONTROLLERS
 app.MapControllers();

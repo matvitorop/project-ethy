@@ -37,6 +37,20 @@ interface HideHelpRequestData {
     admin: { hideHelpRequest: { success: boolean; error: ApiError | null } }
 }
 
+function formatLastActivity(dateStr: string | null | undefined) {
+    if (!dateStr) return 'немає'
+    const date = new Date(dateStr)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+    if (diffDays === 0) return 'сьогодні'
+    if (diffDays === 1) return 'вчора'
+    if (diffDays < 7) return `${diffDays} дн. тому`
+    
+    return date.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' })
+}
+
 
 const VOLUNTEER_STATUS_CONFIG: Record<number, { label: string; variant: string }> = {
     0: { label: 'Очікує', variant: 'warning' },
@@ -428,6 +442,10 @@ function UsersTab({ items, loading, onRefresh, search, onSearchChange, shortId, 
                                         </button>
                                         <span className="w-1 h-1 bg-border rounded-full" />
                                         <span>Реєстрація: {new Date(u.registeredAtUtc).toLocaleDateString('uk-UA')}</span>
+                                        <span className="w-1 h-1 bg-border rounded-full" />
+                                        <span className={u.lastActivityAtUtc && (new Date().getTime() - new Date(u.lastActivityAtUtc).getTime()) < 10 * 60 * 1000 ? 'text-success' : ''}>
+                                            Активність: {formatLastActivity(u.lastActivityAtUtc)}
+                                        </span>
                                     </div>
                                 </div>
                                 <div className="flex gap-2">

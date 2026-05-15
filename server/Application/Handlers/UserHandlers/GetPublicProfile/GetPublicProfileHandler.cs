@@ -37,7 +37,8 @@ namespace server.Application.Handlers.UserHandlers.GetPublicProfile
                 TotalRequests: stats?.TotalRequests ?? 0,
                 CompletedRequests: stats?.CompletedRequests ?? 0,
                 HelpedRequests: stats?.HelpedRequests ?? 0,
-                RejectedRequests: stats?.RejectedRequests ?? 0
+                RejectedRequests: stats?.RejectedRequests ?? 0,
+                LastActivityAtUtc: user.LastActivityAtUtc
             ));
         }
     }

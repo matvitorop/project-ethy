@@ -15,6 +15,7 @@ namespace server.Application.Handlers.UserHandlers.GetPublicProfile
         int TotalRequests,
         int CompletedRequests,
         int HelpedRequests,
-        int RejectedRequests
+        int RejectedRequests,
+        DateTime? LastActivityAtUtc
     );
 }

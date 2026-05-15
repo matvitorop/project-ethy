@@ -55,6 +55,7 @@ export interface ProfileData {
                 helpedRequests: number
                 rejectedRequests: number
                 dailyComplaintsCount: number
+                lastActivityAtUtc: string | null
             } | null
             error: ApiError | null
         }
@@ -406,6 +407,7 @@ export interface PublicProfileDto {
     rejectedRequests: number
     phoneNumber: string | null
     socialLinks: string | null
+    lastActivityAtUtc: string | null
 }
 
 export interface PublicProfileData {
@@ -504,6 +506,7 @@ export interface AdminUserDto {
     isBlocked: boolean
     blockedUntilUtc: string | null
     isDeleted: boolean
+    lastActivityAtUtc: string | null
 }
 
 export interface AdminUsersData {

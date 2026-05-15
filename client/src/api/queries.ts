@@ -42,6 +42,7 @@ export const GET_PROFILE = gql`
           helpedRequests
           rejectedRequests
           dailyComplaintsCount
+          lastActivityAtUtc
         }
         error { code message }
       }
@@ -621,6 +622,7 @@ export const GET_PUBLIC_PROFILE = gql`
           rejectedRequests
           phoneNumber
           socialLinks
+          lastActivityAtUtc
         }
         error { code message }
       }
@@ -719,6 +721,7 @@ export const GET_ADMIN_USERS = gql`
           isBlocked
           blockedUntilUtc
           isDeleted
+          lastActivityAtUtc
         }
         error { code message }
       }

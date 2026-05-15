@@ -197,6 +197,10 @@ export default function ProfilePage() {
                         </button>
                     </h1>
                     <p className="text-xs font-bold text-ink-soft uppercase tracking-widest mt-1">Особисті налаштування</p>
+                    <div className="flex items-center gap-2 text-[10px] font-black text-ink-soft uppercase tracking-widest mt-2">
+                        <Calendar size={12} className="text-primary" />
+                        На платформі з {new Date(profile.registeredAtUtc).toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    </div>
                 </div>
                 {profile.role === 'Volunteer' && (
                     <Badge variant="success" className="py-2 px-4 text-sm">

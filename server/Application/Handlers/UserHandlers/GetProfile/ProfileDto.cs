@@ -17,6 +17,7 @@ namespace server.Application.Handlers.UserHandlers.GetProfile
         int CompletedRequests,
         int HelpedRequests,
         int RejectedRequests,
-        int DailyComplaintsCount
+        int DailyComplaintsCount,
+        DateTime? LastActivityAtUtc
     );
 }

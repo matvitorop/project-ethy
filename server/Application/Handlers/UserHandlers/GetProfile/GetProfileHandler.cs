@@ -49,7 +49,8 @@ namespace server.Application.Handlers.UserHandlers.GetProfile
                     CompletedRequests: stats?.CompletedRequests ?? 0,
                     HelpedRequests: stats?.HelpedRequests ?? 0,
                     RejectedRequests: stats?.RejectedRequests ?? 0,
-                    DailyComplaintsCount: dailyComplaintsCount));
+                    DailyComplaintsCount: dailyComplaintsCount,
+                    LastActivityAtUtc: user.LastActivityAtUtc));
         }
     }
 }

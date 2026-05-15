@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using server.Application.IRepositories;
 using server.Domain.HelpRequest;
 using server.Domain.Primitives;
@@ -35,10 +35,25 @@ namespace server.Application.Handlers.UserHandlers.LeaveReview
                 return Result<Guid>.Failure(
                     new Error("Reviews can only be left for resolved requests", "Review.REQUEST_NOT_RESOLVED"));
 
-            // Відгук залишає лише призначений виконавець
-            if (helpRequest.AssignedUserId != request.ReviewerUserId)
+            Guid targetUserId;
+            if (helpRequest.AssignedUserId == request.ReviewerUserId)
+            {
+                // Виконавець пише відгук власнику
+                targetUserId = helpRequest.CreatorId;
+            }
+            else if (helpRequest.CreatorId == request.ReviewerUserId)
+            {
+                // Власник пише відгук виконавцю
+                if (!helpRequest.AssignedUserId.HasValue)
+                    return Result<Guid>.Failure(new Error("No assignee to leave a review for", "Review.NO_ASSIGNEE"));
+                
+                targetUserId = helpRequest.AssignedUserId.Value;
+            }
+            else
+            {
                 return Result<Guid>.Failure(
-                    new Error("Only the assigned executor can leave a review", "Review.NOT_EXECUTOR"));
+                    new Error("Only the owner or the assigned executor can leave a review", "Review.NOT_AUTHORIZED"));
+            }
 
             var alreadyExists = await _reviewRepository
                 .ExistsAsync(request.HelpRequestId, request.ReviewerUserId, ct);
@@ -50,7 +65,7 @@ namespace server.Application.Handlers.UserHandlers.LeaveReview
             var review = new UserReview(
                 helpRequestId: request.HelpRequestId,
                 reviewerUserId: request.ReviewerUserId,
-                targetUserId: helpRequest.CreatorId,
+                targetUserId: targetUserId,
                 isPositive: request.IsPositive,
                 comment: request.Comment);
 
