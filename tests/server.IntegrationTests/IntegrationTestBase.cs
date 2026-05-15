@@ -150,5 +150,49 @@ namespace server.IntegrationTests
 
             return Guid.Parse(hrData.GetProperty("data").GetProperty("id").GetString()!);
         }
+
+        protected async Task<string> LoginAsAdminAsync()
+        {
+            var loginMutation = @"
+                mutation Login($email: String!, $password: String!) {
+                    auth {
+                        login(email: $email, password: $password) {
+                            token
+                            error { code message }
+                        }
+                    }
+                }";
+
+            var loginResult = await SendGraphQLAsync(loginMutation, new { email = "admin@test.com", password = "AdminPassword123!" });
+            var loginData = loginResult.GetProperty("data").GetProperty("auth").GetProperty("login");
+
+            if (loginData.TryGetProperty("error", out var loginError) && loginError.ValueKind != JsonValueKind.Null)
+            {
+                throw new Exception($"Admin login failed: {loginError.ToString()}");
+            }
+
+            return loginData.GetProperty("token").GetString()!;
+        }
+
+        protected async Task ApproveHelpRequestAsync(Guid helpRequestId)
+        {
+            var adminToken = await LoginAsAdminAsync();
+            var approveMutation = @"
+                mutation Approve($id: ID!) {
+                    admin {
+                        approveHelpRequest(helpRequestId: $id) {
+                            error { code message }
+                        }
+                    }
+                }";
+
+            var result = await SendGraphQLAsync(approveMutation, new { id = helpRequestId.ToString() }, adminToken);
+            var approveData = result.GetProperty("data").GetProperty("admin").GetProperty("approveHelpRequest");
+
+            if (approveData.TryGetProperty("error", out var error) && error.ValueKind != JsonValueKind.Null)
+            {
+                throw new Exception($"ApproveHelpRequest failed: {error.ToString()}");
+            }
+        }
     }
 }

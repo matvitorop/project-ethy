@@ -674,7 +674,7 @@ namespace server.Infrastructure.Repositories
             const string sql = """
                 SELECT COUNT(1) FROM HelpRequests
                 WHERE CreatorId = @UserId
-                  AND Status IN (1, 2)   -- 1 = Open, 2 = InProgress
+                  AND Status IN (0, 1, 2)   -- 0 = Moderation, 1 = Open, 2 = InProgress
                   AND IsDeleted = 0;
                 """;
 
