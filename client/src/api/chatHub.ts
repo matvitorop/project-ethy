@@ -1,6 +1,6 @@
 import * as signalR from '@microsoft/signalr'
 
-const API_BASE_URL = 'http://localhost:5274'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 let connection: signalR.HubConnection | null = null
 

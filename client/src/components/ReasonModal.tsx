@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Modal from './Modal'
+import Button from './ui/Button'
 import { AlertCircle } from 'lucide-react'
 
 interface ReasonModalProps {
@@ -42,14 +43,6 @@ export default function ReasonModal({
         onConfirm(reason.trim())
     }
 
-    const getVariantClasses = () => {
-        switch (confirmVariant) {
-            case 'error': return 'bg-error text-white shadow-error/20 hover:bg-error/90'
-            case 'success': return 'bg-success text-white shadow-success/20 hover:bg-success/90'
-            default: return 'bg-primary text-white shadow-primary/20 hover:bg-primary/90'
-        }
-    }
-
     return (
         <Modal isOpen={isOpen} onClose={handleClose} title={title}>
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -88,21 +81,24 @@ export default function ReasonModal({
                 </div>
 
                 <div className="flex gap-3 pt-2">
-                    <button
+                    <Button
                         type="button"
+                        variant="outline"
                         onClick={handleClose}
                         disabled={isLoading}
-                        className="flex-1 py-3.5 px-6 border-2 border-border rounded-2xl text-[11px] font-black uppercase tracking-widest text-ink-soft hover:text-ink hover:bg-surface-muted transition-all disabled:opacity-50"
+                        className="flex-1 py-3.5"
                     >
                         Скасувати
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                         type="submit"
-                        disabled={isLoading || !reason.trim()}
-                        className={`flex-1 py-3.5 px-6 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-lg disabled:opacity-50 disabled:grayscale ${getVariantClasses()}`}
+                        variant={confirmVariant}
+                        isLoading={isLoading}
+                        disabled={!reason.trim()}
+                        className="flex-1 py-3.5"
                     >
-                        {isLoading ? 'Надсилання...' : confirmText}
-                    </button>
+                        {confirmText}
+                    </Button>
                 </div>
             </form>
         </Modal>
