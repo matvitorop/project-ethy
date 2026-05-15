@@ -7,6 +7,7 @@ import { GET_PENDING_REPORTS } from '../../api/queries'
 import type { HelpRequestsPageData } from '../../api/types'
 import { formatDateTime } from '../../hooks/useDateTime'
 import { PageSpinner } from '../../components/Spinner'
+import { getImageUrl } from '../../utils/imageUrl'
 
 export default function ReportsPanel() {
     const dispatch = useAppDispatch()
@@ -83,7 +84,7 @@ export default function ReportsPanel() {
                                     <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-surface-muted border border-border overflow-hidden">
                                         {item.previewImageUrl ? (
                                             <img
-                                                src={`${import.meta.env.VITE_API_BASE_URL}${item.previewImageUrl}`}
+                                                src={getImageUrl(item.previewImageUrl)}
                                                 alt=""
                                                 className="w-full h-full object-cover"
                                             />

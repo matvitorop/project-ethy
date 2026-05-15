@@ -3,6 +3,7 @@ import { Upload, X } from 'lucide-react'
 import { useAppDispatch } from '../../../store/hooks'
 import { addToast } from '../../../store/uiSlice'
 import Spinner from '../../../components/Spinner'
+import { getImageUrl } from '../../../utils/imageUrl'
 
 const MAX_IMAGES = 5
 
@@ -77,7 +78,7 @@ export default function ImageUploader({ value, onChange }: ImageUploaderProps) {
         {value.map(url => (
           <div key={url} className="relative w-20 h-20 rounded-lg overflow-hidden border border-border group">
             <img
-              src={`${import.meta.env.VITE_API_BASE_URL}${url}`}
+              src={getImageUrl(url)}
               alt=""
               className="w-full h-full object-cover"
             />
