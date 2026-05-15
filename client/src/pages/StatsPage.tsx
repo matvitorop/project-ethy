@@ -18,7 +18,8 @@ const STATUS_COLORS = {
     'В процесі': '#FEC130',
     'Виконані': '#22C55E',
     'Скасовані': '#EF4444',
-    'Чернетки': '#94A3B8',
+    'На модерації': '#94A3B8',
+    'Відхилені': '#7C2D12',
 }
 
 export default function StatsPage() {
@@ -45,7 +46,8 @@ export default function StatsPage() {
         { name: 'В процесі', value: stats.inProgressRequests, color: STATUS_COLORS['В процесі'] },
         { name: 'Виконані', value: stats.resolvedRequests, color: STATUS_COLORS['Виконані'] },
         { name: 'Скасовані', value: stats.cancelledRequests, color: STATUS_COLORS['Скасовані'] },
-        { name: 'Чернетки', value: stats.draftRequests, color: STATUS_COLORS['Чернетки'] },
+        { name: 'На модерації', value: stats.moderationRequests, color: STATUS_COLORS['На модерації'] },
+        { name: 'Відхилені', value: stats.rejectedRequests ?? 0, color: STATUS_COLORS['Відхилені'] },
     ].filter(d => d.value > 0) : []
 
     const chartData = monthly.map(m => ({

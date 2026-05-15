@@ -37,6 +37,12 @@ export const GET_PROFILE = gql`
           role
           activeRequestsCount
           activeResponsesCount
+          totalRequests
+          completedRequests
+          helpedRequests
+          rejectedRequests
+          dailyComplaintsCount
+          lastActivityAtUtc
         }
         error { code message }
       }
@@ -421,6 +427,42 @@ export const SOFT_DELETE_HELP_REQUEST = gql`
   }
 `
 
+export const DELETE_HELP_REQUEST = gql`
+  mutation SoftDeleteHelpRequest($helpRequestId: ID!) {
+    helpRequest {
+      softDeleteHelpRequest(helpRequestId: $helpRequestId) {
+        success
+        error { code message }
+      }
+    }
+  }
+`
+
+export const EDIT_HELP_REQUEST = gql`
+  mutation EditHelpRequest(
+    $helpRequestId: ID!, 
+    $title: String!, 
+    $description: String!, 
+    $latitude: Float, 
+    $longitude: Float,
+    $imageUrls: [String]
+  ) {
+    helpRequest {
+      editHelpRequest(
+        helpRequestId: $helpRequestId
+        title: $title
+        description: $description
+        latitude: $latitude
+        longitude: $longitude
+        imageUrls: $imageUrls
+      ) {
+        success
+        error { code message }
+      }
+    }
+  }
+`
+
 export const CANCEL_HELP_REQUEST = gql`
   mutation CancelHelpRequest($helpRequestId: ID!, $reason: String!) {
     helpRequest {
@@ -477,6 +519,28 @@ export const LEAVE_COMPLAINT = gql`
     user {
       leaveComplaint(targetUserId: $targetUserId, reason: $reason) {
         complaintId
+        error { code message }
+      }
+    }
+  }
+`
+
+export const RESIGN_AS_EXECUTOR = gql`
+  mutation ResignAsExecutor($helpRequestId: ID!, $reason: String!) {
+    helpRequest {
+      resignAsExecutor(helpRequestId: $helpRequestId, reason: $reason) {
+        success
+        error { code message }
+      }
+    }
+  }
+`
+
+export const REMOVE_EXECUTOR = gql`
+  mutation RemoveExecutor($helpRequestId: ID!, $reason: String!) {
+    helpRequest {
+      removeExecutor(helpRequestId: $helpRequestId, reason: $reason) {
+        success
         error { code message }
       }
     }
@@ -554,8 +618,11 @@ export const GET_PUBLIC_PROFILE = gql`
           negativeReviews
           totalRequests
           completedRequests
+          helpedRequests
+          rejectedRequests
           phoneNumber
           socialLinks
+          lastActivityAtUtc
         }
         error { code message }
       }
@@ -654,6 +721,7 @@ export const GET_ADMIN_USERS = gql`
           isBlocked
           blockedUntilUtc
           isDeleted
+          lastActivityAtUtc
         }
         error { code message }
       }
@@ -774,11 +842,12 @@ export const GET_PLATFORM_STATS = gql`
       platformStats {
         stats {
           totalRequests
-          draftRequests
+          moderationRequests
           openRequests
           inProgressRequests
           resolvedRequests
           cancelledRequests
+          rejectedRequests
           totalUsers
           totalVolunteers
           completionRate
@@ -893,6 +962,28 @@ export const MARK_ALL_NOTIFICATIONS_AS_READ = gql`
           code
           message
         }
+      }
+    }
+  }
+`;
+
+export const APPROVE_HELP_REQUEST = gql`
+  mutation ApproveHelpRequest($helpRequestId: ID!) {
+    admin {
+      approveHelpRequest(helpRequestId: $helpRequestId) {
+        success
+        error { code message }
+      }
+    }
+  }
+`;
+
+export const REJECT_HELP_REQUEST = gql`
+  mutation RejectHelpRequest($helpRequestId: ID!, $reason: String!) {
+    admin {
+      rejectHelpRequest(helpRequestId: $helpRequestId, reason: $reason) {
+        success
+        error { code message }
       }
     }
   }

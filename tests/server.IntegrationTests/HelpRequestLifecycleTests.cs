@@ -23,6 +23,7 @@ namespace server.IntegrationTests
 
             // 3. Creator creates HelpRequest
             var helpRequestId = await CreateHelpRequestAsync(creator.Token, "Test Help Request", "Need help with something.");
+            await ApproveHelpRequestAsync(helpRequestId);
 
             // 4. Volunteer responds to HelpRequest
             var respondMutation = @"
@@ -101,6 +102,7 @@ namespace server.IntegrationTests
         {
             var creator = await RegisterAndLoginAsync("creator_edit", "creator_edit@test.com", "Password123!");
             var helpRequestId = await CreateHelpRequestAsync(creator.Token, "Initial Title", "Initial Description");
+            await ApproveHelpRequestAsync(helpRequestId);
 
             // Edit
             var editMutation = @"
@@ -113,6 +115,7 @@ namespace server.IntegrationTests
                 }";
             var editResult = await SendGraphQLAsync(editMutation, new { id = helpRequestId.ToString(), title = "New Title", desc = "New Desc" }, creator.Token);
             editResult.GetProperty("data").GetProperty("helpRequest").GetProperty("editHelpRequest").GetProperty("error").ValueKind.Should().Be(JsonValueKind.Null);
+            await ApproveHelpRequestAsync(helpRequestId);
 
             // Cancel
             var cancelMutation = @"

@@ -32,6 +32,7 @@ namespace server.IntegrationTests
             var volunteer = await RegisterAndLoginAsync("chat_vol", "chat_vol@test.com", "Password123!");
 
             var helpRequestId = await CreateHelpRequestAsync(creator.Token, "Test Title", "Test Desc");
+            await ApproveHelpRequestAsync(helpRequestId);
 
             // Volunteer responds
             var respondMutation = @"

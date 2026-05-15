@@ -1,5 +1,6 @@
-﻿using MediatR;
+using MediatR;
 using server.Application.IRepositories;
+using server.Application.IServices;
 using server.Domain.Exceptions;
 using server.Domain.HelpRequest;
 using server.Domain.Primitives;
@@ -11,10 +12,12 @@ namespace server.Application.Handlers.EditHelpRequest
         : IRequestHandler<EditHelpRequestCommand, Result>
     {
         private readonly IHelpRequestRepository _repository;
+        private readonly IImageStorageService _imageStorage;
 
-        public EditHelpRequestHandler(IHelpRequestRepository repository)
+        public EditHelpRequestHandler(IHelpRequestRepository repository, IImageStorageService imageStorage)
         {
             _repository = repository;
+            _imageStorage = imageStorage;
         }
 
         public async Task<Result> Handle(
@@ -34,6 +37,10 @@ namespace server.Application.Handlers.EditHelpRequest
 
             try
             {
+                var permanentImageUrls = await _imageStorage.CommitHelpRequestImagesAsync(request.ImageUrls);
+
+                helpRequest.UpdateImages(permanentImageUrls);
+
                 helpRequest.Edit(
                     request.Title,
                     request.Description,
@@ -43,6 +50,10 @@ namespace server.Application.Handlers.EditHelpRequest
             catch (DomainException ex)
             {
                 return Result.Failure(new Error(ex.Message, ex.Code));
+            }
+            catch (FileNotFoundException)
+            {
+                return Result.Failure(new Error("Images session expired or files not found", "HelpRequest.IMAGE_EXPIRED"));
             }
 
             var logEvent = new HelpRequestEvent(

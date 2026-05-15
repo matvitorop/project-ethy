@@ -1,4 +1,4 @@
-﻿namespace server.Domain.UserAndVolunteer
+namespace server.Domain.UserAndVolunteer
 {
     public enum VolunteerApplicationStatus
     {
@@ -13,7 +13,7 @@
         public Guid UserId { get; private set; }
         public string OrganizationName { get; private set; }
         public string ActivityDescription { get; private set; }
-        public string? DocumentImageUrl { get; private set; }
+        public string DocumentImageUrl { get; private set; }
         public VolunteerApplicationStatus Status { get; private set; }
         public string? AdminComment { get; private set; }
         public DateTime SubmittedAtUtc { get; private set; }
@@ -26,8 +26,11 @@
             Guid userId,
             string organizationName,
             string activityDescription,
-            string? documentImageUrl)
+            string documentImageUrl)
         {
+            if (string.IsNullOrWhiteSpace(documentImageUrl))
+                throw new Domain.Exceptions.DomainException("Document image is required", "Volunteer.DOCUMENT_REQUIRED");
+
             Id = Guid.NewGuid();
             UserId = userId;
             OrganizationName = organizationName;

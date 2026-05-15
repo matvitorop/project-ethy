@@ -20,6 +20,7 @@ namespace server.IntegrationTests
             var volunteer = await RegisterAndLoginAsync("volunteer_c", "volunteer_c@test.com", "Password123!");
 
             var helpRequestId = await CreateHelpRequestAsync(creator.Token, "Test Title", "Test Desc");
+            await ApproveHelpRequestAsync(helpRequestId);
 
             // Volunteer responds
             var respondMutation = @"
@@ -67,6 +68,7 @@ namespace server.IntegrationTests
             var volunteer = await RegisterAndLoginAsync("volunteer_r", "volunteer_r@test.com", "Password123!");
 
             var helpRequestId = await CreateHelpRequestAsync(creator.Token, "Test Title", "Test Desc");
+            await ApproveHelpRequestAsync(helpRequestId);
 
             // Respond
             var respondMutation = @"
@@ -119,6 +121,7 @@ namespace server.IntegrationTests
             var volunteer = await RegisterAndLoginAsync("volunteer_rem", "volunteer_rem@test.com", "Password123!");
 
             var helpRequestId = await CreateHelpRequestAsync(creator.Token, "Test Title", "Test Desc");
+            await ApproveHelpRequestAsync(helpRequestId);
 
             var respondMutation = @"
                 mutation Respond($id: ID!, $message: String!) {

@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using server.Domain.Primitives;
 
 namespace server.Application.Handlers.EditHelpRequest
@@ -9,6 +9,7 @@ namespace server.Application.Handlers.EditHelpRequest
         string Title,
         string Description,
         double? Latitude,
-        double? Longitude
+        double? Longitude,
+        IReadOnlyList<string> ImageUrls
     ) : IRequest<Result>;
 }

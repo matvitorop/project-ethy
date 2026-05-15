@@ -1,4 +1,4 @@
-﻿using Dapper;
+using Dapper;
 using server.Application.Handlers.StatisticsHandlers.GetAdminAnalytics;
 using server.Application.Handlers.StatisticsHandlers.GetMonthlyActivity;
 using server.Application.Handlers.StatisticsHandlers.GetPlatformStats;
@@ -21,11 +21,12 @@ namespace server.Infrastructure.Repositories
             const string sql = """
                 SELECT
                     COUNT(*)                                                          AS TotalRequests,
-                    SUM(CASE WHEN Status = 0 THEN 1 ELSE 0 END)                      AS DraftRequests,
+                    SUM(CASE WHEN Status = 0 THEN 1 ELSE 0 END)                      AS ModerationRequests,
                     SUM(CASE WHEN Status = 1 THEN 1 ELSE 0 END)                      AS OpenRequests,
                     SUM(CASE WHEN Status = 2 THEN 1 ELSE 0 END)                      AS InProgressRequests,
                     SUM(CASE WHEN Status = 3 THEN 1 ELSE 0 END)                      AS ResolvedRequests,
                     SUM(CASE WHEN Status = 4 THEN 1 ELSE 0 END)                      AS CancelledRequests,
+                    SUM(CASE WHEN Status = 5 THEN 1 ELSE 0 END)                      AS RejectedRequests,
                     ISNULL(
                         CAST(SUM(CASE WHEN Status = 3 THEN 1 ELSE 0 END) AS FLOAT)
                         / NULLIF(COUNT(*), 0) * 100, 0)                              AS CompletionRate,
@@ -49,11 +50,12 @@ namespace server.Infrastructure.Repositories
 
             return new PlatformStatsDto(
                 TotalRequests: (int)raw.TotalRequests,
-                DraftRequests: (int)raw.DraftRequests,
+                ModerationRequests: (int)raw.ModerationRequests,
                 OpenRequests: (int)raw.OpenRequests,
                 InProgressRequests: (int)raw.InProgressRequests,
                 ResolvedRequests: (int)raw.ResolvedRequests,
                 CancelledRequests: (int)raw.CancelledRequests,
+                RejectedRequests: (int)raw.RejectedRequests,
                 TotalUsers: totalUsers,
                 TotalVolunteers: volunteers,
                 CompletionRate: Math.Round((double)raw.CompletionRate, 1),

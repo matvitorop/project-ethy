@@ -1,4 +1,4 @@
-﻿namespace server.Domain.HelpRequest
+namespace server.Domain.HelpRequest
 {
     public enum HelpRequestEventType
     {
@@ -10,7 +10,9 @@
         StageDeleted = 5,
         HelpRequestEdited = 6,
         ExecutorResigned = 7,
-        ExecutorRemoved = 8
+        ExecutorRemoved = 8,
+        ModerationApproved = 9,
+        ModerationRejected = 10
     }
 
     public class HelpRequestEvent

@@ -66,7 +66,8 @@ namespace server.Infrastructure.Repositories
                     HasActiveRequestLimit,
                     IsEmailVerified,
                     BlockedUntilUtc,
-                    BlockReason
+                    BlockReason,
+                    LastActivityAtUtc
                 FROM Users
                 WHERE Email = @Email
                 """;
@@ -84,7 +85,8 @@ namespace server.Infrastructure.Repositories
                 SELECT
                     Id, Username, Email, PasswordHash, PasswordSalt,
                     Role, RegisteredAtUtc,
-                    PhoneNumber, SocialLinks, IsEmailVerified
+                    PhoneNumber, SocialLinks, IsEmailVerified,
+                    LastActivityAtUtc
                 FROM Users
                 WHERE Id = @Id;
                 """;
@@ -93,7 +95,7 @@ namespace server.Infrastructure.Repositories
                 new CommandDefinition(sql, new { Id = id }, cancellationToken: ct));
         }
 
-        // +++ Trust module: оновлений запит з лічильниками відгуків
+        // Trust module: запит з лічильниками відгуків
         public async Task<UserStatisticsDto?> GetUserStatisticsAsync(Guid userId, CancellationToken ct)
         {
             using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
@@ -101,36 +103,15 @@ namespace server.Infrastructure.Repositories
             const string sql = """
                 SELECT
                     u.RegisteredAtUtc,
- 
-                    COUNT(DISTINCT hr.Id) AS TotalRequests,
- 
-                    SUM(CASE
-                            WHEN hr.Status IN (1, 2) THEN 1
-                            ELSE 0
-                        END) AS ActiveRequests,
- 
-                    SUM(CASE
-                            WHEN hr.Status = 3 THEN 1
-                            ELSE 0
-                        END) AS CompletedRequests,
- 
-                    SUM(CASE
-                            WHEN rv.IsPositive = 1 THEN 1
-                            ELSE 0
-                        END) AS PositiveReviews,
- 
-                    SUM(CASE
-                            WHEN rv.IsPositive = 0 THEN 1
-                            ELSE 0
-                        END) AS NegativeReviews
- 
+                    (SELECT COUNT(*) FROM HelpRequests WHERE CreatorId = u.Id AND IsDeleted = 0) AS TotalRequests,
+                    (SELECT COUNT(*) FROM HelpRequests WHERE CreatorId = u.Id AND IsDeleted = 0 AND Status IN (1, 2)) AS ActiveRequests,
+                    (SELECT COUNT(*) FROM HelpRequests WHERE CreatorId = u.Id AND Status = 3) AS CompletedRequests,
+                    (SELECT COUNT(*) FROM HelpRequests WHERE CreatorId = u.Id AND Status = 4) AS RejectedRequests,
+                    (SELECT COUNT(*) FROM HelpRequests WHERE AssignedUserId = u.Id AND Status = 3) AS HelpedRequests,
+                    (SELECT COUNT(*) FROM UserReviews WHERE TargetUserId = u.Id AND IsPositive = 1) AS PositiveReviews,
+                    (SELECT COUNT(*) FROM UserReviews WHERE TargetUserId = u.Id AND IsPositive = 0) AS NegativeReviews
                 FROM Users u
-                LEFT JOIN HelpRequests hr ON hr.CreatorId = u.Id
-                LEFT JOIN UserReviews rv ON rv.TargetUserId = u.Id
- 
-                WHERE u.Id = @UserId
- 
-                GROUP BY u.RegisteredAtUtc;
+                WHERE u.Id = @UserId;
                 """;
 
             return await connection.QuerySingleOrDefaultAsync<UserStatisticsDto>(
@@ -300,7 +281,8 @@ namespace server.Infrastructure.Repositories
                     Id, Username, Email, Role, RegisteredAtUtc,
                     CAST(CASE WHEN BlockedUntilUtc IS NOT NULL AND (BlockedUntilUtc > GETUTCDATE() OR BlockedUntilUtc = '9999-12-31') THEN 1 ELSE 0 END AS BIT) as IsBlocked,
                     BlockedUntilUtc,
-                    IsDeleted
+                    IsDeleted,
+                    LastActivityAtUtc
                 FROM Users
                 WHERE {filterClause}
                 ORDER BY RegisteredAtUtc DESC
@@ -327,6 +309,14 @@ namespace server.Infrastructure.Repositories
             await conn.ExecuteAsync(
                 "UPDATE Users SET BlockedUntilUtc = NULL, BlockReason = NULL WHERE Id = @Id",
                 new { Id = userId });
+        }
+
+        public async Task UpdateLastActivityAsync(Guid userId, CancellationToken ct)
+        {
+            using var conn = await _connectionFactory.CreateOpenConnectionAsync(ct);
+            await conn.ExecuteAsync(
+                "UPDATE Users SET LastActivityAtUtc = @Now WHERE Id = @Id",
+                new { Id = userId, Now = DateTime.UtcNow });
         }
     }
 }
