@@ -63,13 +63,15 @@ export default function CreateRequestPage() {
     return (
         <div className="max-w-2xl mx-auto">
             {/* Назад */}
-            <button
+            <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => navigate(-1)}
-                className="flex items-center gap-2 text-sm text-ink-muted hover:text-ink mb-6 transition-colors"
+                className="-ml-2 mb-6 text-ink-muted"
             >
                 <ArrowLeft size={16} />
                 Назад
-            </button>
+            </Button>
 
             <h1 className="text-2xl font-bold text-ink mb-8"
                 style={{ fontFamily: 'Jua, sans-serif' }}>

@@ -44,7 +44,7 @@ export default function RequestsListPage() {
 
     const currentTab = useMemo(() => TABS.find(t => t.key === activeTab) || TABS[0], [activeTab])
 
-    const { data, loading, error } = useQuery<HelpRequestsPageData>(GET_HELP_REQUESTS, {
+    const { data, loading, error, refetch } = useQuery<HelpRequestsPageData>(GET_HELP_REQUESTS, {
         variables: {
             page,
             pageSize: PAGE_SIZE,
@@ -175,7 +175,7 @@ export default function RequestsListPage() {
             {error && (
                 <Card className="text-center py-16 border-error/20 bg-error/5">
                     <p className="text-error font-medium">Помилка завантаження заявок</p>
-                    <Button variant="outline" size="sm" className="mt-4" onClick={() => window.location.reload()}>
+                    <Button variant="outline" size="sm" className="mt-4" onClick={() => refetch()}>
                         Спробувати знову
                     </Button>
                 </Card>
