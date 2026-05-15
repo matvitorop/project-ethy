@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useApolloClient } from '@apollo/client/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FileText, ThumbsUp, ChevronLeft, ChevronRight, Ban, CheckCircle } from 'lucide-react'
-import { GET_MY_REQUESTS, GET_ASSIGNEE_REQUESTS, CHANGE_HELP_REQUEST_STATUS, CANCEL_RESPONSE, GET_PROFILE, RESIGN_AS_EXECUTOR, DELETE_HELP_REQUEST } from '../../../api/queries'
+import { GET_MY_REQUESTS, GET_ASSIGNEE_REQUESTS, CHANGE_HELP_REQUEST_STATUS, CANCEL_RESPONSE, GET_PROFILE, RESIGN_AS_EXECUTOR, SOFT_DELETE_HELP_REQUEST } from '../../../api/queries'
 import type { HelpRequestsPageData, ChangeHelpRequestStatusData, CancelResponseData, ResignAsExecutorData, SoftDeleteHelpRequestData } from '../../../api/types'
 import { useAppDispatch } from '../../../store/hooks'
 import { addToast } from '../../../store/uiSlice'
@@ -90,7 +90,7 @@ export default function ProfileRequests({ userId, isOwn = false }: ProfileReques
         onError: () => dispatch(addToast({ type: 'error', message: 'Помилка при спробі відмовитись' })),
     })
 
-    const [deleteRequest, { loading: deleting }] = useMutation<SoftDeleteHelpRequestData>(DELETE_HELP_REQUEST, {
+    const [deleteRequest, { loading: deleting }] = useMutation<SoftDeleteHelpRequestData>(SOFT_DELETE_HELP_REQUEST, {
         refetchQueries: [{ query: GET_PROFILE }],
         onCompleted: (data) => {
             const r = data.helpRequest.softDeleteHelpRequest

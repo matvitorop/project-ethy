@@ -4,7 +4,7 @@ import { X, ClipboardList } from 'lucide-react'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { closeReportsPanel } from '../../store/uiSlice'
 import { GET_PENDING_REPORTS } from '../../api/queries'
-import type { PendingReportsData } from '../../api/types'
+import type { HelpRequestsPageData } from '../../api/types'
 
 const API_BASE_URL = 'http://localhost:5274'
 
@@ -21,7 +21,7 @@ export default function ReportsPanel() {
     const isOpen = useAppSelector(s => s.ui.reportsPanelOpen)
     const userId = useAppSelector(s => s.auth.userId)
 
-    const { data, loading } = useQuery<PendingReportsData>(GET_PENDING_REPORTS, {
+    const { data, loading } = useQuery<HelpRequestsPageData>(GET_PENDING_REPORTS, {
         variables: { page: 1, pageSize: 20, creatorId: userId },
         skip: !isOpen || !userId,
         fetchPolicy: 'network-only',
