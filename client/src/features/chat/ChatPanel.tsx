@@ -4,7 +4,7 @@ import { X, Send, ArrowLeft, MessageCircle, ListChecks, Loader2 } from 'lucide-r
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { closeChatPanel, openChat } from '../../store/uiSlice'
-import { GET_MY_CHATS, GET_CHAT_MESSAGES, GET_STAGES_FOR_CHAT } from '../../api/queries'
+import { GET_MY_CHATS, GET_CHAT_MESSAGES, GET_STAGES } from '../../api/queries'
 import type { MyChatsData, ChatMessagesData, ChatMessage, ChatListItem, StagesData, StageItem, StageEvent } from '../../api/types'
 import { startChatConnection, getChatConnection, stopChatConnection } from '../../api/chatHub'
 import * as signalR from '@microsoft/signalr'
@@ -104,7 +104,7 @@ function ChatConversation({ chat, onBack }: { chat: ChatListItem; onBack: () => 
         fetchPolicy: 'network-only'
     })
 
-    const { data: stagesData } = useQuery<StagesData>(GET_STAGES_FOR_CHAT, {
+    const { data: stagesData } = useQuery<StagesData>(GET_STAGES, {
         variables: { helpRequestId: chat.helpRequestId },
         fetchPolicy: 'network-only'
     })
@@ -163,7 +163,7 @@ function ChatConversation({ chat, onBack }: { chat: ChatListItem; onBack: () => 
                 conn.on('StageConfirmed', (event: StageEvent) => {
                     if (mounted) {
                         setLiveStages(prev => prev.map(s => s.id === event.stageId ? { ...s, status: 1 } : s))
-                        apolloClient.refetchQueries({ include: [GET_STAGES_FOR_CHAT] })
+                        apolloClient.refetchQueries({ include: [GET_STAGES] })
                     }
                 })
 
@@ -171,7 +171,7 @@ function ChatConversation({ chat, onBack }: { chat: ChatListItem; onBack: () => 
                 conn.on('StageRejected', (event: StageEvent) => {
                     if (mounted) {
                         setLiveStages(prev => prev.map(s => s.id === event.stageId ? { ...s, status: 2, rejectionReason: event.reason ?? null } : s))
-                        apolloClient.refetchQueries({ include: [GET_STAGES_FOR_CHAT] })
+                        apolloClient.refetchQueries({ include: [GET_STAGES] })
                     }
                 })
 

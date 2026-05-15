@@ -253,24 +253,6 @@ export const GET_CHAT_MESSAGES = gql`
   }
 `
 
-export const GET_STAGES_FOR_CHAT = gql`
-  query GetStagesForChat($helpRequestId: ID!) {
-    helpRequestQuer {
-      stages(helpRequestId: $helpRequestId) {
-        items {
-          id
-          proposedByUserId
-          content
-          status
-          rejectionReason
-          createdAtUtc
-          resolvedAtUtc
-        }
-        error { code message }
-      }
-    }
-  }
-`
 
 export const UPDATE_USERNAME = gql`
   mutation UpdateUsername($newUsername: String!) {
@@ -427,16 +409,6 @@ export const SOFT_DELETE_HELP_REQUEST = gql`
   }
 `
 
-export const DELETE_HELP_REQUEST = gql`
-  mutation SoftDeleteHelpRequest($helpRequestId: ID!) {
-    helpRequest {
-      softDeleteHelpRequest(helpRequestId: $helpRequestId) {
-        success
-        error { code message }
-      }
-    }
-  }
-`
 
 export const EDIT_HELP_REQUEST = gql`
   mutation EditHelpRequest(
