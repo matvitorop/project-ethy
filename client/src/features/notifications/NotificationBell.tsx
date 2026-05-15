@@ -6,21 +6,60 @@ import type { Notification } from '../../api/types';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '../../store/hooks';
 import { openChat } from '../../store/uiSlice';
+import { useRelativeTime } from '../../hooks/useRelativeTime';
 
-const formatTime = (dateStr: string) => {
-    try {
-        const date = new Date(dateStr);
-        const now = new Date();
-        const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+// Окремий компонент для елемента сповіщення, щоб використовувати хук часу
+function NotificationItem({ 
+    notification, 
+    onClick, 
+    onMarkRead,
+    getIcon 
+}: { 
+    notification: Notification; 
+    onClick: () => void; 
+    onMarkRead: (e: React.MouseEvent) => void;
+    getIcon: (type: Notification['type']) => React.ReactNode;
+}) {
+    const date = notification.createdAtUtc ? new Date(notification.createdAtUtc) : null;
+    const timeAgo = useRelativeTime(date);
 
-        if (diffInSeconds < 60) return 'щойно';
-        if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} хв тому`;
-        if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} год тому`;
-        return date.toLocaleDateString('uk-UA');
-    } catch {
-        return '';
-    }
-};
+    return (
+        <div
+            onClick={onClick}
+            className={`w-full text-left px-4 py-3 hover:bg-primary/5 transition-all flex gap-3 border-b border-border/50 last:border-0 cursor-pointer group relative ${!notification.isRead ? 'bg-primary/[0.02]' : 'opacity-70'}`}
+        >
+            <div className={`w-8 h-8 rounded-lg shrink-0 flex items-center justify-center ${!notification.isRead ? 'bg-primary/10' : 'bg-surface-muted'}`}>
+                {getIcon(notification.type)}
+            </div>
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2 mb-1">
+                    <p className={`text-xs truncate ${!notification.isRead ? 'font-black text-ink' : 'font-bold text-ink-muted'}`}>
+                        {notification.title}
+                    </p>
+                    <span className="text-[9px] font-bold text-ink-soft whitespace-nowrap">
+                        {timeAgo}
+                    </span>
+                </div>
+                <p className="text-[11px] font-medium text-ink-muted line-clamp-2 leading-relaxed">
+                    {notification.content}
+                </p>
+            </div>
+            
+            {!notification.isRead && (
+                <div className="flex flex-col items-center justify-between shrink-0">
+                    <div className="w-2 h-2 bg-primary rounded-full mt-1 group-hover:hidden" />
+                    <button
+                        onClick={onMarkRead}
+                        className="hidden group-hover:flex w-5 h-5 bg-success/10 text-success rounded-full items-center justify-center hover:bg-success hover:text-white transition-all"
+                        title="Позначити як прочитане"
+                    >
+                        <Check size={10} />
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+}
 
 export default function NotificationBell() {
     const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
@@ -28,6 +67,14 @@ export default function NotificationBell() {
     const dropdownRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
+
+    // Стейт для розмірів вікна
+    const [dimensions, setDimensions] = useState(() => {
+        const saved = localStorage.getItem('notification-dropdown-size');
+        return saved ? JSON.parse(saved) : { width: 320, height: 400 };
+    });
+
+    const [isResizing, setIsResizing] = useState(false);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -39,14 +86,43 @@ export default function NotificationBell() {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    // Логіка ресайзу
+    useEffect(() => {
+        if (!isResizing) return;
+
+        const handleMouseMove = (e: MouseEvent) => {
+            if (!dropdownRef.current) return;
+            const rect = dropdownRef.current.getBoundingClientRect();
+            
+            // Розраховуємо нові розміри (dropdown відкривається вліво-вниз від кнопки)
+            const newWidth = Math.max(280, Math.min(500, rect.right - e.clientX));
+            const newHeight = Math.max(200, Math.min(600, e.clientY - rect.top));
+
+            const newDims = { width: newWidth, height: newHeight };
+            setDimensions(newDims);
+            localStorage.setItem('notification-dropdown-size', JSON.stringify(newDims));
+        };
+
+        const handleMouseUp = () => {
+            setIsResizing(false);
+        };
+
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [isResizing]);
+
     const handleNotificationClick = (notification: Notification) => {
         if (!notification.isRead) {
             markAsRead(notification.id);
         }
         
-        setIsOpen(false);
-
+        // Закриваємо тільки якщо є куди переходити
         if (notification.relatedEntityId) {
+            setIsOpen(false);
             if (notification.relatedEntityType === 'HelpRequest') {
                 navigate(`/requests/${notification.relatedEntityId}`);
             } else if (notification.relatedEntityType === 'Chat') {
@@ -93,66 +169,54 @@ export default function NotificationBell() {
                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="absolute right-0 mt-3 w-80 bg-surface border border-border shadow-2xl rounded-2xl overflow-hidden z-[100]"
+                        style={{ width: dimensions.width, height: dimensions.height }}
+                        className="absolute right-0 mt-3 bg-surface border border-border shadow-2xl rounded-2xl overflow-hidden z-[100] flex flex-col"
                     >
-                        <div className="px-4 py-3 border-b border-border bg-surface-muted/50 flex items-center justify-between">
-                            <span className="text-xs font-black uppercase tracking-widest text-ink">Сповіщення</span>
+                        <div className="px-4 py-3 border-b border-border bg-surface-muted/50 flex items-center justify-between shrink-0">
+                            <span className="text-xs font-black uppercase tracking-widest text-ink" style={{ fontFamily: 'Jua, sans-serif' }}>Сповіщення</span>
                             {unreadCount > 0 && (
                                 <button 
                                     onClick={(e) => { e.stopPropagation(); markAllAsRead(); }}
-                                    className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1"
+                                    className="text-[10px] font-black uppercase text-primary hover:text-primary-light flex items-center gap-1 transition-colors"
                                 >
-                                    <Check size={10} /> Позначити всі як прочитані
+                                    <Check size={12} /> Позначити всі
                                 </button>
                             )}
                         </div>
 
-                        <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
+                        <div className="flex-1 overflow-y-auto custom-scrollbar">
                             {notifications.length === 0 ? (
                                 <div className="py-12 text-center">
                                     <div className="w-12 h-12 bg-surface-muted rounded-full flex items-center justify-center mx-auto mb-3">
                                         <Bell size={20} className="text-ink-muted/30" />
                                     </div>
-                                    <p className="text-xs text-ink-soft">У вас поки немає сповіщень</p>
+                                    <p className="text-xs text-ink-soft font-bold">У вас поки немає сповіщень</p>
                                 </div>
                             ) : (
                                 notifications.map(notification => (
-                                    <button
+                                    <NotificationItem 
                                         key={notification.id}
+                                        notification={notification}
+                                        getIcon={getIcon}
                                         onClick={() => handleNotificationClick(notification)}
-                                        className={`w-full text-left px-4 py-3 hover:bg-primary/5 transition-all flex gap-3 border-b border-border/50 last:border-0 ${!notification.isRead ? 'bg-primary/[0.02]' : 'opacity-70'}`}
-                                    >
-                                        <div className={`w-8 h-8 rounded-lg shrink-0 flex items-center justify-center ${!notification.isRead ? 'bg-primary/10' : 'bg-surface-muted'}`}>
-                                            {getIcon(notification.type)}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center justify-between gap-2 mb-1">
-                                                <p className={`text-xs truncate ${!notification.isRead ? 'font-bold text-ink' : 'font-medium text-ink-muted'}`}>
-                                                    {notification.title}
-                                                </p>
-                                                <span className="text-[9px] text-ink-soft whitespace-nowrap">
-                                                    {formatTime(notification.createdAtUtc)}
-                                                </span>
-                                            </div>
-                                            <p className="text-[11px] text-ink-muted line-clamp-2 leading-relaxed">
-                                                {notification.content}
-                                            </p>
-                                        </div>
-                                        {!notification.isRead && (
-                                            <div className="w-2 h-2 bg-primary rounded-full shrink-0 mt-1" />
-                                        )}
-                                    </button>
+                                        onMarkRead={(e) => {
+                                            e.stopPropagation();
+                                            markAsRead(notification.id);
+                                        }}
+                                    />
                                 ))
                             )}
                         </div>
 
-                        <div className="p-2 border-t border-border bg-surface-muted/30">
-                            <button 
-                                onClick={() => { setIsOpen(false); navigate('/profile'); }}
-                                className="w-full py-2 text-[10px] font-black uppercase tracking-widest text-ink-soft hover:text-primary transition-colors"
-                            >
-                                Переглянути всі в профілі
-                            </button>
+                        {/* Ручка для ресайзу */}
+                        <div 
+                            className="absolute bottom-0 left-0 w-4 h-4 cursor-nesw-resize z-[110]"
+                            onMouseDown={(e) => {
+                                e.preventDefault();
+                                setIsResizing(true);
+                            }}
+                        >
+                            <div className="absolute bottom-1 left-1 w-2 h-2 border-l-2 border-b-2 border-ink-soft/30 rounded-bl-sm" />
                         </div>
                     </motion.div>
                 )}
