@@ -1,5 +1,5 @@
 import { FileText, CheckCircle, ThumbsUp, TrendingUp } from 'lucide-react'
-import Card from '../../../components/ui/Card'
+import Card from '../../components/ui/Card'
 
 interface ProfileStatsCardsProps {
     totalRequests: number
