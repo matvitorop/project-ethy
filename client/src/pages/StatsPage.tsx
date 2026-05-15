@@ -147,8 +147,8 @@ export default function StatsPage() {
                             <AreaChart data={chartData}>
                                 <defs>
                                     <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#0B1D3A" stopOpacity={0.2} />
-                                        <stop offset="95%" stopColor="#0B1D3A" stopOpacity={0} />
+                                        <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.2} />
+                                        <stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
@@ -157,9 +157,9 @@ export default function StatsPage() {
                                 <Tooltip 
                                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                                     formatter={(value) => [`${value} заявок`]} 
-                                />
+                                 />
                                 <Area type="monotone" dataKey="count" name="Заявок"
-                                    stroke="#0B1D3A" fill="url(#colorCount)" strokeWidth={3} />
+                                    stroke="var(--color-primary)" fill="url(#colorCount)" strokeWidth={3} />
                             </AreaChart>
                         </ResponsiveContainer>
                     ) : (
