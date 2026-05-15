@@ -3,6 +3,7 @@ import type { HelpRequestListItem } from '../../api/types'
 import Card from '../../components/ui/Card'
 import Badge from '../../components/ui/Badge'
 import { formatDateTime } from '../../hooks/useDateTime'
+import { getImageUrl } from '../../utils/imageUrl'
 
 const STATUS_CONFIG = {
     0: { label: 'На модерації', variant: 'info' },
@@ -24,7 +25,7 @@ export default function RequestCard({ item }: { item: HelpRequestListItem }) {
                     <div className="flex-shrink-0 w-20 h-20 rounded-lg bg-surface-muted border border-border overflow-hidden relative shadow-inner">
                         {item.previewImageUrl ? (
                             <img
-                                src={`${import.meta.env.VITE_API_BASE_URL}${item.previewImageUrl}`}
+                                src={getImageUrl(item.previewImageUrl)}
                                 alt={item.title}
                                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                             />
