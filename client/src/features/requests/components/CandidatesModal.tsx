@@ -7,6 +7,8 @@ import { PageSpinner } from '../../../components/Spinner'
 import { useAppDispatch } from '../../../store/hooks'
 import { addToast } from '../../../store/uiSlice'
 import UserLink from '../../../components/ui/UserLink'
+import { formatDateTime } from '../../../hooks/useDateTime'
+import Button from '../../../components/ui/Button'
 
 const RESPONSE_STATUS = {
     0: { label: 'Очікує', color: 'text-warning' },
@@ -14,15 +16,6 @@ const RESPONSE_STATUS = {
     2: { label: 'Відхилено', color: 'text-error' },
     3: { label: 'Скасовано', color: 'text-ink-muted' },
 } as const
-
-function formatDate(dateStr: string) {
-    return new Date(dateStr).toLocaleDateString('uk-UA', {
-        day: 'numeric',
-        month: 'short',
-        hour: '2-digit',
-        minute: '2-digit',
-    })
-}
 
 interface CandidateCardProps {
     response: HelpRequestResponse
@@ -55,17 +48,17 @@ function CandidateCard({ response, onAssign, canAssign, assigning }: CandidateCa
             <div className="flex items-center justify-between">
                 <span className="flex items-center gap-1 text-xs text-ink-muted">
                     <Clock size={12} />
-                    {formatDate(response.createdAtUtc)}
+                    {formatDateTime(response.createdAtUtc, 'full')}
                 </span>
 
                 {canAssign && response.status === 0 && (
-                    <button
+                    <Button
+                        size="sm"
                         onClick={() => onAssign(response.id)}
                         disabled={assigning}
-                        className="px-3 py-1.5 text-xs font-semibold bg-primary text-white rounded-lg hover:bg-primary-light disabled:opacity-60 transition-colors"
                     >
                         {assigning ? 'Призначення...' : 'Призначити'}
-                    </button>
+                    </Button>
                 )}
             </div>
         </div>

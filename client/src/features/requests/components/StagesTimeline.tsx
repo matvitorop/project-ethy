@@ -1,5 +1,6 @@
 import { CheckCircle, Clock, XCircle, Trash2 } from 'lucide-react'
 import type { StageItem } from '../../../api/types'
+import { formatDateTime } from '../../../hooks/useDateTime'
 
 const STAGE_STATUS = {
     0: { label: 'Очікує', icon: Clock, color: 'text-warning' },
@@ -7,14 +8,6 @@ const STAGE_STATUS = {
     2: { label: 'Відхилено', icon: XCircle, color: 'text-error' },
     3: { label: 'Видалено', icon: Trash2, color: 'text-ink-soft' },
 } as const
-
-function formatDate(dateStr: string) {
-    return new Date(dateStr).toLocaleDateString('uk-UA', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-    })
-}
 
 export default function StagesTimeline({ stages }: { stages: StageItem[] }) {
     if (stages.length === 0) {
@@ -53,7 +46,7 @@ export default function StagesTimeline({ stages }: { stages: StageItem[] }) {
                                 </span>
                             </div>
                             <p className="text-xs text-ink-muted mt-0.5">
-                                {formatDate(stage.createdAtUtc)}
+                                {formatDateTime(stage.createdAtUtc, 'short')}
                             </p>
                             {stage.rejectionReason && (
                                 <p className="text-xs text-error mt-1 bg-error/10 px-2 py-1 rounded">
