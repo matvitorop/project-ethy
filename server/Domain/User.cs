@@ -32,6 +32,7 @@ namespace server.Domain
         public DateTime? BlockedUntilUtc { get; private set; }
         public string? BlockReason { get; private set; }
         public DateTime? LastVolunteerApplicationAtUtc { get; private set; }
+        public DateTime? LastActivityAtUtc { get; private set; }
 
         public bool IsBlocked =>
             BlockedUntilUtc.HasValue &&
@@ -169,6 +170,11 @@ namespace server.Domain
         public void SetLastVolunteerApplicationDate()
         {
             LastVolunteerApplicationAtUtc = DateTime.UtcNow;
+        }
+
+        public void UpdateLastActivity()
+        {
+            LastActivityAtUtc = DateTime.UtcNow;
         }
         // ---
 

@@ -66,7 +66,8 @@ namespace server.Infrastructure.Repositories
                     HasActiveRequestLimit,
                     IsEmailVerified,
                     BlockedUntilUtc,
-                    BlockReason
+                    BlockReason,
+                    LastActivityAtUtc
                 FROM Users
                 WHERE Email = @Email
                 """;
@@ -84,7 +85,8 @@ namespace server.Infrastructure.Repositories
                 SELECT
                     Id, Username, Email, PasswordHash, PasswordSalt,
                     Role, RegisteredAtUtc,
-                    PhoneNumber, SocialLinks, IsEmailVerified
+                    PhoneNumber, SocialLinks, IsEmailVerified,
+                    LastActivityAtUtc
                 FROM Users
                 WHERE Id = @Id;
                 """;
@@ -279,7 +281,8 @@ namespace server.Infrastructure.Repositories
                     Id, Username, Email, Role, RegisteredAtUtc,
                     CAST(CASE WHEN BlockedUntilUtc IS NOT NULL AND (BlockedUntilUtc > GETUTCDATE() OR BlockedUntilUtc = '9999-12-31') THEN 1 ELSE 0 END AS BIT) as IsBlocked,
                     BlockedUntilUtc,
-                    IsDeleted
+                    IsDeleted,
+                    LastActivityAtUtc
                 FROM Users
                 WHERE {filterClause}
                 ORDER BY RegisteredAtUtc DESC
@@ -306,6 +309,14 @@ namespace server.Infrastructure.Repositories
             await conn.ExecuteAsync(
                 "UPDATE Users SET BlockedUntilUtc = NULL, BlockReason = NULL WHERE Id = @Id",
                 new { Id = userId });
+        }
+
+        public async Task UpdateLastActivityAsync(Guid userId, CancellationToken ct)
+        {
+            using var conn = await _connectionFactory.CreateOpenConnectionAsync(ct);
+            await conn.ExecuteAsync(
+                "UPDATE Users SET LastActivityAtUtc = @Now WHERE Id = @Id",
+                new { Id = userId, Now = DateTime.UtcNow });
         }
     }
 }

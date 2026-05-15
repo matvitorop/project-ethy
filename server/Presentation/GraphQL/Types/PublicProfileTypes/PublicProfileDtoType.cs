@@ -22,6 +22,7 @@ namespace server.Presentation.GraphQL.Types.PublicProfileTypes
             Field(x => x.CompletedRequests);
             Field(x => x.HelpedRequests);
             Field(x => x.RejectedRequests);
+            Field(x => x.LastActivityAtUtc, nullable: true);
         }
     }
 }

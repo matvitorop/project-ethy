@@ -12,6 +12,7 @@ interface LeaveReviewModalProps {
     onClose: () => void
     helpRequestId: string
     onSuccess: () => void
+    targetName?: string
 }
 
 export default function LeaveReviewModal({
@@ -19,6 +20,7 @@ export default function LeaveReviewModal({
     onClose,
     helpRequestId,
     onSuccess,
+    targetName = 'власником заявки'
 }: LeaveReviewModalProps) {
     const dispatch = useAppDispatch()
     const [isPositive, setIsPositive] = useState<boolean | null>(null)
@@ -59,7 +61,7 @@ export default function LeaveReviewModal({
         <Modal isOpen={isOpen} onClose={onClose} title="Залишити відгук">
             <div className="space-y-5">
                 <p className="text-sm text-ink-muted">
-                    Оцініть взаємодію з власником заявки
+                    Оцініть взаємодію з {targetName}
                 </p>
 
                 {/* Вибір оцінки */}

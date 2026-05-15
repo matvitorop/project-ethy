@@ -470,7 +470,7 @@ export default function RequestDetailsPage() {
                     </Button>
                 )}
 
-                {isAssignee && hr.status === 3 && (
+                {(isAssignee || isOwner) && Number(hr.status) === 3 && (
                     <Button variant="success" size="sm" onClick={() => setReviewModalOpen(true)}>
                         Залишити відгук
                     </Button>
@@ -671,6 +671,7 @@ export default function RequestDetailsPage() {
                 onClose={() => setReviewModalOpen(false)}
                 helpRequestId={hr.id}
                 onSuccess={() => window.location.reload()}
+                targetName={isOwner ? 'помічником' : 'власником заявки'}
             />
 
             {hr.assignedUserId && (

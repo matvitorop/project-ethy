@@ -18,6 +18,20 @@ import Card from '../../components/ui/Card'
 import Badge from '../../components/ui/Badge'
 import SocialLink from '../../components/ui/SocialLink'
 
+function formatLastActivity(dateStr: string | null | undefined) {
+    if (!dateStr) return 'невідомо'
+    const date = new Date(dateStr)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+    if (diffDays === 0) return 'сьогодні'
+    if (diffDays === 1) return 'вчора'
+    if (diffDays < 7) return `${diffDays} дн. тому`
+    
+    return date.toLocaleDateString('uk-UA', { day: 'numeric', month: 'long' })
+}
+
 export default function PublicProfilePage() {
     const { userId } = useParams<{ userId: string }>()
     const dispatch = useAppDispatch()
@@ -66,6 +80,8 @@ export default function PublicProfilePage() {
     const positiveCount = reviews.filter(r => r.isPositive).length
     const negativeCount = reviews.filter(r => !r.isPositive).length
 
+    const isOnline = profile.lastActivityAtUtc && (new Date().getTime() - new Date(profile.lastActivityAtUtc).getTime()) < 10 * 60 * 1000
+
     const handleCopyId = () => {
         if (!profile) return
         navigator.clipboard.writeText(profile.id.slice(-6))
@@ -107,9 +123,15 @@ export default function PublicProfilePage() {
                                 {profile.role === 0 && <Badge variant="info" size="sm">Адміністратор</Badge>}
                                 {profile.role === 2 && <Badge variant="success" size="sm">Волонтер</Badge>}
                             </div>
-                            <div className="flex items-center gap-2 text-[10px] font-black text-ink-soft uppercase tracking-widest">
-                                <Calendar size={12} />
-                                На платформі з {new Date(profile.registeredAtUtc).toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' })}
+                            <div className="flex flex-col gap-2 mt-2">
+                                <div className="flex items-center gap-2 text-[10px] font-black text-ink-soft uppercase tracking-widest">
+                                    <Calendar size={12} />
+                                    На платформі з {new Date(profile.registeredAtUtc).toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                </div>
+                                <div className="flex items-center gap-2 text-[10px] font-black text-ink-soft uppercase tracking-widest">
+                                    <div className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-success shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-ink-soft opacity-40'}`} />
+                                    {isOnline ? <span className="text-success">В мережі</span> : `Активність: ${formatLastActivity(profile.lastActivityAtUtc)}`}
+                                </div>
                             </div>
                         </div>
                     </div>
