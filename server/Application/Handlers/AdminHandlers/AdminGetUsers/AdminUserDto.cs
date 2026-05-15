@@ -10,6 +10,7 @@ namespace server.Application.Handlers.AdminHandlers.AdminGetUsers
         DateTime RegisteredAtUtc,
         bool IsBlocked,
         DateTime? BlockedUntilUtc,
-        bool IsDeleted
+        bool IsDeleted,
+        DateTime? LastActivityAtUtc
     );
 }

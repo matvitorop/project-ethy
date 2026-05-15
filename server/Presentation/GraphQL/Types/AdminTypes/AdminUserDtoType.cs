@@ -15,6 +15,7 @@ namespace server.Presentation.GraphQL.Types.AdminTypes
             Field(x => x.IsBlocked);
             Field(x => x.BlockedUntilUtc, nullable: true);
             Field(x => x.IsDeleted);
+            Field(x => x.LastActivityAtUtc, nullable: true);
         }
     }
 }

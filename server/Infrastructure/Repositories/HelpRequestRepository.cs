@@ -152,7 +152,9 @@ namespace server.Infrastructure.Repositories
 
             var filters = new List<string> { "hr.IsDeleted = 0" };
             if (status.HasValue) filters.Add("hr.Status = @Status");
-            if (statuses != null && statuses.Count > 0) filters.Add("hr.Status IN @Statuses");
+            else if (statuses != null && statuses.Count > 0) filters.Add("hr.Status IN @Statuses");
+            else if (!creatorId.HasValue) filters.Add("hr.Status != 0"); // Hide Moderation (0) from public list
+
             if (creatorId.HasValue) filters.Add("hr.CreatorId = @CreatorId");
             if (assignedUserId.HasValue) filters.Add("hr.AssignedUserId = @AssignedUserId");
             if (hasNoReport == true)
@@ -493,6 +495,7 @@ namespace server.Infrastructure.Repositories
                     Description  = @Description,
                     Latitude     = @Latitude,
                     Longitude    = @Longitude,
+                    Status       = @Status,
                     UpdatedAtUtc = @UpdatedAtUtc
                 WHERE Id = @Id;
                 """;
@@ -507,6 +510,7 @@ namespace server.Infrastructure.Repositories
                             request.Description,
                             Latitude = request.Location?.Latitude,
                             Longitude = request.Location?.Longitude,
+                            Status = (int)request.Status,
                             request.UpdatedAtUtc
                         },
                         transaction: tx,
@@ -515,6 +519,25 @@ namespace server.Infrastructure.Repositories
                 if (affectedRows == 0)
                     throw new InvalidOperationException(
                         $"HelpRequest with id '{request.Id}' not found.");
+
+                // Update images
+                await connection.ExecuteAsync(
+                    "DELETE FROM HelpRequestImages WHERE HelpRequestId = @Id",
+                    new { request.Id },
+                    transaction: tx);
+
+                const string imagesSql = """
+                INSERT INTO HelpRequestImages (Id, HelpRequestId, [Order], ImageUrl)
+                VALUES (NEWID(), @HelpRequestId, @Order, @ImageUrl);
+                """;
+
+                foreach (var img in request.Images)
+                {
+                    await connection.ExecuteAsync(
+                        imagesSql,
+                        new { HelpRequestId = request.Id, img.Order, img.ImageUrl },
+                        transaction: tx);
+                }
 
                 await InsertEventAsync(connection, tx, logEvent, ct);
 
@@ -651,7 +674,7 @@ namespace server.Infrastructure.Repositories
             const string sql = """
                 SELECT COUNT(1) FROM HelpRequests
                 WHERE CreatorId = @UserId
-                  AND Status IN (1, 2)   -- 1 = Open, 2 = InProgress
+                  AND Status IN (0, 1, 2)   -- 0 = Moderation, 1 = Open, 2 = InProgress
                   AND IsDeleted = 0;
                 """;
 
@@ -721,18 +744,7 @@ namespace server.Infrastructure.Repositories
 
             try
             {
-                const string updateRequest = """
-                    UPDATE HelpRequests
-                    SET Status         = @Status,
-                        AssignedUserId = NULL
-                    WHERE Id = @Id;
-                    """;
-
-                await connection.ExecuteAsync(new CommandDefinition(
-                    updateRequest,
-                    new { request.Id, Status = (int)request.Status },
-                    transaction: tx,
-                    cancellationToken: ct));
+                await UpdateHelpRequestCoreAsync(connection, tx, request, ct);
 
                 const string deactivateChat = """
                     UPDATE Chats
@@ -768,18 +780,7 @@ namespace server.Infrastructure.Repositories
 
             try
             {
-                const string updateRequest = """
-                    UPDATE HelpRequests
-                    SET Status         = @Status,
-                        AssignedUserId = NULL
-                    WHERE Id = @Id;
-                    """;
-
-                await connection.ExecuteAsync(new CommandDefinition(
-                    updateRequest,
-                    new { request.Id, Status = (int)request.Status },
-                    transaction: tx,
-                    cancellationToken: ct));
+                await UpdateHelpRequestCoreAsync(connection, tx, request, ct);
 
                 const string deactivateChat = """
                     UPDATE Chats
@@ -857,8 +858,16 @@ namespace server.Infrastructure.Repositories
         {
             using var conn = await _connectionFactory.CreateOpenConnectionAsync(ct);
             await conn.ExecuteAsync(
-                "UPDATE HelpRequests SET ResolvedAtUtc = @Now WHERE Id = @Id",
-                new { Id = helpRequestId, Now = DateTime.UtcNow });
+                "UPDATE HelpRequests SET ResolvedAtUtc = GETUTCDATE() WHERE Id = @Id",
+                new { Id = helpRequestId });
+        }
+
+        public async Task<IReadOnlyList<string>> GetAllImageUrlsAsync()
+        {
+            using var conn = await _connectionFactory.CreateOpenConnectionAsync();
+            const string sql = "SELECT ImageUrl FROM HelpRequestImages";
+            var result = await conn.QueryAsync<string>(sql);
+            return result.AsList();
         }
 
         public async Task<int> CountActiveRequestsByCreatorAsync(Guid creatorId, CancellationToken ct)
@@ -868,7 +877,7 @@ namespace server.Infrastructure.Repositories
             const string sql = """
                 SELECT COUNT(1) FROM HelpRequests
                 WHERE CreatorId = @CreatorId
-                  AND Status IN (1, 2)   -- 1 = Open, 2 = InProgress
+                  AND Status IN (0, 1, 2)   -- 0 = Moderation, 1 = Open, 2 = InProgress
                   AND IsDeleted = 0;
                 """;
 

@@ -1,4 +1,4 @@
-﻿using GraphQL.Types;
+using GraphQL.Types;
 using server.Application.Handlers.StatisticsHandlers.GetPlatformStats;
 
 namespace server.Presentation.GraphQL.Types.StatsTypes
@@ -8,11 +8,12 @@ namespace server.Presentation.GraphQL.Types.StatsTypes
         public PlatformStatsDtoType()
         {
             Field(x => x.TotalRequests);
-            Field(x => x.DraftRequests);
+            Field(x => x.ModerationRequests);
             Field(x => x.OpenRequests);
             Field(x => x.InProgressRequests);
             Field(x => x.ResolvedRequests);
             Field(x => x.CancelledRequests);
+            Field(x => x.RejectedRequests);
             Field(x => x.TotalUsers);
             Field(x => x.TotalVolunteers);
             Field(x => x.CompletionRate);

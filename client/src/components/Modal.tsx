@@ -6,9 +6,10 @@ interface ModalProps {
     onClose: () => void
     title: string
     children: React.ReactNode
+    maxWidth?: string
 }
 
-export default function Modal({ isOpen, onClose, title, children }: ModalProps) {
+export default function Modal({ isOpen, onClose, title, children, maxWidth = 'max-w-md' }: ModalProps) {
     // Закрити по Escape
     useEffect(() => {
         const handleKey = (e: KeyboardEvent) => {
@@ -35,9 +36,8 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
             {/* Backdrop */}
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
 
-            {/* Modal */}
             <div
-                className="relative bg-surface rounded-2xl border border-border shadow-xl w-full max-w-md p-6"
+                className={`relative bg-surface rounded-2xl border border-border shadow-xl w-full ${maxWidth} p-6`}
                 onClick={e => e.stopPropagation()}
             >
                 {/* Заголовок */}

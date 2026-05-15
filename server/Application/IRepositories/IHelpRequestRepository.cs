@@ -38,5 +38,6 @@ namespace server.Application.IRepositories
         // ---
 
         Task SetResolvedAtAsync(Guid helpRequestId, CancellationToken ct);
+        Task<IReadOnlyList<string>> GetAllImageUrlsAsync();
     }
 }

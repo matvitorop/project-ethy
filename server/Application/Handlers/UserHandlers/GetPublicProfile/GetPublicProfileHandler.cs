@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using server.Application.IRepositories;
 using server.Domain.Primitives;
 
@@ -35,7 +35,10 @@ namespace server.Application.Handlers.UserHandlers.GetPublicProfile
                 PositiveReviews: stats?.PositiveReviews ?? 0,
                 NegativeReviews: stats?.NegativeReviews ?? 0,
                 TotalRequests: stats?.TotalRequests ?? 0,
-                CompletedRequests: stats?.CompletedRequests ?? 0
+                CompletedRequests: stats?.CompletedRequests ?? 0,
+                HelpedRequests: stats?.HelpedRequests ?? 0,
+                RejectedRequests: stats?.RejectedRequests ?? 0,
+                LastActivityAtUtc: user.LastActivityAtUtc
             ));
         }
     }

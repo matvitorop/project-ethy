@@ -50,6 +50,12 @@ export interface ProfileData {
                 role: string
                 activeRequestsCount: number
                 activeResponsesCount: number
+                totalRequests: number
+                completedRequests: number
+                helpedRequests: number
+                rejectedRequests: number
+                dailyComplaintsCount: number
+                lastActivityAtUtc: string | null
             } | null
             error: ApiError | null
         }
@@ -135,6 +141,15 @@ export interface EventLogData {
     helpRequestQuer: {
         eventLog: {
             items: EventLogItem[] | null
+            error: ApiError | null
+        }
+    }
+}
+
+export interface EditHelpRequestData {
+    helpRequest: {
+        editHelpRequest: {
+            success: boolean
             error: ApiError | null
         }
     }
@@ -354,6 +369,23 @@ export interface UpdateProfileData {
     }
 }
 
+export interface ResignAsExecutorData {
+    helpRequest: {
+        resignAsExecutor: {
+            success: boolean
+            error: ApiError | null
+        }
+    }
+}
+
+export interface RemoveExecutorData {
+    helpRequest: {
+        removeExecutor: {
+            success: boolean
+            error: ApiError | null
+        }
+    }
+}
 
 // ========================
 // Admin module types
@@ -371,8 +403,11 @@ export interface PublicProfileDto {
     negativeReviews: number
     totalRequests: number
     completedRequests: number
+    helpedRequests: number
+    rejectedRequests: number
     phoneNumber: string | null
     socialLinks: string | null
+    lastActivityAtUtc: string | null
 }
 
 export interface PublicProfileData {
@@ -471,6 +506,7 @@ export interface AdminUserDto {
     isBlocked: boolean
     blockedUntilUtc: string | null
     isDeleted: boolean
+    lastActivityAtUtc: string | null
 }
 
 export interface AdminUsersData {
@@ -493,6 +529,24 @@ export interface AdminActionData {
     admin: {
         [key: string]: {
             success: boolean | null
+            error: ApiError | null
+        }
+    }
+}
+
+export interface ApproveHelpRequestData {
+    admin: {
+        approveHelpRequest: {
+            success: boolean
+            error: ApiError | null
+        }
+    }
+}
+
+export interface RejectHelpRequestData {
+    admin: {
+        rejectHelpRequest: {
+            success: boolean
             error: ApiError | null
         }
     }
@@ -554,11 +608,12 @@ export interface MyVolunteerApplicationData {
 
 export interface PlatformStatsDto {
     totalRequests: number
-    draftRequests: number
+    moderationRequests: number
     openRequests: number
     inProgressRequests: number
     resolvedRequests: number
     cancelledRequests: number
+    rejectedRequests: number
     totalUsers: number
     totalVolunteers: number
     completionRate: number
@@ -657,6 +712,15 @@ export interface GetNotificationsData {
 export interface CancelResponseData {
     helpRequest: {
         cancelResponse: {
+            success: boolean
+            error: ApiError | null
+        }
+    }
+}
+
+export interface SoftDeleteHelpRequestData {
+    helpRequest: {
+        softDeleteHelpRequest: {
             success: boolean
             error: ApiError | null
         }

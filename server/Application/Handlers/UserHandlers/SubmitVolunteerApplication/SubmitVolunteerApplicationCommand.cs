@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using server.Domain.Primitives;
 
 namespace server.Application.Handlers.UserHandlers.SubmitVolunteerApplication
@@ -7,7 +7,7 @@ namespace server.Application.Handlers.UserHandlers.SubmitVolunteerApplication
         Guid UserId,
         string OrganizationName,
         string ActivityDescription,
-        string? DocumentImageUrl
+        string DocumentImageUrl
     ) : IRequest<Result<Guid>>;
 
 }

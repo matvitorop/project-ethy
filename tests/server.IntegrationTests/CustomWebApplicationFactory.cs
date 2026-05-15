@@ -49,6 +49,8 @@ namespace server.IntegrationTests
             System.Environment.SetEnvironmentVariable("JwtSettings__Key", "super-secret-key-that-is-very-long-for-testing");
             System.Environment.SetEnvironmentVariable("JwtSettings__Issuer", "TestIssuer");
             System.Environment.SetEnvironmentVariable("JwtSettings__Audience", "TestAudience");
+            System.Environment.SetEnvironmentVariable("AdminSeed__Email", "admin@test.com");
+            System.Environment.SetEnvironmentVariable("AdminSeed__Password", "AdminPassword123!");
         }
 
         public new async Task DisposeAsync()
@@ -58,6 +60,8 @@ namespace server.IntegrationTests
             System.Environment.SetEnvironmentVariable("JwtSettings__Key", null);
             System.Environment.SetEnvironmentVariable("JwtSettings__Issuer", null);
             System.Environment.SetEnvironmentVariable("JwtSettings__Audience", null);
+            System.Environment.SetEnvironmentVariable("AdminSeed__Email", null);
+            System.Environment.SetEnvironmentVariable("AdminSeed__Password", null);
         }
     }
 }

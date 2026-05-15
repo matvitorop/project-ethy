@@ -17,6 +17,7 @@ using server.Infrastructure;
 using server.Infrastructure.Authentication;
 using server.Infrastructure.ImageStoring;
 using server.Infrastructure.Repositories;
+using server.Infrastructure.BackgroundServices;
 using server.Presentation.Controllers;
 using server.Presentation.GraphQL;
 using server.Presentation.GraphQL.Helpers;
@@ -86,6 +87,7 @@ builder.Services.Configure<JwtSettings>(jwtSettings);
 builder.Services.AddSingleton<ISqlConnectionFactory>(new SqlConnectionFactory(connectionString));
 
 builder.Services.AddHostedService<TemporaryFileCleanupService>();
+builder.Services.AddHostedService<OrphanedImagesCleanupService>();
 
 // --- Email (SendGrid) ---
 builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
@@ -218,6 +220,7 @@ app.UseCors();
 app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<server.Presentation.Middlewares.LastActivityMiddleware>();
 
 // ROUTING TO CONTROLLERS
 app.MapControllers();

@@ -26,6 +26,7 @@ namespace server.Application.IRepositories
         Task UpdateRoleAsync(Guid userId, UserRole role, CancellationToken ct);
         Task BlockAsync(Guid userId, DateTime? blockedUntilUtc, string reason, CancellationToken ct);
         Task UnblockAsync(Guid userId, CancellationToken ct);
+        Task UpdateLastActivityAsync(Guid userId, CancellationToken ct);
         // ---
 
     }

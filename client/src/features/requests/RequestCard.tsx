@@ -4,11 +4,12 @@ import Card from '../../components/ui/Card'
 import Badge from '../../components/ui/Badge'
 
 const STATUS_CONFIG = {
-    0: { label: 'Чернетка', variant: 'default' },
+    0: { label: 'На модерації', variant: 'info' },
     1: { label: 'Відкрита', variant: 'success' },
     2: { label: 'В процесі', variant: 'info' },
     3: { label: 'Виконана', variant: 'outline' },
     4: { label: 'Скасована', variant: 'error' },
+    5: { label: 'Відхилена', variant: 'error' },
 } as const
 
 function formatDate(dateStr: string) {

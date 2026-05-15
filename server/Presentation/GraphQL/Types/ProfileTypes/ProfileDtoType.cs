@@ -18,8 +18,13 @@ namespace server.Presentation.GraphQL.Types.ProfileTypes
             Field(x => x.Role);
             Field(x => x.ActiveRequestsCount);
             Field(x => x.ActiveResponsesCount);
+            Field(x => x.TotalRequests);
+            Field(x => x.CompletedRequests);
+            Field(x => x.HelpedRequests);
+            Field(x => x.RejectedRequests);
+            Field(x => x.DailyComplaintsCount);
+            Field(x => x.LastActivityAtUtc, nullable: true);
             // ---
-
         }
     }
 }

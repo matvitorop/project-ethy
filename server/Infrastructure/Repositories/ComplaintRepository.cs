@@ -73,5 +73,21 @@ namespace server.Infrastructure.Repositories
                 "SELECT * FROM UserComplaints WHERE Id = @Id",
                 new { Id = complaintId });
         }
+ 
+        public async Task<int> GetCountByUserInLast24HoursAsync(Guid userId, CancellationToken ct)
+        {
+            using var conn = await _connectionFactory.CreateOpenConnectionAsync(ct);
+            return await conn.ExecuteScalarAsync<int>(
+                "SELECT COUNT(*) FROM UserComplaints WHERE ReporterUserId = @UserId AND CreatedAtUtc > @Since",
+                new { UserId = userId, Since = DateTime.UtcNow.AddHours(-24) });
+        }
+ 
+        public async Task<bool> HasActiveComplaintOnTargetAsync(Guid reporterId, Guid targetUserId, CancellationToken ct)
+        {
+            using var conn = await _connectionFactory.CreateOpenConnectionAsync(ct);
+            return await conn.ExecuteScalarAsync<bool>(
+                "SELECT COUNT(*) FROM UserComplaints WHERE ReporterUserId = @ReporterId AND TargetUserId = @TargetUserId AND IsResolved = 0",
+                new { ReporterId = reporterId, TargetUserId = targetUserId });
+        }
     }
 }

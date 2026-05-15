@@ -1,7 +1,9 @@
-﻿using MediatR;
+using MediatR;
 using server.Application.IRepositories;
+using server.Application.IServices;
 using server.Domain.Exceptions;
 using server.Domain.HelpRequest;
+using server.Domain.Notifications;
 using server.Domain.Primitives;
 using System.Text.Json;
 
@@ -12,13 +14,16 @@ namespace server.Application.Handlers.HelpRequestResponseHandlers.RemoveExecutor
     {
         private readonly IHelpRequestRepository _helpRequestRepository;
         private readonly IChatRepository _chatRepository;
+        private readonly INotificationService _notificationService;
 
         public RemoveExecutorHandler(
             IHelpRequestRepository helpRequestRepository,
-            IChatRepository chatRepository)
+            IChatRepository chatRepository,
+            INotificationService notificationService)
         {
             _helpRequestRepository = helpRequestRepository;
             _chatRepository = chatRepository;
+            _notificationService = notificationService;
         }
 
         public async Task<Result> Handle(
@@ -38,6 +43,8 @@ namespace server.Application.Handlers.HelpRequestResponseHandlers.RemoveExecutor
             if (chat is null)
                 return Result.Failure(
                     new Error("Chat not found", "Chat.NOT_FOUND"));
+
+            var removedExecutorId = helpRequest.AssignedUserId;
 
             try
             {
@@ -62,6 +69,20 @@ namespace server.Application.Handlers.HelpRequestResponseHandlers.RemoveExecutor
 
             await _helpRequestRepository.RemoveExecutorAsync(
                 helpRequest, chat, logEvent, ct);
+
+            // Send notification to the removed executor via service (SignalR + DB)
+            if (removedExecutorId.HasValue)
+            {
+                await _notificationService.SendNotificationAsync(
+                    removedExecutorId.Value,
+                    "Припинення співпраці",
+                    $"Власник заявки \"{helpRequest.Title}\" припинив вашу участь у ролі помічника. Причина: {request.Reason}",
+                    NotificationType.HelpRequest,
+                    helpRequest.Id,
+                    "HelpRequest",
+                    ct
+                );
+            }
 
             return Result.Success();
         }
