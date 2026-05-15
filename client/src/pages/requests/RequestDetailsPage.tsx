@@ -416,9 +416,9 @@ export default function RequestDetailsPage() {
 
             {/* Кнопки дій */}
             <div className="flex flex-wrap gap-3 mb-12 p-1 bg-surface-muted rounded-2xl border border-border w-fit shadow-inner">
-                {isOwner && (hr.status === 1 || hr.status === 2) && (
+                {isOwner && (Number(hr.status) === 0 || Number(hr.status) === 1 || Number(hr.status) === 2) && (
                     <>
-                        {hr.status === 1 && (
+                        {Number(hr.status) === 1 && (
                             <Link to={`/requests/${hr.id}/edit`}>
                                 <Button variant="ghost" size="sm">Редагувати</Button>
                             </Link>

@@ -437,6 +437,31 @@ export const DELETE_HELP_REQUEST = gql`
   }
 `
 
+export const EDIT_HELP_REQUEST = gql`
+  mutation EditHelpRequest(
+    $helpRequestId: ID!, 
+    $title: String!, 
+    $description: String!, 
+    $latitude: Float, 
+    $longitude: Float,
+    $imageUrls: [String]
+  ) {
+    helpRequest {
+      editHelpRequest(
+        helpRequestId: $helpRequestId
+        title: $title
+        description: $description
+        latitude: $latitude
+        longitude: $longitude
+        imageUrls: $imageUrls
+      ) {
+        success
+        error { code message }
+      }
+    }
+  }
+`
+
 export const CANCEL_HELP_REQUEST = gql`
   mutation CancelHelpRequest($helpRequestId: ID!, $reason: String!) {
     helpRequest {

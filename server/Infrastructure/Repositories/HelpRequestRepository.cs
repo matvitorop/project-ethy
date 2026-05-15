@@ -495,6 +495,7 @@ namespace server.Infrastructure.Repositories
                     Description  = @Description,
                     Latitude     = @Latitude,
                     Longitude    = @Longitude,
+                    Status       = @Status,
                     UpdatedAtUtc = @UpdatedAtUtc
                 WHERE Id = @Id;
                 """;
@@ -509,6 +510,7 @@ namespace server.Infrastructure.Repositories
                             request.Description,
                             Latitude = request.Location?.Latitude,
                             Longitude = request.Location?.Longitude,
+                            Status = (int)request.Status,
                             request.UpdatedAtUtc
                         },
                         transaction: tx,
@@ -517,6 +519,25 @@ namespace server.Infrastructure.Repositories
                 if (affectedRows == 0)
                     throw new InvalidOperationException(
                         $"HelpRequest with id '{request.Id}' not found.");
+
+                // Update images
+                await connection.ExecuteAsync(
+                    "DELETE FROM HelpRequestImages WHERE HelpRequestId = @Id",
+                    new { request.Id },
+                    transaction: tx);
+
+                const string imagesSql = """
+                INSERT INTO HelpRequestImages (Id, HelpRequestId, [Order], ImageUrl)
+                VALUES (NEWID(), @HelpRequestId, @Order, @ImageUrl);
+                """;
+
+                foreach (var img in request.Images)
+                {
+                    await connection.ExecuteAsync(
+                        imagesSql,
+                        new { HelpRequestId = request.Id, img.Order, img.ImageUrl },
+                        transaction: tx);
+                }
 
                 await InsertEventAsync(connection, tx, logEvent, ct);
 
@@ -837,8 +858,16 @@ namespace server.Infrastructure.Repositories
         {
             using var conn = await _connectionFactory.CreateOpenConnectionAsync(ct);
             await conn.ExecuteAsync(
-                "UPDATE HelpRequests SET ResolvedAtUtc = @Now WHERE Id = @Id",
-                new { Id = helpRequestId, Now = DateTime.UtcNow });
+                "UPDATE HelpRequests SET ResolvedAtUtc = GETUTCDATE() WHERE Id = @Id",
+                new { Id = helpRequestId });
+        }
+
+        public async Task<IReadOnlyList<string>> GetAllImageUrlsAsync()
+        {
+            using var conn = await _connectionFactory.CreateOpenConnectionAsync();
+            const string sql = "SELECT ImageUrl FROM HelpRequestImages";
+            var result = await conn.QueryAsync<string>(sql);
+            return result.AsList();
         }
 
         public async Task<int> CountActiveRequestsByCreatorAsync(Guid creatorId, CancellationToken ct)

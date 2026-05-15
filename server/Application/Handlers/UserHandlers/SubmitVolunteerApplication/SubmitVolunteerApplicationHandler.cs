@@ -62,7 +62,7 @@ namespace server.Application.Handlers.UserHandlers.SubmitVolunteerApplication
             if (string.IsNullOrWhiteSpace(request.DocumentImageUrl))
                 return Result<Guid>.Failure(new Error("Document image is required", "Volunteer.DOCUMENT_REQUIRED"));
 
-            await _imageStorage.MoveVolunteerDocumentFromTempAsync(
+            var finalPath = await _imageStorage.MoveVolunteerDocumentFromTempAsync(
                 request.DocumentImageUrl, ct);
 
             // Потім створюємо заявку
@@ -70,7 +70,7 @@ namespace server.Application.Handlers.UserHandlers.SubmitVolunteerApplication
                 request.UserId,
                 request.OrganizationName,
                 request.ActivityDescription,
-                request.DocumentImageUrl);
+                finalPath);
 
             await _applications.AddAsync(application, ct);
 

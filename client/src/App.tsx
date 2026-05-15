@@ -10,6 +10,7 @@ import RegisterPage from './pages/auth/RegisterPage'
 import RequestsListPage from './pages/requests/RequestsListPage'
 import RequestDetailsPage from './pages/requests/RequestDetailsPage'
 import CreateRequestPage from './pages/requests/CreateRequestPage'
+import EditRequestPage from './pages/requests/EditRequestPage'
 import ProfilePage from './pages/profile/ProfilePage'
 import PublicProfilePage from './pages/profile/PublicProfilePage'
 import AdminPage from './pages/admin/AdminPage'
@@ -38,8 +39,9 @@ export default function App() {
                 <Route element={<PrivateRoute />}>
                     <Route element={<AppLayout />}>
                         <Route path="/requests" element={<RequestsListPage />} />
-                        <Route path="/requests/:id" element={<RequestDetailsPage />} />
                         <Route path="/requests/new" element={<CreateRequestPage />} />
+                        <Route path="/requests/:id/edit" element={<EditRequestPage />} />
+                        <Route path="/requests/:id" element={<RequestDetailsPage />} />
                         <Route path="/profile" element={<ProfilePage />} />
                         <Route path="/profile/:userId" element={<PublicProfilePage />} />
                         <Route path="/admin" element={<AdminPage />} />

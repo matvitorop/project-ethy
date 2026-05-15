@@ -1,9 +1,10 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useApolloClient } from '@apollo/client/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FileText, ThumbsUp, ChevronLeft, ChevronRight, Ban, CheckCircle } from 'lucide-react'
 import { GET_MY_REQUESTS, GET_ASSIGNEE_REQUESTS, CHANGE_HELP_REQUEST_STATUS, CANCEL_RESPONSE, GET_PROFILE, RESIGN_AS_EXECUTOR, DELETE_HELP_REQUEST } from '../../../api/queries'
-import type { HelpRequestsPageData, ChangeHelpRequestStatusData, CancelResponseData, ResignAsExecutorData } from '../../../api/types'
+import type { HelpRequestsPageData, ChangeHelpRequestStatusData, CancelResponseData, ResignAsExecutorData, SoftDeleteHelpRequestData } from '../../../api/types'
 import { useAppDispatch } from '../../../store/hooks'
 import { addToast } from '../../../store/uiSlice'
 import { PageSpinner } from '../../../components/Spinner'
@@ -22,6 +23,7 @@ interface ProfileRequestsProps {
 type ProfileTab = 'owner' | 'assignee'
 
 export default function ProfileRequests({ userId, isOwn = false }: ProfileRequestsProps) {
+    const navigate = useNavigate();
     const dispatch = useAppDispatch()
     const client = useApolloClient()
     const [activeTab, setActiveTab] = useState<ProfileTab>('owner')
@@ -88,9 +90,9 @@ export default function ProfileRequests({ userId, isOwn = false }: ProfileReques
         onError: () => dispatch(addToast({ type: 'error', message: 'Помилка при спробі відмовитись' })),
     })
 
-    const [deleteRequest, { loading: deleting }] = useMutation(DELETE_HELP_REQUEST, {
+    const [deleteRequest, { loading: deleting }] = useMutation<SoftDeleteHelpRequestData>(DELETE_HELP_REQUEST, {
         refetchQueries: [{ query: GET_PROFILE }],
-        onCompleted: (data: any) => {
+        onCompleted: (data) => {
             const r = data.helpRequest.softDeleteHelpRequest
             if (r.error) dispatch(addToast({ type: 'error', message: r.error.message }))
             else {
@@ -154,7 +156,7 @@ export default function ProfileRequests({ userId, isOwn = false }: ProfileReques
 
                                         {/* Owner controls - visible only to owner */}
                                         {isOwn && activeTab === 'owner' && Number(item.status) === 2 && (
-                                            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                            <div className="absolute top-4 right-4 z-10">
                                                 <Button
                                                     variant="success"
                                                     size="sm"
@@ -172,8 +174,25 @@ export default function ProfileRequests({ userId, isOwn = false }: ProfileReques
                                             </div>
                                         )}
 
+                                        {isOwn && activeTab === 'owner' && Number(item.status) === 1 && (
+                                            <div className="absolute top-4 right-4 z-10">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        navigate(`/requests/${item.id}/edit`);
+                                                    }}
+                                                    className="shadow-lg py-1 px-3 h-auto text-[10px] bg-surface border border-border hover:bg-primary/5 hover:text-primary transition-all"
+                                                >
+                                                    Редагувати
+                                                </Button>
+                                            </div>
+                                        )}
+
                                         {isOwn && activeTab === 'owner' && Number(item.status) === 0 && (
-                                            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                            <div className="absolute top-4 right-4 z-10">
                                                 <Button
                                                     variant="error"
                                                     size="sm"

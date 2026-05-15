@@ -12,7 +12,7 @@ import {
 import type {
     VolunteerApplicationsData, ComplaintsData, AdminHelpRequestsData,
     VolunteerApplicationItem, AdminComplaintItem, AdminHelpRequestItem, ApiError, AdminAnalyticsData,
-    AdminAnalyticsDto, AdminUsersData, AdminUserDto
+    AdminAnalyticsDto, AdminUsersData, AdminUserDto, ApproveHelpRequestData, RejectHelpRequestData
 } from '../../api/types'
 import { useAppDispatch } from '../../store/hooks'
 import { addToast } from '../../store/uiSlice'
@@ -559,6 +559,13 @@ function ApplicationsTab({ items, loading, onRefresh }: { items: VolunteerApplic
     const dispatch = useAppDispatch()
     const [reviewModal, setReviewModal] = useState<{ id: string; approve: boolean } | null>(null)
     const [comment, setComment] = useState('')
+    const [previewImage, setPreviewImage] = useState<string | null>(null)
+
+    const getImageUrl = (url: string | null) => {
+        if (!url) return null;
+        if (url.startsWith('/uploads')) return `http://localhost:5274${url}`;
+        return `http://localhost:5274/uploads/volunteer-documents/${url}`;
+    }
 
     const [review, { loading: reviewing }] = useMutation<{ admin: { reviewVolunteerApplication: { success: boolean; error: ApiError | null } } }>(REVIEW_VOLUNTEER_APPLICATION, {
         onCompleted: (data) => {
@@ -587,12 +594,21 @@ function ApplicationsTab({ items, loading, onRefresh }: { items: VolunteerApplic
                 <Card key={app.id} padding="md" className="hover:border-primary/20 transition-all">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                         <div className="flex items-start gap-4">
-                            <div className="w-12 h-12 rounded-xl bg-surface-muted flex items-center justify-center text-ink-soft shrink-0 shadow-inner">
-                                <FileText size={24} />
+                            <div className="w-12 h-12 rounded-xl bg-surface-muted flex items-center justify-center text-ink-soft shrink-0 shadow-inner overflow-hidden border border-border">
+                                {app.documentImageUrl ? (
+                                    <img 
+                                        src={getImageUrl(app.documentImageUrl)!} 
+                                        alt="Document" 
+                                        className="w-full h-full object-cover cursor-pointer hover:scale-110 transition-transform"
+                                        onClick={() => setPreviewImage(app.documentImageUrl!)}
+                                    />
+                                ) : (
+                                    <FileText size={24} />
+                                )}
                             </div>
                             <div>
                                 <div className="flex items-center gap-3 mb-2">
-                                    <span className="font-black text-xl text-ink leading-none">{app.username}</span>
+                                    <UserLink userId={app.userId} username={app.username} className="font-black text-xl text-ink leading-none hover:text-primary transition-colors" />
                                     <Badge variant={(VOLUNTEER_STATUS_CONFIG[app.status]?.variant as 'default' | 'success' | 'warning' | 'error' | 'info' | 'outline') || 'default'}>
                                         {VOLUNTEER_STATUS_CONFIG[app.status]?.label}
                                     </Badge>
@@ -602,12 +618,17 @@ function ApplicationsTab({ items, loading, onRefresh }: { items: VolunteerApplic
                                         <Calendar size={12} />
                                         {new Date(app.submittedAtUtc).toLocaleDateString('uk-UA')}
                                     </span>
+                                    {app.organizationName && (
+                                        <>
+                                            <span className="w-1 h-1 bg-border rounded-full" />
+                                            <span>{app.organizationName}</span>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         </div>
 
                         <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="sm" onClick={() => { /* View Profile */ }}>Профіль</Button>
                             {app.status === 0 && (
                                 <div className="flex gap-2 ml-4 pl-4 border-l border-border">
                                     <Button variant="success" size="sm" onClick={() => setReviewModal({ id: app.id, approve: true })}>
@@ -629,7 +650,7 @@ function ApplicationsTab({ items, loading, onRefresh }: { items: VolunteerApplic
                                 className="overflow-hidden"
                             >
                                 <div className="mt-6 pt-6 border-t border-border">
-                                    <p className="text-[10px] font-black text-ink-soft uppercase tracking-widest mb-3">Супровідний текст</p>
+                                    <p className="text-[10px] font-black text-ink-soft uppercase tracking-widest mb-3">Опис діяльності</p>
                                     <div className="bg-surface-muted/50 p-4 rounded-2xl border border-border/50 italic text-sm text-ink-muted leading-relaxed">
                                         "{app.activityDescription || 'Без коментаря'}"
                                     </div>
@@ -674,6 +695,20 @@ function ApplicationsTab({ items, loading, onRefresh }: { items: VolunteerApplic
                             {reviewing ? 'Обробка...' : reviewModal?.approve ? 'Підтвердити' : 'Відхилити'}
                         </Button>
                     </div>
+                </div>
+            </Modal>
+
+            {/* Image Preview Modal */}
+            <Modal isOpen={!!previewImage} onClose={() => setPreviewImage(null)} title="Перегляд документа" maxWidth="max-w-4xl">
+                <div className="p-1 flex justify-center bg-surface-muted/30 rounded-2xl overflow-hidden border border-border">
+                    <img 
+                        src={getImageUrl(previewImage)!} 
+                        alt="Document Large" 
+                        className="max-w-full max-h-[80vh] object-contain shadow-2xl rounded-xl"
+                    />
+                </div>
+                <div className="mt-4 flex justify-end">
+                    <Button variant="outline" onClick={() => setPreviewImage(null)}>Закрити</Button>
                 </div>
             </Modal>
         </div>
@@ -876,16 +911,16 @@ function RequestsTab({ items, loading, onRefresh, filter, onFilterChange, search
     const [rejectModal, setRejectModal] = useState<{ id: string; title: string } | null>(null)
     const [rejectReason, setRejectReason] = useState('')
 
-    const [approveReq] = useMutation(APPROVE_HELP_REQUEST, {
-        onCompleted: (data: any) => {
+    const [approveReq] = useMutation<ApproveHelpRequestData>(APPROVE_HELP_REQUEST, {
+        onCompleted: (data) => {
             const r = data.admin.approveHelpRequest
             if (r.error) dispatch(addToast({ type: 'error', message: r.error.message }))
             else { dispatch(addToast({ type: 'success', message: 'Заявку схвалено' })); onRefresh() }
         }
     })
 
-    const [rejectReq, { loading: rejecting }] = useMutation(REJECT_HELP_REQUEST, {
-        onCompleted: (data: any) => {
+    const [rejectReq, { loading: rejecting }] = useMutation<RejectHelpRequestData>(REJECT_HELP_REQUEST, {
+        onCompleted: (data) => {
             const r = data.admin.rejectHelpRequest
             if (r.error) dispatch(addToast({ type: 'error', message: r.error.message }))
             else {

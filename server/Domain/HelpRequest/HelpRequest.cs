@@ -136,6 +136,19 @@ namespace server.Domain.HelpRequest
                 _images[i] = new RequestImage(i, _images[i].ImageUrl);
         }
 
+        public void UpdateImages(IEnumerable<string> imageUrls)
+        {
+            if (Status != HelpRequestStatus.Open)
+                throw new DomainException("Wrong help request status for updating images", "HelpRequest.CANNOT_UPDATE_IMAGES_IN_CURRENT_STATUS");
+
+            _images.Clear();
+            int order = 0;
+            foreach (var url in imageUrls.Take(5))
+            {
+                _images.Add(new RequestImage(order++, url));
+            }
+        }
+
         internal void MarkInProgress()
         {
             if (Status == HelpRequestStatus.Open || Status == HelpRequestStatus.Resolved)
@@ -241,7 +254,7 @@ namespace server.Domain.HelpRequest
             double? latitude,
             double? longitude)
         {
-            if (Status != HelpRequestStatus.Open && Status != HelpRequestStatus.Moderation)
+            if (Status != HelpRequestStatus.Open)
                 throw new DomainException(
                     "Cannot edit current request",
                     "HelpRequest.CANNOT_EDIT");
@@ -253,6 +266,7 @@ namespace server.Domain.HelpRequest
                 ? new HelpRequestGeoPoint(latitude.Value, longitude.Value)
                 : null;
 
+            Status = HelpRequestStatus.Moderation;
             UpdatedAtUtc = DateTime.UtcNow;
         }
 
