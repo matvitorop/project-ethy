@@ -142,7 +142,8 @@ namespace server.Presentation.GraphQL.Mutations
                 new QueryArgument<NonNullGraphType<StringGraphType>> { Name = "title" },
                 new QueryArgument<NonNullGraphType<StringGraphType>> { Name = "description" },
                 new QueryArgument<FloatGraphType> { Name = "latitude" },
-                new QueryArgument<FloatGraphType> { Name = "longitude" }
+                new QueryArgument<FloatGraphType> { Name = "longitude" },
+                new QueryArgument<ListGraphType<StringGraphType>> { Name = "imageUrls" }
             )
             .ResolveAsync(async context =>
             {
@@ -155,7 +156,8 @@ namespace server.Presentation.GraphQL.Mutations
                         context.GetArgument<string>("title"),
                         context.GetArgument<string>("description"),
                         context.GetArgument<double?>("latitude"),
-                        context.GetArgument<double?>("longitude")
+                        context.GetArgument<double?>("longitude"),
+                        context.GetArgument<List<string>>("imageUrls") ?? []
                     ));
 
                 return result.ToPayload(

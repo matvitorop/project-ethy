@@ -145,6 +145,15 @@ export interface EventLogData {
     }
 }
 
+export interface EditHelpRequestData {
+    helpRequest: {
+        editHelpRequest: {
+            success: boolean
+            error: ApiError | null
+        }
+    }
+}
+
 export interface CreateHelpRequestData {
     helpRequest: {
         createHelpRequest: {
@@ -522,6 +531,24 @@ export interface AdminActionData {
     }
 }
 
+export interface ApproveHelpRequestData {
+    admin: {
+        approveHelpRequest: {
+            success: boolean
+            error: ApiError | null
+        }
+    }
+}
+
+export interface RejectHelpRequestData {
+    admin: {
+        rejectHelpRequest: {
+            success: boolean
+            error: ApiError | null
+        }
+    }
+}
+
 export interface SubmitVolunteerApplicationData {
     user: {
         submitVolunteerApplication: {
@@ -682,6 +709,15 @@ export interface GetNotificationsData {
 export interface CancelResponseData {
     helpRequest: {
         cancelResponse: {
+            success: boolean
+            error: ApiError | null
+        }
+    }
+}
+
+export interface SoftDeleteHelpRequestData {
+    helpRequest: {
+        softDeleteHelpRequest: {
             success: boolean
             error: ApiError | null
         }

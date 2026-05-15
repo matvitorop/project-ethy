@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Modal from './Modal'
 import { AlertCircle } from 'lucide-react'
 
@@ -31,12 +31,10 @@ export default function ReasonModal({
 }: ReasonModalProps) {
     const [reason, setReason] = useState('')
 
-    // Скидаємо текст при відкритті/закритті
-    useEffect(() => {
-        if (!isOpen) {
-            setReason('')
-        }
-    }, [isOpen])
+    const handleClose = () => {
+        setReason('')
+        onClose()
+    }
 
     const handleSubmit = (e?: React.FormEvent) => {
         e?.preventDefault()
@@ -53,7 +51,7 @@ export default function ReasonModal({
     }
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={title}>
+        <Modal isOpen={isOpen} onClose={handleClose} title={title}>
             <form onSubmit={handleSubmit} className="space-y-6">
                 {description && (
                     <div className="flex gap-3 p-4 bg-surface-muted/50 rounded-2xl border border-border/50">
@@ -92,7 +90,7 @@ export default function ReasonModal({
                 <div className="flex gap-3 pt-2">
                     <button
                         type="button"
-                        onClick={onClose}
+                        onClick={handleClose}
                         disabled={isLoading}
                         className="flex-1 py-3.5 px-6 border-2 border-border rounded-2xl text-[11px] font-black uppercase tracking-widest text-ink-soft hover:text-ink hover:bg-surface-muted transition-all disabled:opacity-50"
                     >

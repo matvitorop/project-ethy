@@ -71,9 +71,14 @@ namespace server.Infrastructure
                     File.Move(sourceFile, destFile);
                     committedUrls.Add($"/uploads/help-requests/{fileName}");
                 }
+                else if (File.Exists(destFile))
+                {
+                    // File already committed
+                    committedUrls.Add($"/uploads/help-requests/{fileName}");
+                }
                 else
                 {
-                    throw new FileNotFoundException($"Temporary file not found or expired: {fileName}");
+                    throw new FileNotFoundException($"File not found in temp or help-requests: {fileName}");
                 }
             }
 
@@ -131,7 +136,7 @@ namespace server.Infrastructure
                 throw new FileNotFoundException($"Temp file not found: {fileName}");
 
             File.Move(tempPath, destPath, overwrite: true);
-            return fileName;
+            return $"/uploads/volunteer-documents/{fileName}";
         }
     }
 }
