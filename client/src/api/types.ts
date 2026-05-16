@@ -303,14 +303,6 @@ export interface CreateReportData {
     }
 }
 
-export interface PendingReportsData {
-    helpRequestQuer: {
-        helpRequestQuery: {
-            items: HelpRequestListItem[]
-            error: ApiError | null
-        }
-    }
-}
 
 export interface ChangeHelpRequestStatusData {
     helpRequest: {

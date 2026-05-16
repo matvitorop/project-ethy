@@ -3,6 +3,7 @@ import {
   XCircle, Trash2, Edit, LogOut, UserMinus
 } from 'lucide-react'
 import type { EventLogItem } from '../../../api/types'
+import { formatDateTime } from '../../../hooks/useDateTime'
 
 const EVENT_CONFIG = {
   0: { label: 'Виконавця призначено', icon: UserCheck,   color: 'text-success' },
@@ -15,15 +16,6 @@ const EVENT_CONFIG = {
   7: { label: 'Виконавець відмовився',icon: LogOut,      color: 'text-error' },
   8: { label: 'Виконавця знято',      icon: UserMinus,   color: 'text-error' },
 } as const
-
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString('uk-UA', {
-    day: 'numeric',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
 
 function parsePayload(payload: string): Record<string, string> {
   try {
@@ -70,7 +62,7 @@ export default function EventLogList({ events }: { events: EventLogItem[] }) {
               )}
             </div>
             <span className="text-xs text-ink-soft flex-shrink-0">
-              {formatDate(event.createdAtUtc)}
+              {formatDateTime(event.createdAtUtc, 'full')}
             </span>
           </div>
         )

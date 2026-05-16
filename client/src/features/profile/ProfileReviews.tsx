@@ -1,7 +1,8 @@
 import { ThumbsUp, ThumbsDown } from 'lucide-react'
-import Card from '../../../components/ui/Card'
-import UserLink from '../../../components/ui/UserLink'
-import type { UserReviewItem } from '../../../api/types'
+import Card from '../../components/ui/Card'
+import UserLink from '../../components/ui/UserLink'
+import type { UserReviewItem } from '../../api/types'
+import { formatDateTime } from '../../hooks/useDateTime'
 
 interface ProfileReviewsProps {
     reviews: UserReviewItem[]
@@ -24,7 +25,7 @@ export default function ProfileReviews({ reviews, title = "Відгуки кор
                                     <div className="flex items-center justify-between mb-1">
                                         <UserLink userId={review.reviewerUserId} username={review.reviewerUsername} className="text-xs font-bold" />
                                         <span className="text-[10px] font-bold text-ink-soft uppercase">
-                                            {new Date(review.createdAtUtc).toLocaleDateString('uk-UA')}
+                                            {formatDateTime(review.createdAtUtc, 'short')}
                                         </span>
                                     </div>
                                     {review.comment && <p className="text-sm text-ink leading-relaxed">{review.comment}</p>}

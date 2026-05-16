@@ -6,6 +6,7 @@ import { GET_PROFILE, LEAVE_COMPLAINT } from '../../../api/queries'
 import type { LeaveComplaintData, ProfileData } from '../../../api/types'
 import { useAppDispatch } from '../../../store/hooks'
 import { addToast } from '../../../store/uiSlice'
+import Button from '../../../components/ui/Button'
 
 interface LeaveComplaintModalProps {
     isOpen: boolean
@@ -89,19 +90,21 @@ export default function LeaveComplaintModal({
                 </div>
 
                 <div className="flex gap-3">
-                    <button
+                    <Button
+                        variant="outline"
+                        className="flex-1"
                         onClick={onClose}
-                        className="flex-1 py-2.5 border border-border rounded-lg text-sm font-medium text-ink hover:border-primary transition-colors"
                     >
                         Скасувати
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                        variant="error"
+                        className="flex-1"
                         onClick={handleSubmit}
                         disabled={loading || !reason.trim() || limitReached}
-                        className="flex-1 py-2.5 bg-error text-white rounded-lg text-sm font-semibold hover:opacity-90 disabled:opacity-60 transition-colors"
                     >
                         {loading ? 'Надсилання...' : 'Надіслати скаргу'}
-                    </button>
+                    </Button>
                 </div>
             </div>
         </Modal>

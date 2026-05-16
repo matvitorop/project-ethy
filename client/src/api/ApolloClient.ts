@@ -5,7 +5,7 @@ import {
 } from '@apollo/client'
 
 const httpLink = new HttpLink({
-    uri: 'http://localhost:5274/graphql',
+    uri: `${import.meta.env.VITE_API_BASE_URL}/graphql`,
     credentials: 'include',
 })
 

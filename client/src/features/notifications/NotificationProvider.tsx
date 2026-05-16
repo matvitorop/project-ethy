@@ -93,13 +93,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
                 prev.map(n => n.id === id ? { ...n, isRead: true } : n)
             )
 
-            // Update Apollo cache for initial notifications
-            client.cache.modify({
-                id: client.cache.identify({ __typename: 'Notification', id }),
-                fields: {
-                    isRead() { return true }
-                }
-            })
+            // Refetch queries to ensure Apollo cache is up to date for all items
+            client.refetchQueries({ include: [GET_NOTIFICATIONS] })
         } catch (err) {
             console.error('Failed to mark notification as read:', err)
         }

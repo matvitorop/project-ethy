@@ -4,16 +4,10 @@ import { X, ClipboardList } from 'lucide-react'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { closeReportsPanel } from '../../store/uiSlice'
 import { GET_PENDING_REPORTS } from '../../api/queries'
-import type { PendingReportsData } from '../../api/types'
-
-const API_BASE_URL = 'http://localhost:5274'
-
-function formatDate(dateStr: string) {
-    return new Date(dateStr).toLocaleDateString('uk-UA', {
-        day: 'numeric',
-        month: 'short',
-    })
-}
+import type { HelpRequestsPageData } from '../../api/types'
+import { formatDateTime } from '../../hooks/useDateTime'
+import { PageSpinner } from '../../components/Spinner'
+import { getImageUrl } from '../../utils/imageUrl'
 
 export default function ReportsPanel() {
     const dispatch = useAppDispatch()
@@ -21,7 +15,7 @@ export default function ReportsPanel() {
     const isOpen = useAppSelector(s => s.ui.reportsPanelOpen)
     const userId = useAppSelector(s => s.auth.userId)
 
-    const { data, loading } = useQuery<PendingReportsData>(GET_PENDING_REPORTS, {
+    const { data, loading } = useQuery<HelpRequestsPageData>(GET_PENDING_REPORTS, {
         variables: { page: 1, pageSize: 20, creatorId: userId },
         skip: !isOpen || !userId,
         fetchPolicy: 'network-only',
@@ -62,7 +56,7 @@ export default function ReportsPanel() {
                 <div className="flex-1 overflow-y-auto">
                     {loading && (
                         <div className="flex items-center justify-center h-32">
-                            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                            <PageSpinner />
                         </div>
                     )}
 
@@ -90,7 +84,7 @@ export default function ReportsPanel() {
                                     <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-surface-muted border border-border overflow-hidden">
                                         {item.previewImageUrl ? (
                                             <img
-                                                src={`${API_BASE_URL}${item.previewImageUrl}`}
+                                                src={getImageUrl(item.previewImageUrl)}
                                                 alt=""
                                                 className="w-full h-full object-cover"
                                             />
@@ -105,7 +99,7 @@ export default function ReportsPanel() {
                                             {item.title}
                                         </p>
                                         <p className="text-xs text-ink-muted mt-0.5">
-                                            {formatDate(item.createdAt)}
+                                            {formatDateTime(item.createdAt, 'short')}
                                         </p>
                                         <span className="inline-block mt-1 px-2 py-0.5 text-xs bg-warning/15 text-warning rounded-full">
                                             Потребує звіту

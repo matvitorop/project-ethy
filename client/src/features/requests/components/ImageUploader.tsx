@@ -2,8 +2,9 @@ import { useState, useRef } from 'react'
 import { Upload, X } from 'lucide-react'
 import { useAppDispatch } from '../../../store/hooks'
 import { addToast } from '../../../store/uiSlice'
+import Spinner from '../../../components/Spinner'
+import { getImageUrl } from '../../../utils/imageUrl'
 
-const API_BASE_URL = 'http://localhost:5274'
 const MAX_IMAGES = 5
 
 interface ImageUploaderProps {
@@ -36,7 +37,7 @@ export default function ImageUploader({ value, onChange }: ImageUploaderProps) {
         const formData = new FormData()
           formData.append('files', file, file.name)
 
-        const res = await fetch(`${API_BASE_URL}/api/files/help-requests`, {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/files/help-requests`, {
           method: 'POST',
           credentials: 'include',
           body: formData,
@@ -77,7 +78,7 @@ export default function ImageUploader({ value, onChange }: ImageUploaderProps) {
         {value.map(url => (
           <div key={url} className="relative w-20 h-20 rounded-lg overflow-hidden border border-border group">
             <img
-              src={`${API_BASE_URL}${url}`}
+              src={getImageUrl(url)}
               alt=""
               className="w-full h-full object-cover"
             />
@@ -99,7 +100,7 @@ export default function ImageUploader({ value, onChange }: ImageUploaderProps) {
           className="w-20 h-20 rounded-lg border-2 border-dashed border-border hover:border-primary flex flex-col items-center justify-center gap-1 transition-colors disabled:opacity-50"
         >
           {uploading ? (
-            <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <Spinner size={16} />
           ) : (
             <>
               <Upload size={16} className="text-ink-muted" />

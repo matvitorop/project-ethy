@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom'
 import type { HelpRequestListItem } from '../../api/types'
 import Card from '../../components/ui/Card'
 import Badge from '../../components/ui/Badge'
+import { formatDateTime } from '../../hooks/useDateTime'
+import { getImageUrl } from '../../utils/imageUrl'
 
 const STATUS_CONFIG = {
     0: { label: 'На модерації', variant: 'info' },
@@ -11,14 +13,6 @@ const STATUS_CONFIG = {
     4: { label: 'Скасована', variant: 'error' },
     5: { label: 'Відхилена', variant: 'error' },
 } as const
-
-function formatDate(dateStr: string) {
-    return new Date(dateStr).toLocaleDateString('uk-UA', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-    })
-}
 
 export default function RequestCard({ item }: { item: HelpRequestListItem }) {
     const statusConfig = STATUS_CONFIG[item.status as keyof typeof STATUS_CONFIG]
@@ -31,7 +25,7 @@ export default function RequestCard({ item }: { item: HelpRequestListItem }) {
                     <div className="flex-shrink-0 w-20 h-20 rounded-lg bg-surface-muted border border-border overflow-hidden relative shadow-inner">
                         {item.previewImageUrl ? (
                             <img
-                                src={`http://localhost:5274${item.previewImageUrl}`}
+                                src={getImageUrl(item.previewImageUrl)}
                                 alt={item.title}
                                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                             />
@@ -56,7 +50,7 @@ export default function RequestCard({ item }: { item: HelpRequestListItem }) {
                                 </Badge>
                             )}
                             <span className="text-xs text-ink-soft font-medium">
-                                {formatDate(item.createdAt)}
+                                {formatDateTime(item.createdAt, 'short')}
                             </span>
                         </div>
                     </div>
