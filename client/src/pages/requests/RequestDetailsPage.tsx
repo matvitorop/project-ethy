@@ -36,8 +36,8 @@ import CandidatesModal from '../../features/requests/components/CandidatesModal'
 import LeaveReviewModal from '../../features/requests/components/LeaveReviewModal'
 import LeaveComplaintModal from '../../features/requests/components/LeaveComplaintModal'
 import ReasonModal from '../../components/ReasonModal'
-
-const API_BASE_URL = 'http://localhost:5274'
+import { getImageUrl } from '../../utils/imageUrl'
+import { formatDateTime } from '../../hooks/useDateTime'
 
 // Lazy load карти щоб не блокувати рендер
 const RequestMap = lazy(() => import('../../features/requests/components/RequestMap'))
@@ -52,18 +52,11 @@ const STATUS_CONFIG = {
 
 type DetailTab = 'stages' | 'log' | 'report'
 
-function formatDate(dateStr: string) {
-    return new Date(dateStr).toLocaleDateString('uk-UA', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-    })
-}
-
 export default function RequestDetailsPage() {
     const { id } = useParams<{ id: string }>()
     const navigate = useNavigate()
     const userId = useAppSelector(s => s.auth.userId)
+    const role = useAppSelector(s => s.auth.role)
     const [activeTab, setActiveTab] = useState<DetailTab>('stages')
     const [activeImage, setActiveImage] = useState(0)
     const [respondModalOpen, setRespondModalOpen] = useState(false)
@@ -77,7 +70,7 @@ export default function RequestDetailsPage() {
 
     const dispatch = useAppDispatch()
 
-    const { data, loading, error } = useQuery<HelpRequestDetailData>(
+    const { data, loading, error, refetch } = useQuery<HelpRequestDetailData>(
         GET_HELP_REQUEST_BY_ID,
         { variables: { id }, fetchPolicy: 'cache-and-network' }
     )
@@ -91,7 +84,7 @@ export default function RequestDetailsPage() {
                     dispatch(addToast({ type: 'error', message: result.error.message }))
                 } else {
                     dispatch(addToast({ type: 'success', message: 'Статус змінено!' }))
-                    window.location.reload()
+                    refetch()
                 }
             },
             onError: () => dispatch(addToast({ type: 'error', message: 'Помилка зміни статусу' })),
@@ -101,7 +94,7 @@ export default function RequestDetailsPage() {
     const [restoreRequest, { loading: restoring }] = useMutation(RESTORE_HELP_REQUEST, {
         onCompleted: () => {
             dispatch(addToast({ type: 'success', message: 'Заявку відновлено' }))
-            window.location.reload()
+            refetch()
         },
         onError: () => dispatch(addToast({ type: 'error', message: 'Помилка відновлення' })),
     })
@@ -114,7 +107,7 @@ export default function RequestDetailsPage() {
             } else {
                 dispatch(addToast({ type: 'success', message: 'Ви відмовились від виконання' }))
                 setResignModalOpen(false)
-                window.location.reload()
+                refetch()
             }
         },
         onError: () => dispatch(addToast({ type: 'error', message: 'Помилка при спробі відмовитись' })),
@@ -128,7 +121,7 @@ export default function RequestDetailsPage() {
             } else {
                 dispatch(addToast({ type: 'success', message: 'Помічника видалено' }))
                 setRemoveExecutorModalOpen(false)
-                window.location.reload()
+                refetch()
             }
         },
         onError: () => dispatch(addToast({ type: 'error', message: 'Помилка видалення помічника' })),
@@ -150,7 +143,7 @@ export default function RequestDetailsPage() {
             } else {
                 dispatch(addToast({ type: 'success', message: 'Заявку скасовано' }))
                 setCancelModalOpen(false)
-                window.location.reload()
+                refetch()
             }
         },
         onError: () => dispatch(addToast({ type: 'error', message: 'Помилка скасування' })),
@@ -213,7 +206,7 @@ export default function RequestDetailsPage() {
             const formData = new FormData()
             formData.append('files', file, file.name)  // ← 'files' множина
 
-            const res = await fetch(`${API_BASE_URL}/api/files/help-requests`, {  // ← temp endpoint
+            const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/files/help-requests`, {  // ← temp endpoint
                 method: 'POST',
                 credentials: 'include',
                 body: formData,
@@ -277,7 +270,7 @@ export default function RequestDetailsPage() {
             className="max-w-4xl mx-auto"
         >
             {/* Назад */}
-            <Link to="/requests">
+            <Link to={role === 'Admin' ? '/admin' : '/requests'}>
                 <Button variant="ghost" size="sm" className="-ml-2 mb-6 text-ink-muted">
                     <ArrowLeft size={16} />
                     Назад до списку
@@ -289,7 +282,7 @@ export default function RequestDetailsPage() {
                 <div className="mb-10">
                     <Card padding="none" className="h-80 md:h-[400px] shadow-lg">
                         <img
-                            src={`${API_BASE_URL}${hr.imageUrls[activeImage]}`}
+                            src={getImageUrl(hr.imageUrls[activeImage])}
                             alt={hr.title}
                             className="w-full h-full object-cover"
                         />
@@ -304,7 +297,7 @@ export default function RequestDetailsPage() {
                                         }`}
                                 >
                                     <img
-                                        src={`${API_BASE_URL}${url}`}
+                                        src={getImageUrl(url)}
                                         alt=""
                                         className="w-full h-full object-cover"
                                     />
@@ -351,7 +344,7 @@ export default function RequestDetailsPage() {
                         </div>
                         <div>
                             <p className="text-[10px] font-bold text-ink-soft uppercase leading-none mb-1">Створено</p>
-                            <p className="text-xs font-bold text-ink">{formatDate(hr.createdAtUtc)}</p>
+                            <p className="text-xs font-bold text-ink">{formatDateTime(hr.createdAtUtc)}</p>
                         </div>
                     </div>
 
@@ -528,7 +521,7 @@ export default function RequestDetailsPage() {
                                             {report.imageUrl && (
                                                 <div className="rounded-2xl overflow-hidden border border-border shadow-sm">
                                                     <img
-                                                        src={`${API_BASE_URL}/uploads/reports/${report.imageUrl}`}
+                                                        src={getImageUrl(`/uploads/reports/${report.imageUrl}`)}
                                                         alt="Звіт"
                                                         className="w-full max-h-96 object-cover"
                                                     />
@@ -536,7 +529,7 @@ export default function RequestDetailsPage() {
                                             )}
                                             <div className="flex items-center justify-between pt-2">
                                                 <p className="text-xs font-bold text-ink-soft uppercase tracking-widest">
-                                                    {formatDate(report.createdAtUtc)}
+                                                    {formatDateTime(report.createdAtUtc)}
                                                 </p>
                                             </div>
                                         </Card>
@@ -670,7 +663,7 @@ export default function RequestDetailsPage() {
                 isOpen={reviewModalOpen}
                 onClose={() => setReviewModalOpen(false)}
                 helpRequestId={hr.id}
-                onSuccess={() => window.location.reload()}
+                onSuccess={() => refetch()}
                 targetName={isOwner ? 'помічником' : 'власником заявки'}
             />
 

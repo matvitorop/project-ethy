@@ -9,14 +9,15 @@ import { useAppSelector, useAppDispatch } from '../../store/hooks'
 import { addToast } from '../../store/uiSlice'
 import { PageSpinner } from '../../components/Spinner'
 import LeaveComplaintModal from '../../features/requests/components/LeaveComplaintModal'
-import ProfileReputation from '../../features/profile/components/ProfileReputation'
-import ProfileReviews from '../../features/profile/components/ProfileReviews'
-import ProfileStatsCards from '../../features/profile/components/ProfileStatsCards'
-import ProfileRequests from '../../features/profile/components/ProfileRequests'
+import ProfileReputation from '../../features/profile/ProfileReputation'
+import ProfileReviews from '../../features/profile/ProfileReviews'
+import ProfileStatsCards from '../../features/profile/ProfileStatsCards'
+import ProfileRequests from '../../features/profile/ProfileRequests'
 import Button from '../../components/ui/Button'
 import Card from '../../components/ui/Card'
 import Badge from '../../components/ui/Badge'
 import SocialLink from '../../components/ui/SocialLink'
+import { formatDateTime } from '../../hooks/useDateTime'
 
 function formatLastActivity(dateStr: string | null | undefined) {
     if (!dateStr) return 'невідомо'
@@ -95,8 +96,11 @@ export default function PublicProfilePage() {
             className="max-w-3xl mx-auto space-y-8 pb-20"
         >
             {/* Назад */}
-            <Link to="/requests" className="inline-flex items-center gap-2 text-[10px] font-black text-ink-soft uppercase tracking-widest hover:text-primary transition-colors">
-                <ChevronLeft size={14} /> Назад до списку
+            <Link to="/requests">
+                <Button variant="ghost" size="sm" className="-ml-2 mb-6 text-ink-muted">
+                    <ChevronLeft size={14} />
+                    Назад до списку
+                </Button>
             </Link>
 
             {/* Основна інформація */}
@@ -126,7 +130,7 @@ export default function PublicProfilePage() {
                             <div className="flex flex-col gap-2 mt-2">
                                 <div className="flex items-center gap-2 text-[10px] font-black text-ink-soft uppercase tracking-widest">
                                     <Calendar size={12} />
-                                    На платформі з {new Date(profile.registeredAtUtc).toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                    На платформі з {formatDateTime(profile.registeredAtUtc)}
                                 </div>
                                 <div className="flex items-center gap-2 text-[10px] font-black text-ink-soft uppercase tracking-widest">
                                     <div className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-success shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-ink-soft opacity-40'}`} />

@@ -1,5 +1,5 @@
 import { ThumbsUp, ThumbsDown } from 'lucide-react'
-import Card from '../../../components/ui/Card'
+import Card from '../../components/ui/Card'
 
 interface ProfileReputationProps {
     positiveCount: number

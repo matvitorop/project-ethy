@@ -5,6 +5,7 @@ import { RESPOND_TO_HELP_REQUEST } from '../../../api/queries'
 import type { RespondToHelpRequestData } from '../../../api/types'
 import { useAppDispatch } from '../../../store/hooks'
 import { addToast } from '../../../store/uiSlice'
+import Button from '../../../components/ui/Button'
 
 interface RespondModalProps {
     isOpen: boolean
@@ -73,20 +74,21 @@ export default function RespondModal({
                 </div>
 
                 <div className="flex gap-3 pt-1">
-                    <button
-                        type="button"
+                    <Button
+                        variant="outline"
+                        className="flex-1"
                         onClick={onClose}
-                        className="flex-1 py-2.5 border border-border rounded-lg text-sm font-medium text-ink hover:border-primary transition-colors"
+                        type="button"
                     >
                         Скасувати
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                        className="flex-1"
                         type="submit"
                         disabled={loading}
-                        className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-light disabled:opacity-60 transition-colors"
                     >
                         {loading ? 'Надсилання...' : 'Надіслати відгук'}
-                    </button>
+                    </Button>
                 </div>
             </form>
         </Modal>

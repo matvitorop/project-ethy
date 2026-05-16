@@ -6,6 +6,7 @@ import { LEAVE_REVIEW } from '../../../api/queries'
 import type { LeaveReviewData } from '../../../api/types'
 import { useAppDispatch } from '../../../store/hooks'
 import { addToast } from '../../../store/uiSlice'
+import Button from '../../../components/ui/Button'
 
 interface LeaveReviewModalProps {
     isOpen: boolean
@@ -106,19 +107,20 @@ export default function LeaveReviewModal({
                 </div>
 
                 <div className="flex gap-3">
-                    <button
+                    <Button
+                        variant="outline"
+                        className="flex-1"
                         onClick={onClose}
-                        className="flex-1 py-2.5 border border-border rounded-lg text-sm font-medium text-ink hover:border-primary transition-colors"
                     >
                         Скасувати
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                        className="flex-1"
                         onClick={handleSubmit}
                         disabled={loading || isPositive === null}
-                        className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-light disabled:opacity-60 transition-colors"
                     >
                         {loading ? 'Надсилання...' : 'Надіслати'}
-                    </button>
+                    </Button>
                 </div>
             </div>
         </Modal>

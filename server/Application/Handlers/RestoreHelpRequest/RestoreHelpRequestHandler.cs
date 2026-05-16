@@ -65,7 +65,7 @@ namespace server.Application.Handlers.RestoreHelpRequest
                 JsonSerializer.Serialize(new
                 {
                     previousStatus = "Cancelled",
-                    newStatus = "Open",
+                    newStatus = "Moderation",
                     note = "Request restored by owner"
                 }));
 
