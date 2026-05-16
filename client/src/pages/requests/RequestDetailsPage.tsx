@@ -56,6 +56,7 @@ export default function RequestDetailsPage() {
     const { id } = useParams<{ id: string }>()
     const navigate = useNavigate()
     const userId = useAppSelector(s => s.auth.userId)
+    const role = useAppSelector(s => s.auth.role)
     const [activeTab, setActiveTab] = useState<DetailTab>('stages')
     const [activeImage, setActiveImage] = useState(0)
     const [respondModalOpen, setRespondModalOpen] = useState(false)
@@ -269,7 +270,7 @@ export default function RequestDetailsPage() {
             className="max-w-4xl mx-auto"
         >
             {/* Назад */}
-            <Link to="/requests">
+            <Link to={role === 'Admin' ? '/admin' : '/requests'}>
                 <Button variant="ghost" size="sm" className="-ml-2 mb-6 text-ink-muted">
                     <ArrowLeft size={16} />
                     Назад до списку

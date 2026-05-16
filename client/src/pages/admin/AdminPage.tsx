@@ -47,7 +47,7 @@ function RefreshBar({ onRefresh, loading, lastUpdated }: { onRefresh: () => void
 export default function AdminPage() {
     const [searchParams, setSearchParams] = useSearchParams()
     const activeTab = (searchParams.get('tab') as 'applications' | 'complaints' | 'requests' | 'analytics' | 'users') || 'analytics'
-    const reqFilter = (searchParams.get('filter') as 'all' | 'moderation' | 'active' | 'completed' | 'hidden') || 'all'
+    const reqFilter = (searchParams.get('filter') as 'all' | 'moderation' | 'active' | 'completed' | 'hidden' | 'deleted' | 'cancelled' | 'inprogress') || 'all'
     const reqSearch = searchParams.get('q') || ''
 
     // User search state
@@ -102,11 +102,15 @@ export default function AdminPage() {
     const reqVariables = useMemo(() => {
         const f: Record<string, unknown> = { page: 1, pageSize: 50, searchTerm: debouncedSearch || null }
         if (reqFilter === 'active') {
-            f.statuses = ['Open', 'InProgress']
+            f.statuses = ['Open']
+            f.isDeleted = false
+        }
+        else if (reqFilter === 'inprogress') {
+            f.statuses = ['InProgress']
             f.isDeleted = false
         }
         else if (reqFilter === 'completed') {
-            f.statuses = ['Resolved', 'Cancelled']
+            f.statuses = ['Resolved']
             f.isDeleted = false
         }
         else if (reqFilter === 'hidden') {
@@ -115,6 +119,13 @@ export default function AdminPage() {
         }
         else if (reqFilter === 'moderation') {
             f.statuses = ['Moderation']
+            f.isDeleted = false
+        }
+        else if (reqFilter === 'deleted') {
+            f.isDeleted = true
+        }
+        else if (reqFilter === 'cancelled') {
+            f.statuses = ['Cancelled']
             f.isDeleted = false
         }
         return { filter: f }

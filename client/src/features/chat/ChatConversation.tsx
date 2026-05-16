@@ -126,12 +126,6 @@ export default function ChatConversation({ chat, onBack }: ChatConversationProps
                 </button>
                 <div className="flex-1 min-w-0">
                     <p className="text-sm font-black text-ink truncate leading-tight">{chat.helpRequestTitle}</p>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                        <div className={`w-1.5 h-1.5 rounded-full ${connected ? 'bg-success animate-pulse' : 'bg-ink-soft'}`} />
-                        <p className="text-[10px] font-bold text-ink-soft uppercase tracking-widest">
-                            {connected ? 'Онлайн' : 'Підключення...'}
-                        </p>
-                    </div>
                 </div>
             </div>
 

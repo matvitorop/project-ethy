@@ -195,7 +195,6 @@ export default function ProfilePage() {
                             #{userId?.slice(-6)}
                         </button>
                     </h1>
-                    <p className="text-xs font-bold text-ink-soft uppercase tracking-widest mt-1">Особисті налаштування</p>
                     <div className="flex items-center gap-2 text-[10px] font-black text-ink-soft uppercase tracking-widest mt-2">
                         <Calendar size={12} className="text-primary" />
                         На платформі з {formatDateTime(profile.registeredAtUtc)}
