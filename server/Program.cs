@@ -110,7 +110,6 @@ builder.Services.AddScoped<IComplaintRepository, ComplaintRepository>();
 builder.Services.AddScoped<IStatisticsRepository, StatisticsRepository>();
 builder.Services.AddScoped<IPasswordHasher, Pbkdf2PasswordHasher>();
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
-builder.Services.AddTransient<AuthMutation>();
 builder.Services.AddScoped<INotificationService, server.Infrastructure.Notifications.NotificationService>();
 builder.Services.AddScoped<IImageStorageService, LocalImageStorageService>();
 builder.Services.AddSignalR();
