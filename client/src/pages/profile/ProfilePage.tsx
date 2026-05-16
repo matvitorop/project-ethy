@@ -24,8 +24,7 @@ import Button from '../../components/ui/Button'
 import Card from '../../components/ui/Card'
 import Badge from '../../components/ui/Badge'
 import SocialLink from '../../components/ui/SocialLink'
-
-const API_BASE_URL = 'http://localhost:5274'
+import { formatDateTime } from '../../hooks/useDateTime'
 
 export default function ProfilePage() {
     const dispatch = useAppDispatch()
@@ -149,7 +148,7 @@ export default function ProfilePage() {
         try {
             const formData = new FormData()
             formData.append('files', file, file.name)
-            const res = await fetch(`${API_BASE_URL}/api/files/help-requests`, {
+            const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/files/help-requests`, {
                 method: 'POST', credentials: 'include', body: formData,
             })
             if (!res.ok) throw new Error()
@@ -199,7 +198,7 @@ export default function ProfilePage() {
                     <p className="text-xs font-bold text-ink-soft uppercase tracking-widest mt-1">Особисті налаштування</p>
                     <div className="flex items-center gap-2 text-[10px] font-black text-ink-soft uppercase tracking-widest mt-2">
                         <Calendar size={12} className="text-primary" />
-                        На платформі з {new Date(profile.registeredAtUtc).toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        На платформі з {formatDateTime(profile.registeredAtUtc)}
                     </div>
                 </div>
                 {profile.role === 'Volunteer' && (
