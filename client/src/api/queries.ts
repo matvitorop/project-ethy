@@ -295,9 +295,9 @@ export const DELETE_ACCOUNT = gql`
   }
 `
 export const GET_MY_REQUESTS = gql`
-  query GetMyRequests($page: Int!, $pageSize: Int!, $creatorId: ID) {
+  query GetMyRequests($page: Int!, $pageSize: Int!, $creatorId: ID, $statuses: [HelpRequestStatus]) {
     helpRequestQuer {
-      helpRequestQuery(page: $page, pageSize: $pageSize, creatorId: $creatorId) {
+      helpRequestQuery(page: $page, pageSize: $pageSize, creatorId: $creatorId, statuses: $statuses) {
         items {
           id
           title
@@ -312,9 +312,9 @@ export const GET_MY_REQUESTS = gql`
 `
 
 export const GET_ASSIGNEE_REQUESTS = gql`
-  query GetAssigneeRequests($page: Int!, $pageSize: Int!, $assignedUserId: ID, $responderId: ID) {
+  query GetAssigneeRequests($page: Int!, $pageSize: Int!, $assignedUserId: ID, $responderId: ID, $statuses: [HelpRequestStatus]) {
     helpRequestQuer {
-      helpRequestQuery(page: $page, pageSize: $pageSize, assignedUserId: $assignedUserId, responderId: $responderId) {
+      helpRequestQuery(page: $page, pageSize: $pageSize, assignedUserId: $assignedUserId, responderId: $responderId, statuses: $statuses) {
         items {
           id
           title

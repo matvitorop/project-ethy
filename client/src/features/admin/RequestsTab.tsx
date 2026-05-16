@@ -19,17 +19,19 @@ import { formatDateTime } from '../../hooks/useDateTime'
 
 const HELP_REQUEST_STATUS_CONFIG: Record<number, { label: string; variant: string }> = {
     0: { label: 'На модерації', variant: 'warning' },
-    1: { label: 'Активний', variant: 'success' },
-    2: { label: 'Завершений', variant: 'info' },
-    3: { label: 'Відхилено', variant: 'error' },
+    1: { label: 'Відкритий', variant: 'success' },
+    2: { label: 'В процесі', variant: 'info' },
+    3: { label: 'Виконаний', variant: 'outline' },
+    4: { label: 'Скасований', variant: 'default' },
+    5: { label: 'Відхилений', variant: 'error' },
 }
 
 export interface RequestsTabProps {
     items: AdminHelpRequestItem[]
     loading: boolean
     onRefresh: () => void
-    filter: 'all' | 'moderation' | 'active' | 'completed' | 'hidden'
-    onFilterChange: (f: 'all' | 'moderation' | 'active' | 'completed' | 'hidden') => void
+    filter: 'all' | 'moderation' | 'active' | 'completed' | 'hidden' | 'deleted' | 'cancelled' | 'inprogress'
+    onFilterChange: (f: 'all' | 'moderation' | 'active' | 'completed' | 'hidden' | 'deleted' | 'cancelled' | 'inprogress') => void
     search: string
     onSearchChange: (s: string) => void
 }
@@ -69,30 +71,44 @@ export default function RequestsTab({ items, loading, onRefresh, filter, onFilte
         },
     })
 
-    const filterOptions: { id: typeof filter; label: string }[] = [
+    const mainFilters: { id: typeof filter; label: string }[] = [
         { id: 'all', label: 'Всі' },
         { id: 'moderation', label: 'На модерації' },
-        { id: 'active', label: 'Активні' },
+        { id: 'active', label: 'Відкриті' },
+        { id: 'inprogress', label: 'В процесі' },
         { id: 'completed', label: 'Завершені' },
-        { id: 'hidden', label: 'Приховані' },
     ]
+
+    const archiveFilters: { id: typeof filter; label: string }[] = [
+        { id: 'hidden', label: 'Приховані' },
+        { id: 'deleted', label: 'Видалені' },
+        { id: 'cancelled', label: 'Скасовані' },
+    ]
+
+    const renderFilterGroup = (options: { id: typeof filter; label: string }[]) => (
+        <div className="flex flex-wrap gap-1.5 p-1 bg-surface-muted rounded-2xl border border-border/50">
+            {options.map(opt => (
+                <button
+                    key={opt.id}
+                    onClick={() => onFilterChange(opt.id)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${filter === opt.id
+                        ? 'bg-surface text-primary shadow-sm ring-1 ring-border'
+                        : 'text-ink-soft hover:text-ink hover:bg-surface'
+                        }`}
+                >
+                    {opt.label}
+                </button>
+            ))}
+        </div>
+    )
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-surface-muted/30 p-4 rounded-3xl border border-border/50">
-                <div className="flex flex-wrap gap-1.5 p-1 bg-surface-muted rounded-2xl border border-border/50">
-                    {filterOptions.map(opt => (
-                        <button
-                            key={opt.id}
-                            onClick={() => onFilterChange(opt.id)}
-                            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${filter === opt.id
-                                ? 'bg-surface text-primary shadow-sm ring-1 ring-border'
-                                : 'text-ink-soft hover:text-ink hover:bg-surface'
-                                }`}
-                        >
-                            {opt.label}
-                        </button>
-                    ))}
+            <div className="flex flex-col xl:flex-row gap-4 items-start xl:items-center justify-between bg-surface-muted/30 p-4 rounded-3xl border border-border/50">
+                <div className="flex flex-wrap gap-3 items-center">
+                    {renderFilterGroup(mainFilters)}
+                    <span className="hidden md:block text-ink-soft opacity-30">|</span>
+                    {renderFilterGroup(archiveFilters)}
                 </div>
 
                 <div className="relative w-full md:w-72 group">
@@ -135,8 +151,8 @@ export default function RequestsTab({ items, loading, onRefresh, filter, onFilte
                                 >
                                     <div className="flex items-center gap-3 mb-1">
                                         <span className="font-bold text-ink truncate text-base group-hover/item:text-primary transition-colors">{hr.title}</span>
-                                        {hr.isHidden && <Badge variant="error">Приховано</Badge>}
-                                        {hr.isDeleted && <Badge variant="error" className="bg-error text-black font-black">Видалено</Badge>}
+                                        {hr.isHidden && <Badge variant="default">Приховано</Badge>}
+                                        {hr.isDeleted && <Badge variant="outline" className="border-error/50 text-error font-black">Видалено</Badge>}
                                     </div>
                                     <div className="flex items-center gap-3 text-[10px] font-black text-ink-soft uppercase tracking-widest">
                                         <span className="text-primary font-bold">{hr.creatorUsername}</span>
@@ -149,7 +165,7 @@ export default function RequestsTab({ items, loading, onRefresh, filter, onFilte
                                     </div>
                                 </div>
                                 <div className="flex gap-2">
-                                    {hr.status === 0 && (
+                                    {hr.status === 0 && !hr.isDeleted && !hr.isHidden && (
                                         <div className="flex gap-2 mr-2 pr-4 border-r border-border">
                                             <Button
                                                 variant="success"

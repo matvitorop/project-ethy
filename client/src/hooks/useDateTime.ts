@@ -4,14 +4,19 @@
  * @param format 'full' | 'short' | 'timeOnly'
  */
 export function formatDateTime(
-    dateString: string | null | undefined, 
+    dateString: string | null | undefined,
     format: 'full' | 'short' | 'timeOnly' = 'full'
 ): string {
     if (!dateString) return ''
 
-    const date = new Date(dateString)
-    
-    // Перевірка на валідність дати
+    // Якщо рядок не містить інформації про часовий пояс (Z або +), 
+    // і ми знаємо, що сервер віддає UTC, додаємо 'Z'
+    let normalizedDateString = dateString.replace(' ', 'T')
+    if (!normalizedDateString.endsWith('Z') && !normalizedDateString.includes('+')) {
+        normalizedDateString += 'Z'
+    }
+
+    const date = new Date(normalizedDateString)
     if (isNaN(date.getTime())) return ''
 
     const options: Intl.DateTimeFormatOptions = {}

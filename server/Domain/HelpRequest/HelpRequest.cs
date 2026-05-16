@@ -317,7 +317,7 @@ namespace server.Domain.HelpRequest
                     "Only cancelled requests can be restored",
                     "HelpRequest.CANNOT_RESTORE");
 
-            Status = HelpRequestStatus.Open;
+            Status = HelpRequestStatus.Moderation;
             CancellationReason = null;
         }
 
