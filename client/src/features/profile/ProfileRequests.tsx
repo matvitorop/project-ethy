@@ -154,7 +154,10 @@ export default function ProfileRequests({ userId, isOwn = false }: ProfileReques
                             ] as const).map(opt => (
                                 <button
                                     key={opt.id}
-                                    onClick={() => setFilter(opt.id)}
+                                    onClick={() => {
+                                        setFilter(opt.id);
+                                        setCurrentPage(1);
+                                    }}
                                     className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${filter === opt.id
                                         ? 'bg-surface text-primary shadow-sm ring-1 ring-border'
                                         : 'text-ink-soft hover:text-ink hover:bg-surface'

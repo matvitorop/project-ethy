@@ -1,12 +1,9 @@
 using DbUp;
 using GraphQL;
 using GraphQL.Authorization;
-using GraphQL.Server.Ui.Playground;
 using GraphQL.Types;
 using GraphQL.Validation;
-using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Data.SqlClient;
 using Microsoft.IdentityModel.Tokens;
 using server.Application.Handlers.RegisterUser;
 using server.Application.IRepositories;
@@ -19,14 +16,11 @@ using server.Infrastructure.ImageStoring;
 using server.Infrastructure.Repositories;
 using server.Infrastructure.BackgroundServices;
 using server.Presentation.Controllers;
-using server.Presentation.GraphQL;
 using server.Presentation.GraphQL.Helpers;
 using server.Presentation.GraphQL.Mutations;
 using server.Presentation.GraphQL.Schemas;
 using server.Presentation.Hubs;
 using server.Presentation.Schemas;
-using System.Data;
-using System.Security.Claims;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -89,7 +83,7 @@ builder.Services.AddSingleton<ISqlConnectionFactory>(new SqlConnectionFactory(co
 builder.Services.AddHostedService<TemporaryFileCleanupService>();
 builder.Services.AddHostedService<OrphanedImagesCleanupService>();
 
-// --- Email (SendGrid) ---
+// --- Email (SMTP) ---
 builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 
 // --- New repositories ---
@@ -111,7 +105,7 @@ builder.Services.AddScoped<IStatisticsRepository, StatisticsRepository>();
 builder.Services.AddScoped<IPasswordHasher, Pbkdf2PasswordHasher>();
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
 builder.Services.AddScoped<INotificationService, server.Infrastructure.Notifications.NotificationService>();
-builder.Services.AddScoped<IImageStorageService, LocalImageStorageService>();
+builder.Services.AddScoped<IImageStorageService, CloudinaryImageStorageService>();
 builder.Services.AddSignalR();
 
 // CONTROLLERS REGISTRATION
@@ -189,8 +183,8 @@ builder.Services.AddGraphQL(b => b
     })
     .ConfigureExecutionOptions(options =>
     {
-        options.EnableMetrics = true;
-        options.ThrowOnUnhandledException = true;
+        options.EnableMetrics = builder.Environment.IsDevelopment();
+        options.ThrowOnUnhandledException = builder.Environment.IsDevelopment();
     }));
 
 builder.Services.AddMediatR(cfg =>
@@ -228,7 +222,10 @@ app.MapControllers();
 // GRAPHQL ENDPOINTS
 // =====================
 app.UseGraphQL<ISchema>("/graphql");
-app.UseGraphQLPlayground("/graphql/playground");
+if (app.Environment.IsDevelopment())
+{
+    app.UseGraphQLGraphiQL("/graphql/ui");
+}
 
 // =====================
 // Chat endpoint for SignalR

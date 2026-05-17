@@ -396,3 +396,5 @@ Thumbs.db
 # Uploads
 server/wwwroot/uploads/**/*
 !server/wwwroot/uploads/**/.gitkeep
+
+server/appsettings.Development.json

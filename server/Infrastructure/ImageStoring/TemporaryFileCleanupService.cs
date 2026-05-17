@@ -1,16 +1,25 @@
 
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
+
 namespace server.Infrastructure.ImageStoring
 {
     public class TemporaryFileCleanupService : BackgroundService
     {
-        private readonly IWebHostEnvironment _env;
+        private readonly Cloudinary _cloudinary;
         private readonly ILogger<TemporaryFileCleanupService> _logger;
         private readonly TimeSpan _checkInterval = TimeSpan.FromHours(1);
         private readonly TimeSpan _fileTtl = TimeSpan.FromHours(1);
 
-        public TemporaryFileCleanupService(IWebHostEnvironment env, ILogger<TemporaryFileCleanupService> logger)
+        public TemporaryFileCleanupService(IConfiguration config, ILogger<TemporaryFileCleanupService> logger)
         {
-            _env = env;
+            var account = new Account(
+                config["Cloudinary:CloudName"],
+                config["Cloudinary:ApiKey"],
+                config["Cloudinary:ApiSecret"]
+            );
+            _cloudinary = new Cloudinary(account);
+            _cloudinary.Api.Secure = true;
             _logger = logger;
         }
 
@@ -20,7 +29,7 @@ namespace server.Infrastructure.ImageStoring
             {
                 try
                 {
-                    CleanupTempFiles();
+                    await CleanupTempFilesAsync(stoppingToken);
                 }
                 catch (Exception ex)
                 {
@@ -31,31 +40,50 @@ namespace server.Infrastructure.ImageStoring
             }
         }
 
-        private void CleanupTempFiles()
+        private async Task CleanupTempFilesAsync(CancellationToken ct)
         {
-            var webRoot = _env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-            var tempPath = Path.Combine(webRoot, "uploads", "temp");
-            if (!Directory.Exists(tempPath)) return;
+            var cutoff = DateTime.UtcNow.Subtract(_fileTtl);
+            var nextCursor = (string?)null;
 
-            var files = Directory.GetFiles(tempPath);
-            foreach (var file in files)
+            do
             {
-                var fileInfo = new FileInfo(file);
+                var result = await _cloudinary.ListResourcesAsync(
+                    new ListResourcesByPrefixParams
+                    {
+                        Prefix = "ethy/temp/",
+                        Type = "upload",
+                        MaxResults = 100,
+                        NextCursor = nextCursor,
+                    },
+                    ct
+                );
 
-                // file deleting if their age less than TTL
-                if (fileInfo.CreationTimeUtc < DateTime.UtcNow.Subtract(_fileTtl))
+                foreach (var resource in result.Resources)
                 {
-                    try
+                    if (DateTime.TryParseExact(
+                        resource.CreatedAt,
+                        "MM/dd/yyyy HH:mm:ss",
+                        System.Globalization.CultureInfo.InvariantCulture,
+                        System.Globalization.DateTimeStyles.AssumeUniversal |
+                        System.Globalization.DateTimeStyles.AdjustToUniversal,
+                        out var createdAt))
                     {
-                        fileInfo.Delete();
-                        _logger.LogInformation($"Deleted orphaned file: {fileInfo.Name}");
-                    }
-                    catch (IOException)
-                    {
-                        // busy file, skip
+                        var createdAtUtc = createdAt.ToUniversalTime();
+
+                        if (createdAtUtc < cutoff)
+                        {
+                            var deleteParams = new DeletionParams(resource.PublicId)
+                            {
+                                ResourceType = ResourceType.Image
+                            };
+                            var deleteResult = await _cloudinary.DestroyAsync(deleteParams);
+                            _logger.LogInformation("Deleted temp file: {PublicId}", resource.PublicId);
+                        }
                     }
                 }
-            }
+
+                nextCursor = result.NextCursor;
+            } while (!string.IsNullOrEmpty(nextCursor));
         }
     }
 }

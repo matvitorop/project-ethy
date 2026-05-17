@@ -74,7 +74,7 @@ export default function EditRequestPage() {
                 description: values.description.trim(),
                 latitude: values.location?.lat ?? null,
                 longitude: values.location?.lng ?? null,
-                imageUrls: values.imageUrls.map((url: string) => url.split('/').pop()).filter(Boolean),
+                imageUrls: values.imageUrls,
             },
         })
     }

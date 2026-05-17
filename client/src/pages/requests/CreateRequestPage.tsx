@@ -54,7 +54,7 @@ export default function CreateRequestPage() {
                 latitude: values.location?.lat ?? null,
                 longitude: values.location?.lng ?? null,
                 imageUrls: values.imageUrls.length > 0 
-                    ? values.imageUrls.map((url: string) => url.split('/').pop()).filter(Boolean).slice(0, 5) 
+                    ? values.imageUrls.slice(0, 5) 
                     : null,
             },
         })

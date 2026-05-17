@@ -22,7 +22,7 @@ namespace server.Infrastructure
             _password = config["Smtp:Password"]!;
             _fromEmail = config["Smtp:FromEmail"]!;
             _fromName = config["Smtp:FromName"] ?? "Ethy";
-            _frontendBaseUrl = config["Smtp:FrontendBaseUrl"] ?? "http://localhost:5173";
+            _frontendBaseUrl = config["Smtp:FrontendBaseUrl"] ?? throw new InvalidOperationException("Smtp:FrontendBaseUrl is not configured");
         }
 
         public Task SendEmailVerificationAsync(

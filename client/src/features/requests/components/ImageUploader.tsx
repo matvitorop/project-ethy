@@ -21,10 +21,10 @@ export default function ImageUploader({ value, onChange }: ImageUploaderProps) {
     if (!files || files.length === 0) return
 
     if (files.length > MAX_IMAGES) {
-        dispatch(addToast({ 
-            type: 'info', 
-            message: `Можна завантажити не більше ${MAX_IMAGES} фото за раз` 
-        }))
+      dispatch(addToast({
+        type: 'info',
+        message: `Можна завантажити не більше ${MAX_IMAGES} фото за раз`
+      }))
     }
 
     const toUpload = Array.from(files).slice(0, MAX_IMAGES)
@@ -35,7 +35,7 @@ export default function ImageUploader({ value, onChange }: ImageUploaderProps) {
 
       for (const file of toUpload) {
         const formData = new FormData()
-          formData.append('files', file, file.name)
+        formData.append('files', file, file.name)
 
         const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/files/help-requests`, {
           method: 'POST',
@@ -45,9 +45,9 @@ export default function ImageUploader({ value, onChange }: ImageUploaderProps) {
 
         if (!res.ok) throw new Error('Upload failed')
 
-          const data = await res.json()
-          const fullUrls = data.imageUrls.map((url: string) => `/uploads/temp/${url}`)
-          urls.push(...fullUrls)
+        const data = await res.json()
+        const fullUrls = data.imageUrls
+        urls.push(...fullUrls)
       }
 
       const combined = [...value, ...urls]
