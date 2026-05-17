@@ -207,6 +207,9 @@ export default function NotificationBell() {
                                 ))
                             )}
                         </div>
+                        
+                        {/* Футер для запобігання перекриттю ресайз-ручки */}
+                        <div className="h-4 bg-surface-muted/30 border-t border-border/50 shrink-0" />
 
                         {/* Ручка для ресайзу */}
                         <div 
