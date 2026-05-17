@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Testcontainers.MsSql;
 using Xunit;
 using Moq;
+using server.Infrastructure.ImageStoring;
 
 namespace server.IntegrationTests
 {
@@ -42,6 +43,13 @@ namespace server.IntegrationTests
                 // Replace the real image storage with a mock to prevent Cloudinary calls during integration tests
                 services.RemoveAll<IImageStorageService>();
                 services.AddScoped(_ => ImageStorageMock.Object);
+
+                // Remove TemporaryFileCleanupService to avoid Cloudinary initialization errors in CI
+                var descriptor = services.FirstOrDefault(d => d.ImplementationType == typeof(TemporaryFileCleanupService));
+                if (descriptor != null)
+                {
+                    services.Remove(descriptor);
+                }
             });
 
             // Setup mock behavior
