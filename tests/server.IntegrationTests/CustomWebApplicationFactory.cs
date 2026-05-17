@@ -16,6 +16,7 @@ namespace server.IntegrationTests
     {
         private readonly MsSqlContainer _msSqlContainer;
         public Mock<IEmailSender> EmailSenderMock { get; } = new Mock<IEmailSender>();
+        public Mock<IImageStorageService> ImageStorageMock { get; } = new Mock<IImageStorageService>();
 
         public CustomWebApplicationFactory()
         {
@@ -37,7 +38,16 @@ namespace server.IntegrationTests
                 // Replace the real email sender with a mock to prevent sending real emails during integration tests
                 services.RemoveAll<IEmailSender>();
                 services.AddScoped(_ => EmailSenderMock.Object);
+
+                // Replace the real image storage with a mock to prevent Cloudinary calls during integration tests
+                services.RemoveAll<IImageStorageService>();
+                services.AddScoped(_ => ImageStorageMock.Object);
             });
+
+            // Setup mock behavior
+            ImageStorageMock
+                .Setup(x => x.CommitHelpRequestImagesAsync(It.IsAny<IEnumerable<string>>()))
+                .ReturnsAsync((IEnumerable<string> urls) => urls?.ToList() ?? new List<string>());
         }
 
         public async Task InitializeAsync()
