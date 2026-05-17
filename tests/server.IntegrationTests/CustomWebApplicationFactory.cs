@@ -76,6 +76,14 @@ namespace server.IntegrationTests
             System.Environment.SetEnvironmentVariable("JwtSettings__Audience", "TestAudience");
             System.Environment.SetEnvironmentVariable("AdminSeed__Email", "admin@test.com");
             System.Environment.SetEnvironmentVariable("AdminSeed__Password", "AdminPassword123!");
+            
+            // Dummy values for Cloudinary to prevent crash in TemporaryFileCleanupService
+            System.Environment.SetEnvironmentVariable("Cloudinary__CloudName", "test_cloud");
+            System.Environment.SetEnvironmentVariable("Cloudinary__ApiKey", "test_key");
+            System.Environment.SetEnvironmentVariable("Cloudinary__ApiSecret", "test_secret");
+
+            // Dummy value for Smtp to prevent crash in RegisterUserHandler
+            System.Environment.SetEnvironmentVariable("Smtp__FrontendBaseUrl", "http://localhost:3000");
         }
 
         public new async Task DisposeAsync()
@@ -87,6 +95,12 @@ namespace server.IntegrationTests
             System.Environment.SetEnvironmentVariable("JwtSettings__Audience", null);
             System.Environment.SetEnvironmentVariable("AdminSeed__Email", null);
             System.Environment.SetEnvironmentVariable("AdminSeed__Password", null);
+            
+            System.Environment.SetEnvironmentVariable("Cloudinary__CloudName", null);
+            System.Environment.SetEnvironmentVariable("Cloudinary__ApiKey", null);
+            System.Environment.SetEnvironmentVariable("Cloudinary__ApiSecret", null);
+            
+            System.Environment.SetEnvironmentVariable("Smtp__FrontendBaseUrl", null);
         }
     }
 }
