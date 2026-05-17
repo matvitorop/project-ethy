@@ -1,9 +1,23 @@
-﻿namespace server.Application.Handlers.UserHandlers.GetProfile
+namespace server.Application.Handlers.UserHandlers.GetProfile
 {
     public sealed record ProfileDto(
         Guid Id,
         string Username,
         string Email,
-        DateTime RegisteredAtUtc
+        DateTime RegisteredAtUtc,
+        
+        // Trust module
+        string? PhoneNumber,
+        string? SocialLinks,
+        bool IsEmailVerified,
+        string Role,
+        int ActiveRequestsCount,
+        int ActiveResponsesCount,
+        int TotalRequests,
+        int CompletedRequests,
+        int HelpedRequests,
+        int RejectedRequests,
+        int DailyComplaintsCount,
+        DateTime? LastActivityAtUtc
     );
 }

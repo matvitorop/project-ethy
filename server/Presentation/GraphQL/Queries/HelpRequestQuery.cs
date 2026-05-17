@@ -1,4 +1,4 @@
-﻿using GraphQL;
+using GraphQL;
 using GraphQL.Types;
 using MediatR;
 using server.Application.Handlers.GetActiveRequests;
@@ -6,14 +6,20 @@ using server.Application.Handlers.GetChatMessages;
 using server.Application.Handlers.GetEventLog;
 using server.Application.Handlers.GetFullHelpRequest;
 using server.Application.Handlers.GetHelpRequestResponses;
+using server.Application.Handlers.GetMyChats;
 using server.Application.Handlers.GetStages;
+using server.Application.Handlers.HelpRequestResponseHandlers.GetReports;
+using server.Domain.HelpRequest;
 using server.Presentation.GraphQL.Extensions;
 using server.Presentation.GraphQL.Types;
+using server.Presentation.GraphQL.Types.ChangeHRStatusTypes;
 using server.Presentation.GraphQL.Types.ChatMessagesTypes;
+using server.Presentation.GraphQL.Types.ChatTypes;
 using server.Presentation.GraphQL.Types.ErrorTypes;
 using server.Presentation.GraphQL.Types.GetHRDetailTypes;
 using server.Presentation.GraphQL.Types.GetHRListTypes;
 using server.Presentation.GraphQL.Types.GetHRResponsesTypes;
+using server.Presentation.GraphQL.Types.ReportTypes;
 using server.Presentation.GraphQL.Types.StageLogTypes;
 using server.Presentation.GraphQL.Types.StageTypes;
 
@@ -27,18 +33,34 @@ namespace server.Presentation.GraphQL.Queries
             .Authorize()
             .Arguments(
                 new QueryArgument<NonNullGraphType<IntGraphType>> { Name = "page" },
-                new QueryArgument<NonNullGraphType<IntGraphType>> { Name = "pageSize" }
+                new QueryArgument<NonNullGraphType<IntGraphType>> { Name = "pageSize" },
+                new QueryArgument<HelpRequestStatusEnumType> { Name = "status" },
+                new QueryArgument<ListGraphType<HelpRequestStatusEnumType>> { Name = "statuses" },
+                new QueryArgument<IdGraphType> { Name = "creatorId" },  
+                new QueryArgument<IdGraphType> { Name = "assignedUserId" },
+                new QueryArgument<BooleanGraphType> { Name = "hasNoReport" },
+                new QueryArgument<StringGraphType> { Name = "searchTerm" },
+                new QueryArgument<StringGraphType> { Name = "shortId" },
+                new QueryArgument<IdGraphType> { Name = "responderId" }
             )
             .ResolveAsync(async context =>
             {
                 var result = await mediator.Send(
                     new GetHelpRequestsPageQuery(
                         context.GetArgument<int>("page"),
-                        context.GetArgument<int>("pageSize")
+                        context.GetArgument<int>("pageSize"),
+                        context.GetArgument<HelpRequestStatus?>("status"),
+                        context.GetArgument<List<HelpRequestStatus>?>("statuses"),
+                        context.GetArgument<Guid?>("creatorId"),      
+                        context.GetArgument<Guid?>("assignedUserId"),
+                        context.GetArgument<bool?>("hasNoReport"),
+                        context.GetArgument<string?>("searchTerm"),
+                        context.GetArgument<string?>("shortId"),
+                        context.GetArgument<Guid?>("responderId")
                     ));
 
-
-                return result.ToPayload((value, error) => new HelpRequestsPagePayload(value, error));
+                return result.ToPayload((value, error) =>
+                    new HelpRequestsPagePayload(value, error));
             });
 
             Field<HelpRequestDetailPeyloadType>("helpRequestById")
@@ -119,6 +141,33 @@ namespace server.Presentation.GraphQL.Queries
             
                 return result.ToPayload(
                     (value, error) => new EventLogPayload(value, error));
+            });
+
+            Field<ReportsPayloadType>("reports")
+            .Arguments(
+                new QueryArgument<NonNullGraphType<IdGraphType>> { Name = "helpRequestId" }
+            )
+            .ResolveAsync(async context =>
+            {
+                var result = await mediator.Send(
+                    new GetReportsQuery(
+                        context.GetArgument<Guid>("helpRequestId")));
+
+                return result.ToPayload(
+                    (value, error) => new ReportsPayload(value, error));
+            });
+
+            Field<MyChatsPayloadType>("myChats")
+            .Authorize()
+            .ResolveAsync(async context =>
+            {
+                var userId = context.GetUserId();
+
+                var result = await mediator.Send(
+                    new GetMyChatsQuery(userId));
+
+                return result.ToPayload(
+                    (value, error) => new MyChatsPayload(value, error));
             });
         }
     }

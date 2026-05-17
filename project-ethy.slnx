@@ -4,4 +4,6 @@
     <Deploy />
   </Project>
   <Project Path="server/server.csproj" />
+  <Project Path="tests/server.UnitTests/server.UnitTests.csproj" />
+  <Project Path="tests/server.IntegrationTests/server.IntegrationTests.csproj" />
 </Solution>

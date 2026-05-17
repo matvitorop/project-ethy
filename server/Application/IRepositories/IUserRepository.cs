@@ -1,4 +1,5 @@
-﻿using server.Application.Handlers.GetUserStatistics;
+using server.Application.Handlers.AdminHandlers.AdminGetUsers;
+using server.Application.Handlers.GetUserStatistics;
 using server.Domain;
 
 namespace server.Application.IRepositories
@@ -13,5 +14,20 @@ namespace server.Application.IRepositories
         Task UpdatePasswordAsync(Guid id, string passwordHash, string passwordSalt, CancellationToken ct);
         Task<bool> IsAdminAsync(Guid userId, CancellationToken ct);
         Task SoftDeleteAsync(User user, CancellationToken ct);
+        
+        // Trust module
+        Task UpdateProfileAsync(Guid id, string? phoneNumber, string? socialLinks, CancellationToken ct);
+        // ---
+
+        // Admin module
+        Task<IReadOnlyList<AdminUserDto>> GetUsersPageAsync(int page, int pageSize, string? searchTerm, string? shortId, CancellationToken ct);
+        Task VerifyEmailAsync(Guid userId, CancellationToken ct);
+        Task UpdateLastVolunteerApplicationDateAsync(Guid userId, CancellationToken ct);
+        Task UpdateRoleAsync(Guid userId, UserRole role, CancellationToken ct);
+        Task BlockAsync(Guid userId, DateTime? blockedUntilUtc, string reason, CancellationToken ct);
+        Task UnblockAsync(Guid userId, CancellationToken ct);
+        Task UpdateLastActivityAsync(Guid userId, CancellationToken ct);
+        // ---
+
     }
 }

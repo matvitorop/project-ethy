@@ -1,5 +1,6 @@
-﻿using Dapper;
+using Dapper;
 using Microsoft.Data.SqlClient;
+using server.Application.Handlers.AdminHandlers.AdminGetHelpRequests;
 using server.Application.Handlers.GetActiveRequests;
 using server.Application.Handlers.GetFullHelpRequest;
 using server.Application.Handlers.GetHelpRequestResponses;
@@ -133,41 +134,75 @@ namespace server.Infrastructure.Repositories
                 responses);
         }
 
-        public async Task<IReadOnlyList<HelpRequestListItemDto>> GetPageAsync(CancellationToken ct, int page, int pageSize = 10)
+        public async Task<IReadOnlyList<HelpRequestListItemDto>> GetPageAsync(
+            CancellationToken ct,
+            int page,
+            int pageSize = 10,
+            HelpRequestStatus? status = null,
+            IReadOnlyList<HelpRequestStatus>? statuses = null,
+            Guid? creatorId = null,
+            Guid? assignedUserId = null,
+            bool? hasNoReport = null,
+            string? searchTerm = null,
+            string? shortId = null,
+            Guid? responderId = null)
         {
             using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
-
             var offset = (page - 1) * pageSize;
 
-            var sql = """
-                SELECT 
-                    hr.Id,
-                    hr.Title,
-                    hr.Status,
-                    img.ImageUrl AS PreviewImageUrl,
-                    hr.CreatedAtUtc AS CreatedAt
-                FROM HelpRequests hr
-                OUTER APPLY (
-                    SELECT TOP 1 ImageUrl
-                    FROM HelpRequestImages
-                    WHERE HelpRequestId = hr.Id
-                    ORDER BY [Order] ASC
-                ) img
-                WHERE hr.IsDeleted = 0
-                    AND hr.Status != 4
-                ORDER BY hr.CreatedAtUtc DESC
-                OFFSET @Offset ROWS
-                FETCH NEXT @PageSize ROWS ONLY;
-                """;
+            var filters = new List<string> { "hr.IsDeleted = 0" };
+            if (status.HasValue) filters.Add("hr.Status = @Status");
+            else if (statuses != null && statuses.Count > 0) filters.Add("hr.Status IN @Statuses");
+            else if (!creatorId.HasValue) filters.Add("hr.Status != 0"); // Hide Moderation (0) from public list
+
+            if (creatorId.HasValue) filters.Add("hr.CreatorId = @CreatorId");
+            if (assignedUserId.HasValue) filters.Add("hr.AssignedUserId = @AssignedUserId");
+            if (hasNoReport == true)
+            {
+                filters.Add("NOT EXISTS (SELECT 1 FROM HelpRequestReports r WHERE r.HelpRequestId = hr.Id)");
+            }
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                filters.Add("hr.Title LIKE @SearchTerm");
+            }
+            if (!string.IsNullOrWhiteSpace(shortId))
+            {
+                filters.Add("RIGHT(CAST(hr.Id AS NVARCHAR(36)), 6) = @ShortId");
+            }
+            if (responderId.HasValue)
+            {
+                filters.Add("EXISTS (SELECT 1 FROM HelpRequestResponses hrr WHERE hrr.HelpRequestId = hr.Id AND hrr.UserId = @ResponderId AND hrr.Status IN (0, 1))");
+            }
+
+            var filterClause = string.Join(" AND ", filters);
+
+            var sql = $"""
+                 SELECT hr.Id, hr.Title, hr.Status, 
+                        (SELECT TOP 1 ImageUrl FROM HelpRequestImages WHERE HelpRequestId = hr.Id) as PreviewImageUrl,
+                        hr.CreatedAtUtc as CreatedAt
+                 FROM HelpRequests hr
+                 WHERE {filterClause}
+                 ORDER BY hr.CreatedAtUtc DESC
+                 OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY;
+                 """;
 
             var result = await connection.QueryAsync<HelpRequestListItemDto>(
-                new CommandDefinition(
-                    sql,
-                    new { Offset = offset, PageSize = pageSize },
-                    cancellationToken: ct
-                    ));
+                sql,
+                new
+                {
+                    Offset = offset,
+                    PageSize = pageSize,
+                    Status = status.HasValue ? (int)status.Value : 0,
+                    Statuses = statuses?.Select(s => (int)s).ToList(),
+                    CreatorId = creatorId,
+                    AssignedUserId = assignedUserId,
+                    SearchTerm = $"%{searchTerm}%",
+                    ShortId = shortId,
+                    ResponderId = responderId
+                }
+            );
 
-            return result.AsList();
+            return result.ToList();
         }
 
         public async Task<HelpRequestDetailDto?> GetHelpRequestById(CancellationToken ct, Guid id)
@@ -175,17 +210,23 @@ namespace server.Infrastructure.Repositories
             using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
 
             const string requestSql = """
-                SELECT 
-                    Id,
-                    CreatorId,
-                    Title,
-                    Description,
-                    Status,
-                    Latitude,
-                    Longitude,
-                    CreatedAtUtc
-                FROM HelpRequests
-                WHERE Id = @Id;
+                SELECT
+                hr.Id,
+                hr.CreatorId,
+                hr.AssignedUserId,
+                u.Username AS CreatorUsername,
+                au.Username AS AssignedUsername,
+                hr.Title,
+                hr.Description,
+                hr.Status,
+                hr.Latitude,
+                hr.Longitude,
+                hr.CreatedAtUtc,
+                hr.IsHidden
+            FROM HelpRequests hr
+            INNER JOIN Users u ON u.Id = hr.CreatorId
+            LEFT JOIN Users au ON au.Id = hr.AssignedUserId
+            WHERE hr.Id = @Id;
             """;
 
             var request = await connection
@@ -385,14 +426,23 @@ namespace server.Infrastructure.Repositories
             using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
 
             const string sql = """
-                SELECT Id, UserId, Message, Status, CreatedAtUtc
-                FROM HelpRequestResponses
-                WHERE HelpRequestId = @HelpRequestId
-                ORDER BY CreatedAtUtc ASC;
+                SELECT 
+                    hrr.Id,
+                    hrr.UserId,
+                    u.Username,
+                    hrr.Message,
+                    hrr.Status,
+                    hrr.CreatedAtUtc
+                FROM HelpRequestResponses hrr
+                INNER JOIN Users u ON u.Id = hrr.UserId
+                WHERE hrr.HelpRequestId = @HelpRequestId
+                ORDER BY hrr.CreatedAtUtc ASC;
                 """;
 
             var result = await connection.QueryAsync<HelpRequestResponseDto>(
-                new CommandDefinition(sql, new { HelpRequestId = helpRequestId }, cancellationToken: ct));
+                new CommandDefinition(sql,
+                    new { HelpRequestId = helpRequestId },
+                    cancellationToken: ct));
 
             return result.AsList();
         }
@@ -445,6 +495,7 @@ namespace server.Infrastructure.Repositories
                     Description  = @Description,
                     Latitude     = @Latitude,
                     Longitude    = @Longitude,
+                    Status       = @Status,
                     UpdatedAtUtc = @UpdatedAtUtc
                 WHERE Id = @Id;
                 """;
@@ -459,6 +510,7 @@ namespace server.Infrastructure.Repositories
                             request.Description,
                             Latitude = request.Location?.Latitude,
                             Longitude = request.Location?.Longitude,
+                            Status = (int)request.Status,
                             request.UpdatedAtUtc
                         },
                         transaction: tx,
@@ -467,6 +519,25 @@ namespace server.Infrastructure.Repositories
                 if (affectedRows == 0)
                     throw new InvalidOperationException(
                         $"HelpRequest with id '{request.Id}' not found.");
+
+                // Update images
+                await connection.ExecuteAsync(
+                    "DELETE FROM HelpRequestImages WHERE HelpRequestId = @Id",
+                    new { request.Id },
+                    transaction: tx);
+
+                const string imagesSql = """
+                INSERT INTO HelpRequestImages (Id, HelpRequestId, [Order], ImageUrl)
+                VALUES (NEWID(), @HelpRequestId, @Order, @ImageUrl);
+                """;
+
+                foreach (var img in request.Images)
+                {
+                    await connection.ExecuteAsync(
+                        imagesSql,
+                        new { HelpRequestId = request.Id, img.Order, img.ImageUrl },
+                        transaction: tx);
+                }
 
                 await InsertEventAsync(connection, tx, logEvent, ct);
 
@@ -603,7 +674,7 @@ namespace server.Infrastructure.Repositories
             const string sql = """
                 SELECT COUNT(1) FROM HelpRequests
                 WHERE CreatorId = @UserId
-                  AND Status IN (1, 2)   -- 1 = Open, 2 = InProgress
+                  AND Status IN (0, 1, 2)   -- 0 = Moderation, 1 = Open, 2 = InProgress
                   AND IsDeleted = 0;
                 """;
 
@@ -673,18 +744,7 @@ namespace server.Infrastructure.Repositories
 
             try
             {
-                const string updateRequest = """
-                    UPDATE HelpRequests
-                    SET Status         = @Status,
-                        AssignedUserId = NULL
-                    WHERE Id = @Id;
-                    """;
-
-                await connection.ExecuteAsync(new CommandDefinition(
-                    updateRequest,
-                    new { request.Id, Status = (int)request.Status },
-                    transaction: tx,
-                    cancellationToken: ct));
+                await UpdateHelpRequestCoreAsync(connection, tx, request, ct);
 
                 const string deactivateChat = """
                     UPDATE Chats
@@ -720,18 +780,7 @@ namespace server.Infrastructure.Repositories
 
             try
             {
-                const string updateRequest = """
-                    UPDATE HelpRequests
-                    SET Status         = @Status,
-                        AssignedUserId = NULL
-                    WHERE Id = @Id;
-                    """;
-
-                await connection.ExecuteAsync(new CommandDefinition(
-                    updateRequest,
-                    new { request.Id, Status = (int)request.Status },
-                    transaction: tx,
-                    cancellationToken: ct));
+                await UpdateHelpRequestCoreAsync(connection, tx, request, ct);
 
                 const string deactivateChat = """
                     UPDATE Chats
@@ -756,6 +805,104 @@ namespace server.Infrastructure.Repositories
             }
         }
 
+        public async Task SetHiddenAsync(Guid helpRequestId, bool isHidden, CancellationToken ct)
+        {
+            using var conn = await _connectionFactory.CreateOpenConnectionAsync(ct);
+            await conn.ExecuteAsync(
+                "UPDATE HelpRequests SET IsHidden = @IsHidden WHERE Id = @Id",
+                new { Id = helpRequestId, IsHidden = isHidden });
+        }
 
+        public async Task<List<AdminHelpRequestDto>> GetAllForAdminAsync(
+            int page, int pageSize, bool? isHidden, bool? isDeleted, 
+            IReadOnlyList<HelpRequestStatus>? statuses, 
+            string? searchTerm, CancellationToken ct)
+        {
+            using var conn = await _connectionFactory.CreateOpenConnectionAsync(ct);
+
+            var conditions = new List<string>();
+            if (isHidden.HasValue) conditions.Add("hr.IsHidden = @IsHidden");
+            if (isDeleted.HasValue) conditions.Add("hr.IsDeleted = @IsDeleted");
+            
+            if (statuses != null && statuses.Count > 0)
+                conditions.Add("hr.Status IN @Statuses");
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+                conditions.Add("hr.Title LIKE @SearchTerm");
+
+            var where = conditions.Count > 0 ? "WHERE " + string.Join(" AND ", conditions) : "";
+
+            var sql = $"""
+                SELECT hr.Id, hr.Title, hr.Status, hr.IsHidden, hr.IsDeleted,
+                       u.Username AS CreatorUsername, hr.CreatedAtUtc
+                FROM HelpRequests hr
+                INNER JOIN Users u ON u.Id = hr.CreatorId
+                {where}
+                ORDER BY hr.CreatedAtUtc DESC
+                OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY
+                """;
+
+            var rows = await conn.QueryAsync<AdminHelpRequestDto>(sql, new
+            {
+                IsHidden = isHidden,
+                IsDeleted = isDeleted,
+                Statuses = statuses?.Select(s => (int)s).ToArray(),
+                SearchTerm = $"%{searchTerm}%",
+                Offset = (page - 1) * pageSize,
+                PageSize = pageSize
+            });
+            return rows.AsList();
+        }
+
+        public async Task SetResolvedAtAsync(Guid helpRequestId, CancellationToken ct)
+        {
+            using var conn = await _connectionFactory.CreateOpenConnectionAsync(ct);
+            await conn.ExecuteAsync(
+                "UPDATE HelpRequests SET ResolvedAtUtc = GETUTCDATE() WHERE Id = @Id",
+                new { Id = helpRequestId });
+        }
+
+        public async Task<IReadOnlyList<string>> GetAllImageUrlsAsync()
+        {
+            using var conn = await _connectionFactory.CreateOpenConnectionAsync();
+            const string sql = "SELECT ImageUrl FROM HelpRequestImages";
+            var result = await conn.QueryAsync<string>(sql);
+            return result.AsList();
+        }
+
+        public async Task<int> CountActiveRequestsByCreatorAsync(Guid creatorId, CancellationToken ct)
+        {
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
+
+            const string sql = """
+                SELECT COUNT(1) FROM HelpRequests
+                WHERE CreatorId = @CreatorId
+                  AND Status IN (0, 1, 2)   -- 0 = Moderation, 1 = Open, 2 = InProgress
+                  AND IsDeleted = 0;
+                """;
+
+            return await connection.ExecuteScalarAsync<int>(
+                new CommandDefinition(sql, new { CreatorId = creatorId }, cancellationToken: ct));
+        }
+
+        public async Task<int> CountActiveResponsesByUserAsync(Guid userId, CancellationToken ct)
+        {
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
+
+            const string sql = """
+                SELECT COUNT(1) 
+                FROM HelpRequestResponses r
+                JOIN HelpRequests hr ON hr.Id = r.HelpRequestId
+                WHERE r.UserId = @UserId
+                  AND (
+                    r.Status = 0 -- Pending
+                    OR 
+                    (r.Status = 1 AND hr.Status = 2) -- Accepted AND InProgress
+                  );
+                """;
+
+            return await connection.ExecuteScalarAsync<int>(
+                new CommandDefinition(sql, new { UserId = userId }, cancellationToken: ct));
+        }
     }
 }

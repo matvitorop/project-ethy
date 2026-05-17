@@ -35,5 +35,5 @@ jobs:
 
       - name: Push all branches + tags to GitLab (no hidden refs)
         run: |
-          git push --prune gitlab "refs/remotes/origin/*:refs/heads/*"
-          git push --prune gitlab "refs/tags/*:refs/tags/*"
+          git push --force --prune gitlab "refs/remotes/origin/*:refs/heads/*"
+          git push --force --prune gitlab "refs/tags/*:refs/tags/*"

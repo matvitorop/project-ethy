@@ -1,4 +1,4 @@
-﻿using GraphQL.Types;
+using GraphQL.Types;
 using server.Domain.HelpRequest;
 
 namespace server.Presentation.GraphQL.Types.ChangeHRStatusTypes
@@ -10,6 +10,13 @@ namespace server.Presentation.GraphQL.Types.ChangeHRStatusTypes
         {
             Name = "HelpRequestStatus";
             Description = "Status of help request";
+
+            Add("Moderation", HelpRequestStatus.Moderation);
+            Add("Open", HelpRequestStatus.Open);
+            Add("InProgress", HelpRequestStatus.InProgress);
+            Add("Resolved", HelpRequestStatus.Resolved);
+            Add("Cancelled", HelpRequestStatus.Cancelled);
+            Add("Rejected", HelpRequestStatus.Rejected);
         }
     }
 }

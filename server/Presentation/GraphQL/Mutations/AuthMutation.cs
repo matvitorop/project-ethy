@@ -1,4 +1,4 @@
-﻿using GraphQL;
+using GraphQL;
 using GraphQL.Types;
 using MediatR;
 using server.Application.Handlers.LoginUser;
@@ -19,7 +19,7 @@ namespace server.Presentation.GraphQL.Mutations
 {
     public class AuthMutation : ObjectGraphType
     {
-        public AuthMutation(IMediator mediator)
+        public AuthMutation(IMediator mediator, IWebHostEnvironment env)
         {
             Field<NonNullGraphType<RegisterPayloadType>>("register")
                 .Arguments(new QueryArguments(
@@ -39,7 +39,7 @@ namespace server.Presentation.GraphQL.Mutations
                     )
                     );
 
-                    if (result.IsSuccess &&
+                    if (result.IsSuccess && !string.IsNullOrEmpty(result.Value) &&
                         context.UserContext is GraphQLUserContext userContext &&
                         userContext.HttpContext != null)
                     {
@@ -49,8 +49,8 @@ namespace server.Presentation.GraphQL.Mutations
                             new CookieOptions
                             {
                                 HttpOnly = true,
-                                Secure = true,
-                                SameSite = SameSiteMode.None,
+                                Secure = !env.IsDevelopment(),
+                                SameSite = SameSiteMode.Lax,
                                 Expires = DateTimeOffset.UtcNow.AddHours(5)
                             }
                         );
@@ -89,8 +89,8 @@ namespace server.Presentation.GraphQL.Mutations
                             new CookieOptions
                             {
                                 HttpOnly = true,
-                                Secure = true,
-                                SameSite = SameSiteMode.None,
+                                Secure = !env.IsDevelopment(),
+                                SameSite = SameSiteMode.Lax,
                                 Expires = DateTimeOffset.UtcNow.AddHours(5)
                             }
                         );
@@ -128,7 +128,7 @@ namespace server.Presentation.GraphQL.Mutations
 
                 });
             Field<UpdateUsernamePayloadType>("updateUsername")
-            .Authorize()
+            .AuthorizeWithPolicy("Verified")
             .Arguments(
                 new QueryArgument<NonNullGraphType<StringGraphType>> { Name = "newUsername" }
             )
@@ -146,7 +146,7 @@ namespace server.Presentation.GraphQL.Mutations
             });
 
             Field<ChangePasswordPayloadType>("changePassword")
-            .Authorize()
+            .AuthorizeWithPolicy("Verified")
             .Arguments(
                 new QueryArgument<NonNullGraphType<StringGraphType>> { Name = "oldPassword" },
                 new QueryArgument<NonNullGraphType<StringGraphType>> { Name = "newPassword" },
@@ -168,7 +168,7 @@ namespace server.Presentation.GraphQL.Mutations
             });
 
             Field<SoftDeleteUserPayloadType>("deleteAccount")
-            .Authorize()
+            .AuthorizeWithPolicy("Verified")
             .Arguments(
                 // targetUserId необов'язковий — якщо не передано, видаляємо себе
                 // якщо адмін передає targetUserId — видаляє іншого

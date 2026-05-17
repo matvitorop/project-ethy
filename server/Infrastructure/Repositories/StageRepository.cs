@@ -1,4 +1,4 @@
-﻿using Dapper;
+using Dapper;
 using server.Application.Handlers.GetStages;
 using server.Application.Handlers.GetStageTemplates;
 using server.Application.IRepositories;
@@ -14,6 +14,25 @@ namespace server.Infrastructure.Repositories
         public StageRepository(ISqlConnectionFactory connectionFactory)
         {
             _connectionFactory = connectionFactory;
+        }
+
+        public async Task<bool> HasAnyProposedStageAsync(
+            Guid helpRequestId, CancellationToken ct)
+        {
+            using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
+
+            const string sql = """
+                SELECT COUNT(1) FROM HelpRequestStages
+                WHERE HelpRequestId = @HelpRequestId
+                  AND Status = 0;
+                """;
+
+            var count = await connection.ExecuteScalarAsync<int>(
+                new CommandDefinition(sql,
+                    new { HelpRequestId = helpRequestId },
+                    cancellationToken: ct));
+
+            return count > 0;
         }
 
         public async Task<bool> HasActiveProposedStageAsync(
@@ -154,7 +173,7 @@ namespace server.Infrastructure.Repositories
                        RejectionReason, CreatedAtUtc, ResolvedAtUtc
                 FROM HelpRequestStages
                 WHERE HelpRequestId = @HelpRequestId
-                  AND Status IN (1)
+                  AND Status IN (0, 1)
                 ORDER BY CreatedAtUtc ASC;
                 """;
 

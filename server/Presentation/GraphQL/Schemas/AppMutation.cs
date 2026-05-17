@@ -1,4 +1,4 @@
-﻿using GraphQL.Resolvers;
+using GraphQL.Resolvers;
 using GraphQL.Types;
 using server.Presentation.GraphQL.Mutations;
 
@@ -23,6 +23,36 @@ namespace server.Presentation.GraphQL.Schemas
                 ResolvedType = provider.GetRequiredService<HelpRequestMutation>(),
                 Resolver = new FuncFieldResolver<object>(_ => new object())
             });
+
+            // Trust module
+            AddField(new FieldType
+            {
+                Name = "user",
+                Description = "User profile and trust mutations",
+                ResolvedType = provider.GetRequiredService<UserMutation>(),
+                Resolver = new FuncFieldResolver<object>(_ => new object())
+            });
+            // ---
+
+
+            // Admin module
+            AddField(new FieldType
+            {
+                Name = "admin",
+                Description = "Admin mutations",
+                ResolvedType = provider.GetRequiredService<AdminMutation>(),
+                Resolver = new FuncFieldResolver<object>(_ => new object())
+            });
+            // ---
+
+            AddField(new FieldType
+            {
+                Name = "notification",
+                Description = "Notification mutations",
+                ResolvedType = provider.GetRequiredService<NotificationMutation>(),
+                Resolver = new FuncFieldResolver<object>(_ => new object())
+            });
+
         }
     }
 }

@@ -1,9 +1,10 @@
-﻿using MediatR;
+using MediatR;
 using server.Application.IRepositories;
 using server.Application.IServices;
 using server.Domain.Exceptions;
 using server.Domain.HelpRequest;
 using server.Domain.Primitives;
+using server.Domain;
 
 namespace server.Application.Handlers.AddHelpRequest
 {
@@ -11,11 +12,13 @@ namespace server.Application.Handlers.AddHelpRequest
     {
         private readonly IHelpRequestRepository _repository;
         private readonly IImageStorageService _imageStorage;
+        private readonly IUserRepository _userRepository;
 
-        public AddHelpRequestHandler(IHelpRequestRepository repository, IImageStorageService imageStorage)
+        public AddHelpRequestHandler(IHelpRequestRepository repository, IImageStorageService imageStorage, IUserRepository userRepository)
         {
             _repository = repository;
             _imageStorage = imageStorage;
+            _userRepository = userRepository;
         }
 
         public async Task<Result<AddHelpRequestResult>> Handle(
@@ -24,6 +27,20 @@ namespace server.Application.Handlers.AddHelpRequest
         {
             try
             {
+                var user = await _userRepository.GetByIdAsync(request.CreatorId, ct);
+                if (user != null && user.Role == UserRole.User)
+                {
+                    var activeCount = await _repository.CountActiveRequestsByCreatorAsync(request.CreatorId, ct);
+                    if (activeCount >= 3)
+                    {
+                        return Result.Failure<AddHelpRequestResult>(
+                            new Error(
+                                "Regular users can have a maximum of 3 active help requests. Complete or cancel your current requests to create new ones.",
+                                "HelpRequest.LIMIT_EXCEEDED"
+                            ));
+                    }
+                }
+
                 var permanentImageUrls =
                     await _imageStorage.CommitHelpRequestImagesAsync(request.ImageUrls);
 

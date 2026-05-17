@@ -1,10 +1,24 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { ApolloProvider } from '@apollo/client/react'
+import { BrowserRouter } from 'react-router-dom'
+import { Provider } from 'react-redux'
+import { store } from './store/store'
+import { initTheme } from './store/themeSlice'
+import { apolloClient } from './api/ApolloClient'
+import App from './App'
 import './index.css'
-import App from './App.tsx'
+
+store.dispatch(initTheme())
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
+    <StrictMode>
+        <Provider store={store}>
+            <ApolloProvider client={apolloClient}>
+                <BrowserRouter>
+                    <App />
+                </BrowserRouter>
+            </ApolloProvider>
+        </Provider>
+    </StrictMode>,
 )

@@ -1,12 +1,9 @@
 using DbUp;
 using GraphQL;
 using GraphQL.Authorization;
-using GraphQL.Server.Ui.Playground;
 using GraphQL.Types;
 using GraphQL.Validation;
-using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Data.SqlClient;
 using Microsoft.IdentityModel.Tokens;
 using server.Application.Handlers.RegisterUser;
 using server.Application.IRepositories;
@@ -17,15 +14,13 @@ using server.Infrastructure;
 using server.Infrastructure.Authentication;
 using server.Infrastructure.ImageStoring;
 using server.Infrastructure.Repositories;
+using server.Infrastructure.BackgroundServices;
 using server.Presentation.Controllers;
-using server.Presentation.GraphQL;
 using server.Presentation.GraphQL.Helpers;
 using server.Presentation.GraphQL.Mutations;
 using server.Presentation.GraphQL.Schemas;
 using server.Presentation.Hubs;
 using server.Presentation.Schemas;
-using System.Data;
-using System.Security.Claims;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -36,7 +31,7 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 var upgrader =
     DeployChanges.To
         .SqlDatabase(connectionString)
-        .WithScriptsFromFileSystem("Database/Migrations")
+        .WithScriptsFromFileSystem(Path.Combine(AppContext.BaseDirectory, "Database", "Migrations"))
         .LogToConsole()
         .Build();
 
@@ -71,7 +66,10 @@ builder.Services.AddCors(options =>
 
 Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
 
-
+// =====================
+// CACHE CONFIG
+// =====================
+builder.Services.AddMemoryCache();
 
 // =====================
 // JWT CONFIG
@@ -83,16 +81,31 @@ builder.Services.Configure<JwtSettings>(jwtSettings);
 builder.Services.AddSingleton<ISqlConnectionFactory>(new SqlConnectionFactory(connectionString));
 
 builder.Services.AddHostedService<TemporaryFileCleanupService>();
+builder.Services.AddHostedService<OrphanedImagesCleanupService>();
 
+// --- Email (SMTP) ---
+builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
+
+// --- New repositories ---
+builder.Services.AddScoped<IEmailVerificationTokenRepository, EmailVerificationTokenRepository>();
+builder.Services.AddScoped<IVolunteerApplicationRepository, VolunteerApplicationRepository>();
+builder.Services.AddScoped<IBlockHistoryRepository, BlockHistoryRepository>();
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+
+// --- Admin seeder ---
+builder.Services.AddHostedService<AdminSeeder>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IHelpRequestRepository, HelpRequestRepository>();
 builder.Services.AddScoped<IChatRepository, ChatRepository>();
 builder.Services.AddScoped<IStageRepository, StageRepository>();
 builder.Services.AddScoped<IReportRepository, ReportRepository>();
+builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
+builder.Services.AddScoped<IComplaintRepository, ComplaintRepository>();
+builder.Services.AddScoped<IStatisticsRepository, StatisticsRepository>();
 builder.Services.AddScoped<IPasswordHasher, Pbkdf2PasswordHasher>();
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
-builder.Services.AddTransient<AuthMutation>();
-builder.Services.AddScoped<IImageStorageService, LocalImageStorageService>();
+builder.Services.AddScoped<INotificationService, server.Infrastructure.Notifications.NotificationService>();
+builder.Services.AddScoped<IImageStorageService, CloudinaryImageStorageService>();
 builder.Services.AddSignalR();
 
 // CONTROLLERS REGISTRATION
@@ -129,7 +142,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("Verified", policy => 
+        policy.RequireAuthenticatedUser().RequireClaim("email_verified", "true"));
+});
 
 // =====================
 // GRAPHQL AUTHORIZATION
@@ -140,6 +157,8 @@ builder.Services
     {
         var settings = new AuthorizationSettings();
         settings.AddPolicy("Authenticated", p => p.RequireAuthenticatedUser());
+        settings.AddPolicy("Verified", p => 
+            p.RequireAuthenticatedUser().RequireClaim("email_verified", "true"));
 
         //settings.AddPolicy("Admin", p =>
         //    p.RequireClaim(ClaimTypes.Role, UserRole.Admin.ToString()));
@@ -164,8 +183,8 @@ builder.Services.AddGraphQL(b => b
     })
     .ConfigureExecutionOptions(options =>
     {
-        options.EnableMetrics = true;
-        options.ThrowOnUnhandledException = true;
+        options.EnableMetrics = builder.Environment.IsDevelopment();
+        options.ThrowOnUnhandledException = builder.Environment.IsDevelopment();
     }));
 
 builder.Services.AddMediatR(cfg =>
@@ -183,13 +202,18 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseRouting();
 
-app.UseCors();    
+app.UseCors();
+app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<server.Presentation.Middlewares.LastActivityMiddleware>();
 
 // ROUTING TO CONTROLLERS
 app.MapControllers();
@@ -198,11 +222,16 @@ app.MapControllers();
 // GRAPHQL ENDPOINTS
 // =====================
 app.UseGraphQL<ISchema>("/graphql");
-app.UseGraphQLPlayground("/graphql/playground");
+if (app.Environment.IsDevelopment())
+{
+    app.UseGraphQLGraphiQL("/graphql/ui");
+}
 
 // =====================
 // Chat endpoint for SignalR
 // =====================
 app.MapHub<ChatHub>("/hubs/chat");
+app.MapHub<NotificationHub>("/hubs/notifications");
 
 app.Run();
+public partial class Program { }

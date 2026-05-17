@@ -388,3 +388,13 @@ pnpm-debug.log*
 # Системні файли macOS/Windows (опціонально, але корисно)
 .DS_Store
 Thumbs.db
+
+*.rar
+*.zip
+*.7z
+
+# Uploads
+server/wwwroot/uploads/**/*
+!server/wwwroot/uploads/**/.gitkeep
+
+server/appsettings.Development.json

@@ -47,6 +47,23 @@ namespace server.Application.Handlers.LoginUser
                     "Login.INVALID_CREDENTIALS"));
             }
 
+            if (!user.IsEmailVerified)
+            {
+                return Result<string>.Failure(new Error(
+                    "Please verify your email before logging in",
+                    "Login.EMAIL_NOT_VERIFIED"));
+            }
+
+            if (user.IsBlocked)
+            {
+                var until = user.BlockedUntilUtc == DateTime.MaxValue
+                    ? "безстроково"
+                    : user.BlockedUntilUtc!.Value.ToString("dd.MM.yyyy HH:mm");
+
+                return Result<string>.Failure(new Error(
+                    $"Обліковий запис заблоковано до {until}. Причина: {user.BlockReason}",
+                    "Login.ACCOUNT_BLOCKED"));
+            }
             var token = _tokenService.GenerateAccessToken(user);
 
             return Result<string>.Success(token);

@@ -1,4 +1,4 @@
-﻿using Azure.Core;
+using Azure.Core;
 using GraphQL;
 using MediatR;
 using server.Application.IRepositories;
@@ -6,6 +6,7 @@ using server.Domain.Exceptions;
 using server.Domain.HelpRequest;
 using server.Domain.Primitives;
 using System.Text.Json;
+using server.Application.Events;
 
 namespace server.Application.Handlers.ChangeHelpRequestStatus
 {
@@ -13,16 +14,22 @@ namespace server.Application.Handlers.ChangeHelpRequestStatus
     : IRequestHandler<ChangeHelpRequestStatusCommand, Result<ChangeHelpRequestStatusResult>>
     {
         private readonly IHelpRequestRepository _repository;
+        private readonly IStageRepository _stageRepository;
+        private readonly IMediator _mediator;
 
         public ChangeHelpRequestStatusHandler(
-            IHelpRequestRepository repository)
+            IHelpRequestRepository repository,
+            IStageRepository stageRepository,
+            IMediator mediator)
         {
             _repository = repository;
+            _stageRepository = stageRepository;
+            _mediator = mediator;
         }
 
         public async Task<Result<ChangeHelpRequestStatusResult>> Handle(
-    ChangeHelpRequestStatusCommand request,
-    CancellationToken ct)
+            ChangeHelpRequestStatusCommand request,
+            CancellationToken ct)
         {
             var helpRequest = await _repository
                 .GetAggregateByIdAsync(ct, request.HelpRequestId);
@@ -37,6 +44,19 @@ namespace server.Application.Handlers.ChangeHelpRequestStatus
 
             // Зберігаємо попередній статус для логу
             var previousStatus = helpRequest.Status;
+
+            // Prevent completion when a stage is still awaiting review
+            if (request.NewStatus == HelpRequestStatus.Resolved)
+            {
+                var hasPendingStages = await _stageRepository
+                    .HasAnyProposedStageAsync(request.HelpRequestId, ct);
+
+                if (hasPendingStages)
+                    return Result<ChangeHelpRequestStatusResult>.Failure(
+                        new Error(
+                            "Cannot complete a request that has pending stages. Resolve or reject all stages first.",
+                            "HelpRequest.HAS_PENDING_STAGES"));
+            }
 
             try
             {
@@ -65,6 +85,20 @@ namespace server.Application.Handlers.ChangeHelpRequestStatus
                 await _repository.UpdateAsync(helpRequest, logEvent, ct);
             else
                 await _repository.UpdateStatusAsync(ct, helpRequest.Id, helpRequest.Status, logEvent);
+
+            if (request.NewStatus == HelpRequestStatus.Resolved)
+            {
+                await _repository.SetResolvedAtAsync(helpRequest.Id, ct);
+            }
+
+            if (helpRequest.AssignedUserId.HasValue)
+            {
+                await _mediator.Publish(new HelpRequestStatusChangedEvent(
+                    helpRequest.Id,
+                    helpRequest.Title,
+                    helpRequest.AssignedUserId.Value,
+                    helpRequest.Status), ct);
+            }
 
             return Result<ChangeHelpRequestStatusResult>.Success(
                 new ChangeHelpRequestStatusResult(

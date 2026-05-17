@@ -1,8 +1,9 @@
-﻿using MediatR;
+using MediatR;
 using server.Application.IRepositories;
 using server.Domain.Exceptions;
 using server.Domain.HelpRequest;
 using server.Domain.Primitives;
+using server.Domain;
 using System.Text.Json;
 
 namespace server.Application.Handlers.RestoreHelpRequest
@@ -11,10 +12,12 @@ namespace server.Application.Handlers.RestoreHelpRequest
         : IRequestHandler<RestoreHelpRequestCommand, Result>
     {
         private readonly IHelpRequestRepository _repository;
+        private readonly IUserRepository _userRepository;
 
-        public RestoreHelpRequestHandler(IHelpRequestRepository repository)
+        public RestoreHelpRequestHandler(IHelpRequestRepository repository, IUserRepository userRepository)
         {
             _repository = repository;
+            _userRepository = userRepository;
         }
 
         public async Task<Result> Handle(
@@ -34,6 +37,20 @@ namespace server.Application.Handlers.RestoreHelpRequest
 
             try
             {
+                var user = await _userRepository.GetByIdAsync(request.CurrentUserId, ct);
+                if (user != null && user.Role == UserRole.User)
+                {
+                    var activeCount = await _repository.CountActiveRequestsByCreatorAsync(request.CurrentUserId, ct);
+                    if (activeCount >= 3)
+                    {
+                        return Result.Failure(
+                            new Error(
+                                "Cannot restore. You already have 3 active help requests. Delete or complete one to restore this one.",
+                                "HelpRequest.LIMIT_EXCEEDED"
+                            ));
+                    }
+                }
+
                 helpRequest.Restore();
             }
             catch (DomainException ex)
@@ -48,7 +65,7 @@ namespace server.Application.Handlers.RestoreHelpRequest
                 JsonSerializer.Serialize(new
                 {
                     previousStatus = "Cancelled",
-                    newStatus = "Open",
+                    newStatus = "Moderation",
                     note = "Request restored by owner"
                 }));
 

@@ -1,0 +1,31 @@
+name: .NET Tests
+
+on:
+  push:
+    branches: [ "main", "dev" ]
+  pull_request:
+    branches: [ "main", "dev" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET 10
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore project-ethy.slnx
+
+    - name: Build
+      run: dotnet build project-ethy.slnx --no-restore
+
+    - name: Test Unit Tests
+      run: dotnet test tests/server.UnitTests/server.UnitTests.csproj --no-build --verbosity normal
+
+    - name: Test Integration Tests
+      run: dotnet test tests/server.IntegrationTests/server.IntegrationTests.csproj --no-build --verbosity normal

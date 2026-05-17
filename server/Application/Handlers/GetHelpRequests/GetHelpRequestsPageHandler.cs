@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using server.Application.Handlers.GetActiveRequests;
 using server.Application.IRepositories;
 using server.Domain.Primitives;
@@ -30,7 +30,15 @@ namespace server.Application.Handlers.GetHelpRequests
             var items = await _repo.GetPageAsync(
                 ct,
                 request.Page,
-                request.PageSize);
+                request.PageSize,
+                request.Status,
+                request.Statuses, 
+                request.CreatorId,
+                request.AssignedUserId,
+                request.HasNoReport,
+                request.SearchTerm,
+                request.ShortId,
+                request.ResponderId);
 
             return Result<IReadOnlyList<HelpRequestListItemDto>>.Success(items);
         }

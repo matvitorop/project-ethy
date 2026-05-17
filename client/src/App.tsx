@@ -1,13 +1,56 @@
-import './App.css'
-import AuthPage from './AuthPage'
+import { Routes, Route } from 'react-router-dom'
+import AuthInitializer from './components/AuthInitializer'
+import AppLayout from './layout/AppLayout'
+import PublicLayout from './layout/PublicLayout'
+import PrivateRoute from './components/PrivateRoute'
+import ToastContainer from './components/Toast'
+import HomePage from './pages/HomePage'
+import LoginPage from './pages/auth/LoginPage'
+import RegisterPage from './pages/auth/RegisterPage'
+import RequestsListPage from './pages/requests/RequestsListPage'
+import RequestDetailsPage from './pages/requests/RequestDetailsPage'
+import CreateRequestPage from './pages/requests/CreateRequestPage'
+import EditRequestPage from './pages/requests/EditRequestPage'
+import ProfilePage from './pages/profile/ProfilePage'
+import PublicProfilePage from './pages/profile/PublicProfilePage'
+import AdminPage from './pages/admin/AdminPage'
+import VerifyEmailPendingPage from './pages/auth/VerifyEmailPendingPage'
+import VerifyEmailPage from './pages/auth/VerifyEmailPage'
+import StatsPage from './pages/StatsPage'
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 
-function App() {
+import { NotificationProvider } from './features/notifications/NotificationProvider'
 
-  return (
-    <>
-          <AuthPage></AuthPage>
-    </>
-  )
+export default function App() {
+    return (
+        <AuthInitializer>
+            <NotificationProvider>
+                <Routes>
+                <Route element={<PublicLayout />}>
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/register" element={<RegisterPage />} />
+                    <Route path="/verify-email/pending" element={<VerifyEmailPendingPage />} />
+                    <Route path="/verify-email" element={<VerifyEmailPage />} />
+                    <Route path="/stats" element={<StatsPage />} />
+                    <Route path="/privacy" element={<PrivacyPolicyPage />} />
+                </Route>
+
+                <Route element={<PrivateRoute />}>
+                    <Route element={<AppLayout />}>
+                        <Route path="/requests" element={<RequestsListPage />} />
+                        <Route path="/requests/new" element={<CreateRequestPage />} />
+                        <Route path="/requests/:id/edit" element={<EditRequestPage />} />
+                        <Route path="/requests/:id" element={<RequestDetailsPage />} />
+                        <Route path="/profile" element={<ProfilePage />} />
+                        <Route path="/profile/:userId" element={<PublicProfilePage />} />
+                        <Route path="/admin" element={<AdminPage />} />
+                    </Route>
+                </Route>
+            </Routes>
+
+            </NotificationProvider>
+            <ToastContainer />
+        </AuthInitializer>
+    )
 }
-
-export default App
