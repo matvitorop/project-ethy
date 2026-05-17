@@ -50,6 +50,13 @@ namespace server.IntegrationTests
                 {
                     services.Remove(descriptor);
                 }
+
+                // Remove OrphanedImagesCleanupService to avoid Cloudinary initialization errors in CI
+                var orphanedDescriptor = services.FirstOrDefault(d => d.ImplementationType?.Name == "OrphanedImagesCleanupService");
+                if (orphanedDescriptor != null)
+                {
+                    services.Remove(orphanedDescriptor);
+                }
             });
 
             // Setup mock behavior
