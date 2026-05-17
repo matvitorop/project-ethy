@@ -1,36 +1,40 @@
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.DependencyInjection;
 using server.Application.IRepositories;
 
 namespace server.Infrastructure.BackgroundServices
 {
     public class OrphanedImagesCleanupService : BackgroundService
     {
+        private readonly Cloudinary _cloudinary;
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<OrphanedImagesCleanupService> _logger;
-        private readonly string _webRoot;
 
         public OrphanedImagesCleanupService(
+            IConfiguration config,
             IServiceProvider serviceProvider,
-            ILogger<OrphanedImagesCleanupService> logger,
-            IWebHostEnvironment env)
+            ILogger<OrphanedImagesCleanupService> logger)
         {
+            var account = new Account(
+                config["Cloudinary:CloudName"],
+                config["Cloudinary:ApiKey"],
+                config["Cloudinary:ApiSecret"]
+            );
+            _cloudinary = new Cloudinary(account);
+            _cloudinary.Api.Secure = true;
             _serviceProvider = serviceProvider;
             _logger = logger;
-            _webRoot = env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("Orphaned Images Cleanup Service is starting.");
-
-            // Run once on startup
             await CleanupOrphanedImagesAsync();
 
             while (!stoppingToken.IsCancellationRequested)
             {
-                // Run every 24 hours
                 await Task.Delay(TimeSpan.FromHours(24), stoppingToken);
                 await CleanupOrphanedImagesAsync();
             }
@@ -43,49 +47,78 @@ namespace server.Infrastructure.BackgroundServices
             try
             {
                 using var scope = _serviceProvider.CreateScope();
-                var repository = scope.ServiceProvider.GetRequiredService<IHelpRequestRepository>();
+                var repository = scope.ServiceProvider
+                    .GetRequiredService<IHelpRequestRepository>();
 
-                // 1. Get all image URLs from database
+                // URL з БД → витягуємо PublicId
                 var allImageUrls = await repository.GetAllImageUrlsAsync();
-                var activeFileNames = allImageUrls
-                    .Select(url => Path.GetFileName(url))
+                var activePublicIds = allImageUrls
+                    .Select(url => ExtractPublicId(url))
                     .ToHashSet();
 
-                // 2. Scan help-requests directory
-                var helpRequestsDir = Path.Combine(_webRoot, "uploads", "help-requests");
-                if (!Directory.Exists(helpRequestsDir))
-                {
-                    _logger.LogInformation("Directory {Directory} does not exist. Skipping.", helpRequestsDir);
-                    return;
-                }
-
-                var filesOnDisk = Directory.GetFiles(helpRequestsDir);
+                var nextCursor = (string?)null;
                 int deletedCount = 0;
 
-                foreach (var filePath in filesOnDisk)
+                do
                 {
-                    var fileName = Path.GetFileName(filePath);
-                    if (!activeFileNames.Contains(fileName))
-                    {
-                        try
+                    var result = await _cloudinary.ListResourcesAsync(
+                        new ListResourcesByPrefixParams
                         {
-                            File.Delete(filePath);
-                            deletedCount++;
-                            _logger.LogDebug("Deleted orphaned image: {FileName}", fileName);
+                            Prefix = "ethy/help-requests/",
+                            Type = "upload",
+                            MaxResults = 100,
+                            NextCursor = nextCursor,
                         }
-                        catch (Exception ex)
+                    );
+
+                    foreach (var resource in result.Resources)
+                    {
+                        if (!activePublicIds.Contains(resource.PublicId))
                         {
-                            _logger.LogError(ex, "Failed to delete file {FilePath}", filePath);
+                            var deleteParams = new DeletionParams(resource.PublicId)
+                            {
+                                ResourceType = ResourceType.Image
+                            };
+                            await _cloudinary.DestroyAsync(deleteParams);
+                            deletedCount++;
+                            _logger.LogDebug("Deleted orphaned image: {PublicId}", resource.PublicId);
                         }
                     }
-                }
 
-                _logger.LogInformation("Orphaned images cleanup finished. Deleted {Count} files.", deletedCount);
+                    nextCursor = result.NextCursor;
+
+                } while (!string.IsNullOrEmpty(nextCursor));
+
+                _logger.LogInformation("Orphaned cleanup finished. Deleted {Count} files.", deletedCount);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred during orphaned images cleanup.");
             }
+        }
+
+        private static string ExtractPublicId(string cloudinaryUrl)
+        {
+            if (string.IsNullOrEmpty(cloudinaryUrl) || !cloudinaryUrl.StartsWith("http"))
+                return string.Empty;
+
+            var uri = new Uri(cloudinaryUrl);
+            var path = uri.AbsolutePath;
+            var uploadIndex = path.IndexOf("/upload/");
+            if (uploadIndex < 0) return string.Empty;
+
+            var afterUpload = path[(uploadIndex + "/upload/".Length)..];
+
+            if (afterUpload.StartsWith('v') && afterUpload.Length > 1 && char.IsDigit(afterUpload[1]))
+            {
+                var slashIndex = afterUpload.IndexOf('/');
+                if (slashIndex >= 0)
+                    afterUpload = afterUpload[(slashIndex + 1)..];
+            }
+
+            // Прибрати розширення — Cloudinary PublicId без нього
+            return Path.ChangeExtension(afterUpload, null)
+                .Replace('\\', '/');
         }
     }
 }

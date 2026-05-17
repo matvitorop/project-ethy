@@ -48,7 +48,7 @@ namespace server.Application.Handlers.UserHandlers.ResendVerificationByEmail
             var token = new EmailVerificationToken(user.Id);
             await _tokens.AddAsync(token, ct);
 
-            var frontendUrl = _config["Smtp:FrontendBaseUrl"] ?? "http://localhost:5173";
+            var frontendUrl = _config["Smtp:FrontendBaseUrl"] ?? throw new InvalidOperationException("Smtp:FrontendBaseUrl is not configured");
             var link = $"{frontendUrl}/verify-email?token={token.Token}";
             await _emailSender.SendEmailVerificationAsync(user.Email, user.Username, link);
 

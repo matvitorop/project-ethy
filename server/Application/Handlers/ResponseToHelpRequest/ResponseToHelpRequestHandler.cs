@@ -63,7 +63,7 @@ namespace server.Application.Handlers.ResponseToHelpRequestHandler
             {
                 return Result<Guid>.Failure(new Error(ex.Message, ex.Code));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 return Result<Guid>.Failure(new Error("An unexpected error occurred", "HelpRequestResponse.GENERAL_ERROR"));
             }

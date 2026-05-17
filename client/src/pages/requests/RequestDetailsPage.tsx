@@ -521,7 +521,7 @@ export default function RequestDetailsPage() {
                                             {report.imageUrl && (
                                                 <div className="rounded-2xl overflow-hidden border border-border shadow-sm">
                                                     <img
-                                                        src={getImageUrl(`/uploads/reports/${report.imageUrl}`)}
+                                                        src={getImageUrl(report.imageUrl)}
                                                         alt="Звіт"
                                                         className="w-full max-h-96 object-cover"
                                                     />

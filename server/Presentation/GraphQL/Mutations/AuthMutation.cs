@@ -19,7 +19,7 @@ namespace server.Presentation.GraphQL.Mutations
 {
     public class AuthMutation : ObjectGraphType
     {
-        public AuthMutation(IMediator mediator)
+        public AuthMutation(IMediator mediator, IWebHostEnvironment env)
         {
             Field<NonNullGraphType<RegisterPayloadType>>("register")
                 .Arguments(new QueryArguments(
@@ -49,7 +49,7 @@ namespace server.Presentation.GraphQL.Mutations
                             new CookieOptions
                             {
                                 HttpOnly = true,
-                                Secure = false,
+                                Secure = !env.IsDevelopment(),
                                 SameSite = SameSiteMode.Lax,
                                 Expires = DateTimeOffset.UtcNow.AddHours(5)
                             }
@@ -89,7 +89,7 @@ namespace server.Presentation.GraphQL.Mutations
                             new CookieOptions
                             {
                                 HttpOnly = true,
-                                Secure = false,
+                                Secure = !env.IsDevelopment(),
                                 SameSite = SameSiteMode.Lax,
                                 Expires = DateTimeOffset.UtcNow.AddHours(5)
                             }
