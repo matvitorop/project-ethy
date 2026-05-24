@@ -11,7 +11,7 @@ export default function HomePage() {
     const { data } = useQuery<PlatformStatsData>(GET_PLATFORM_STATS, {
         fetchPolicy: 'cache-first',
     })
-    const stats = data?.statsQuery.platformStats.stats
+    const stats = data?.statsQuery?.platformStats?.stats
 
     const containerVariants = {
         hidden: { opacity: 0 },

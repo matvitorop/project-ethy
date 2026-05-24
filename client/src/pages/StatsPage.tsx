@@ -37,7 +37,7 @@ export default function StatsPage() {
 
     if (statsLoading && monthlyLoading) return <PageSpinner />
 
-    const stats = statsData?.statsQuery.platformStats.stats
+    const stats = statsData?.statsQuery?.platformStats?.stats
     const monthly = monthlyData?.statsQuery.monthlyActivity.items ?? []
     const top = topData?.statsQuery.topVolunteers.data
 
