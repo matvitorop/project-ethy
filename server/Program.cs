@@ -84,7 +84,8 @@ builder.Services.AddHostedService<TemporaryFileCleanupService>();
 builder.Services.AddHostedService<OrphanedImagesCleanupService>();
 
 // --- Email (SMTP) ---
-builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
+builder.Services.AddHttpClient<ResendEmailSender>();
+builder.Services.AddScoped<IEmailSender, ResendEmailSender>();
 
 // --- New repositories ---
 builder.Services.AddScoped<IEmailVerificationTokenRepository, EmailVerificationTokenRepository>();
