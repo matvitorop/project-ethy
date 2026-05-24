@@ -35,7 +35,7 @@ jobs:
         run: dotnet build project-ethy.slnx --configuration Release
 
       - name: Run unit tests
-        run: dotnet test tests/server.UnitTests/server.UnitTests.csproj --no-build --verbosity normal
+        run: dotnet test tests/server.UnitTests/server.UnitTests.csproj --no-build --configuration Release --verbosity normal
 
   test-server-integration:
     name: Test — Integration Tests
@@ -60,7 +60,7 @@ jobs:
         run: dotnet build project-ethy.slnx --configuration Release
 
       - name: Run integration tests
-        run: dotnet test tests/server.IntegrationTests/server.IntegrationTests.csproj --no-build --verbosity normal
+        run: dotnet test tests/server.IntegrationTests/server.IntegrationTests.csproj --no-build --configuration Release --verbosity normal
 
   test-client:
     name: Test — Client Lint
