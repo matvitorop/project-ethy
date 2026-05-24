@@ -135,7 +135,7 @@ jobs:
             ${{ secrets.DOCKER_USERNAME }}/ethy-client:${{ github.sha }}
 
   # ═══════════════════════════════════════════════════════
-  # DEPLOY — Railway CLI після push образів
+  # DEPLOY — Railway API після push образів
   # ═══════════════════════════════════════════════════════
 
   deploy-server:
@@ -144,17 +144,15 @@ jobs:
     needs: docker-push
 
     steps:
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
-
       - name: Redeploy server on Railway
         run: |
-          railway redeploy \
-            --service ${{ secrets.RAILWAY_SERVICE_SERVER }} \
-            --environment ${{ secrets.RAILWAY_ENVIRONMENT_ID }} \
-            --yes
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          curl -s -X POST https://backboard.railway.app/graphql/v2 \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.RAILWAY_TOKEN }}" \
+            -d '{
+              "query": "mutation { serviceInstanceRedeploy(environmentId: \"${{ secrets.RAILWAY_ENVIRONMENT_ID }}\", serviceId: \"${{ secrets.RAILWAY_SERVICE_SERVER }}\") }"
+            }'
+          echo "✓ Server deployment triggered"
 
   deploy-client:
     name: Deploy — Railway Client
@@ -162,14 +160,12 @@ jobs:
     needs: docker-push
 
     steps:
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
-
       - name: Redeploy client on Railway
         run: |
-          railway redeploy \
-            --service ${{ secrets.RAILWAY_SERVICE_CLIENT }} \
-            --environment ${{ secrets.RAILWAY_ENVIRONMENT_ID }} \
-            --yes
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          curl -s -X POST https://backboard.railway.app/graphql/v2 \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.RAILWAY_TOKEN }}" \
+            -d '{
+              "query": "mutation { serviceInstanceRedeploy(environmentId: \"${{ secrets.RAILWAY_ENVIRONMENT_ID }}\", serviceId: \"${{ secrets.RAILWAY_SERVICE_CLIENT }}\") }"
+            }'
+          echo "✓ Client deployment triggered"
