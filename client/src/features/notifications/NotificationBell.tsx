@@ -68,13 +68,22 @@ export default function NotificationBell() {
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
 
-    // Стейт для розмірів вікна
     const [dimensions, setDimensions] = useState(() => {
         const saved = localStorage.getItem('notification-dropdown-size');
         return saved ? JSON.parse(saved) : { width: 320, height: 400 };
     });
 
     const [isResizing, setIsResizing] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -169,8 +178,15 @@ export default function NotificationBell() {
                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        style={{ width: dimensions.width, height: dimensions.height }}
-                        className="absolute right-0 mt-3 bg-surface border border-border shadow-2xl rounded-2xl overflow-hidden z-[100] flex flex-col"
+                        style={isMobile ? { 
+                            width: 'calc(100vw - 32px)', 
+                            height: '380px',
+                            maxHeight: '65vh'
+                        } : { 
+                            width: dimensions.width, 
+                            height: dimensions.height 
+                        }}
+                        className="absolute right-[-16px] sm:right-0 mt-3 bg-surface border border-border shadow-2xl rounded-2xl overflow-hidden z-[100] flex flex-col"
                     >
                         <div className="px-4 py-3 border-b border-border bg-surface-muted/50 flex items-center justify-between shrink-0">
                             <span className="text-xs font-black uppercase tracking-widest text-ink" style={{ fontFamily: 'Jua, sans-serif' }}>Сповіщення</span>
@@ -212,15 +228,17 @@ export default function NotificationBell() {
                         <div className="h-4 bg-surface-muted/30 border-t border-border/50 shrink-0" />
 
                         {/* Ручка для ресайзу */}
-                        <div 
-                            className="absolute bottom-0 left-0 w-4 h-4 cursor-nesw-resize z-[110]"
-                            onMouseDown={(e) => {
-                                e.preventDefault();
-                                setIsResizing(true);
-                            }}
-                        >
-                            <div className="absolute bottom-1 left-1 w-2 h-2 border-l-2 border-b-2 border-ink-soft/30 rounded-bl-sm" />
-                        </div>
+                        {!isMobile && (
+                            <div 
+                                className="absolute bottom-0 left-0 w-4 h-4 cursor-nesw-resize z-[110]"
+                                onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    setIsResizing(true);
+                                }}
+                            >
+                                <div className="absolute bottom-1 left-1 w-2 h-2 border-l-2 border-b-2 border-ink-soft/30 rounded-bl-sm" />
+                            </div>
+                        )}
                     </motion.div>
                 )}
             </AnimatePresence>

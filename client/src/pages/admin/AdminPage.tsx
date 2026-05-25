@@ -209,30 +209,34 @@ export default function AdminPage() {
     ]
 
     return (
-        <div className="max-w-6xl mx-auto py-8 px-4">
-            <div className="flex items-center gap-3 mb-10">
-                <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center shadow-sm">
+        <div className="max-w-6xl mx-auto py-6 sm:py-8 px-4">
+            <div className="flex items-center gap-4 mb-8 sm:mb-10">
+                <div className="flex-shrink-0 w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center shadow-sm">
                     <Shield size={24} />
                 </div>
-                <div>
-                    <h1 className="text-3xl font-black text-ink" style={{ fontFamily: 'Jua, sans-serif' }}>Адмін-панель</h1>
-                    <p className="text-xs font-bold text-ink-soft uppercase tracking-widest mt-1">Керування платформою Ethy</p>
+                <div className="min-w-0">
+                    <h1 className="text-2xl sm:text-3xl font-black text-ink leading-none whitespace-nowrap" style={{ fontFamily: 'Jua, sans-serif' }}>
+                        Адмін-панель
+                    </h1>
+                    <p className="text-[10px] sm:text-xs font-black text-ink-soft uppercase tracking-wider mt-1.5 sm:mt-1 truncate">
+                        Керування платформою Ethy
+                    </p>
                 </div>
             </div>
 
             {/* Таби */}
-            <div className="flex flex-wrap gap-2 mb-4 bg-surface-muted/50 p-1.5 rounded-2xl border border-border/50">
+            <div className="grid grid-cols-2 md:flex md:flex-wrap gap-1.5 mb-4 bg-surface-muted/50 p-1.5 rounded-2xl border border-border/50">
                 {tabs.map(tab => (
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id as 'applications' | 'complaints' | 'requests' | 'analytics' | 'users')}
-                        className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === tab.id
+                        className={`flex items-center justify-center md:justify-start gap-2 px-4 py-2.5 sm:px-6 sm:py-3 rounded-xl text-xs sm:text-sm font-bold transition-all flex-shrink-0 ${activeTab === tab.id
                             ? 'bg-surface text-primary shadow-sm ring-1 ring-border'
                             : 'text-ink-soft hover:text-ink hover:bg-surface'
-                            }`}
+                            } ${tab.id === 'users' ? 'col-span-2 md:col-span-auto' : ''}`}
                     >
                         {tab.icon}
-                        {tab.label}
+                        <span>{tab.label}</span>
                     </button>
                 ))}
             </div>

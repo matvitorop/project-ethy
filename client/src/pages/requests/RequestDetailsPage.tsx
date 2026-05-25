@@ -408,7 +408,7 @@ export default function RequestDetailsPage() {
             </div>
 
             {/* Кнопки дій */}
-            <div className="flex flex-wrap gap-3 mb-12 p-1 bg-surface-muted rounded-2xl border border-border w-fit shadow-inner">
+            <div className="flex flex-wrap gap-2 md:gap-3 mb-12 p-1 bg-surface-muted rounded-2xl border border-border w-fit max-w-full shadow-inner">
                 {isOwner && (Number(hr.status) === 0 || Number(hr.status) === 1 || Number(hr.status) === 2) && (
                     <>
                         {Number(hr.status) === 1 && (
@@ -482,15 +482,15 @@ export default function RequestDetailsPage() {
                     {TABS.map(tab => (
                         <button
                             key={tab.key}
-                            onClick={() => setActiveTab(tab.key as 'stages' | 'log')}
-                            className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 text-sm font-bold transition-all rounded-2xl ${activeTab === tab.key
+                            onClick={() => setActiveTab(tab.key as 'stages' | 'log' | 'report')}
+                            className={`flex-1 flex items-center justify-center gap-1.5 px-2 md:px-6 py-3 md:py-4 text-xs md:text-sm font-bold transition-all rounded-2xl ${activeTab === tab.key
                                 ? 'bg-surface text-primary shadow-sm ring-1 ring-border'
                                 : 'text-ink-soft hover:text-ink hover:bg-surface-muted'
                                 }`}
                         >
                             {tab.icon}
-                            {tab.label}
-                            <span className={`ml-1 text-[10px] px-1.5 py-0.5 rounded-full ${activeTab === tab.key ? 'bg-primary text-white' : 'bg-border text-ink-soft'}`}>
+                            <span className="truncate">{tab.label}</span>
+                            <span className={`ml-1 text-[9px] md:text-[10px] px-1.5 py-0.5 rounded-full ${activeTab === tab.key ? 'bg-primary text-white' : 'bg-border text-ink-soft'}`}>
                                 {tab.count}
                             </span>
                         </button>

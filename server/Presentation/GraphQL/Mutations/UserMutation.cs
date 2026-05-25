@@ -9,6 +9,7 @@ using server.Application.Handlers.UserHandlers.SubmitVolunteerApplication;
 using server.Application.Handlers.UserHandlers.UpdateProfile;
 using server.Application.Handlers.UserHandlers.VerifyEmail;
 using server.Presentation.GraphQL.Extensions;
+using server.Presentation.GraphQL.Helpers;
 using server.Presentation.GraphQL.Types.AdminTypes;
 using server.Presentation.GraphQL.Types.ComplaintTypes;
 using server.Presentation.GraphQL.Types.ProfileTypes;
@@ -19,7 +20,7 @@ namespace server.Presentation.GraphQL.Mutations
 {
     public class UserMutation : ObjectGraphType
     {
-        public UserMutation(IMediator mediator)
+        public UserMutation(IMediator mediator, Microsoft.AspNetCore.Hosting.IWebHostEnvironment env)
         {
             Field<LeaveReviewPayloadType>("leaveReview")
             .AuthorizeWithPolicy("Verified")
@@ -104,8 +105,26 @@ namespace server.Presentation.GraphQL.Mutations
             .ResolveAsync(async ctx =>
             {
                 var cmd = new VerifyEmailCommand(ctx.GetArgument<string>("token"));
-                var r = await mediator.Send(cmd);
-                return r.ToPayload((val, err) => new AdminActionPayload(val, err));
+                var result = await mediator.Send(cmd);
+
+                if (result.IsSuccess && !string.IsNullOrEmpty(result.Value) &&
+                    ctx.UserContext is GraphQLUserContext userContext &&
+                    userContext.HttpContext != null)
+                {
+                    userContext.HttpContext.Response.Cookies.Append(
+                        "jwt",
+                        result.Value!,
+                        new Microsoft.AspNetCore.Http.CookieOptions
+                        {
+                            HttpOnly = true,
+                            Secure = !env.IsDevelopment(),
+                            SameSite = env.IsDevelopment() ? Microsoft.AspNetCore.Http.SameSiteMode.Lax : Microsoft.AspNetCore.Http.SameSiteMode.None,
+                            Expires = DateTimeOffset.UtcNow.AddHours(5)
+                        }
+                    );
+                }
+
+                return result.ToPayload((val, err) => new AdminActionPayload(!string.IsNullOrEmpty(val), err));
             });
 
             // +++ Admin module: Volunteer application

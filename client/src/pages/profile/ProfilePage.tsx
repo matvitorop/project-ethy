@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation } from '@apollo/client/react'
-import { useNavigate } from 'react-router-dom'
-import { Shield, Pencil, Check, X, Eye, EyeOff, ThumbsUp, Phone, Link as LinkIcon, Upload, Calendar, Mail, User, Lock, Trash2, FileText, AlertCircle } from 'lucide-react'
+import { useNavigate, Link } from 'react-router-dom'
+import { Shield, Pencil, Check, X, Eye, EyeOff, ThumbsUp, Phone, Link as LinkIcon, Upload, Calendar, Mail, User, Lock, Trash2, FileText, AlertCircle, LogOut, ClipboardList } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { 
     GET_PROFILE, UPDATE_USERNAME, CHANGE_PASSWORD, DELETE_ACCOUNT, 
@@ -12,7 +12,7 @@ import type {
     UpdateProfileData, GetUserReviewsData, MyVolunteerApplicationData, SubmitVolunteerApplicationData 
 } from '../../api/types'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
-import { addToast } from '../../store/uiSlice'
+import { addToast, toggleReportsPanel } from '../../store/uiSlice'
 import { setAuth, clearAuth } from '../../store/authSlice'
 import { PageSpinner } from '../../components/Spinner'
 import Modal from '../../components/Modal'
@@ -25,12 +25,14 @@ import Card from '../../components/ui/Card'
 import Badge from '../../components/ui/Badge'
 import SocialLink from '../../components/ui/SocialLink'
 import { formatDateTime } from '../../hooks/useDateTime'
+import { useLogout } from '../../features/auth/useAuth'
 
 export default function ProfilePage() {
     const dispatch = useAppDispatch()
     const navigate = useNavigate()
     const userId = useAppSelector(s => s.auth.userId)
     const role = useAppSelector(s => s.auth.role)
+    const { logout, loading: logoutLoading } = useLogout()
 
     const [editingUsername, setEditingUsername] = useState(false)
     const [newUsername, setNewUsername] = useState('')
@@ -183,7 +185,7 @@ export default function ProfilePage() {
             animate={{ opacity: 1 }}
             className="max-w-3xl mx-auto space-y-10"
         >
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-black text-ink" style={{ fontFamily: 'Jua, sans-serif' }}>
                         Мій Профіль
@@ -254,14 +256,13 @@ export default function ProfilePage() {
                     {/* Email (Readonly) */}
                     <div>
                         <label className="block text-[10px] font-black text-ink-soft uppercase tracking-[0.2em] mb-3">Email адреса</label>
-                        <div className="relative">
-                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-soft" size={16} />
-                            <input type="email" value={profile.email} disabled
-                                className="w-full pl-11 pr-4 py-3 bg-surface-muted border border-border rounded-2xl text-ink font-bold opacity-60" />
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 bg-surface-muted border border-border rounded-2xl px-4 py-3 opacity-70">
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                                <Mail className="text-ink-soft shrink-0" size={16} />
+                                <span className="font-bold text-ink truncate select-all">{profile.email}</span>
+                            </div>
                             {profile.isEmailVerified && (
-                                <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                                    <Badge variant="success">Підтверджено</Badge>
-                                </div>
+                                <Badge variant="success" className="shrink-0 w-fit">Підтверджено</Badge>
                             )}
                         </div>
                     </div>
@@ -382,15 +383,50 @@ export default function ProfilePage() {
                     </div>
                 </div>
 
-                <div className="mt-10 pt-6 border-t border-border flex items-center justify-between">
+                <div className="mt-10 pt-6 border-t border-border flex flex-wrap gap-4 items-center justify-between">
                     <div className="flex items-center gap-2 text-[10px] font-black text-ink-soft uppercase tracking-widest">
                         <Calendar size={12} />
                         З нами з {new Date(profile.registeredAtUtc).toLocaleDateString('uk-UA', { month: 'long', year: 'numeric' })}
                     </div>
-                    <button onClick={() => setDeleteModalOpen(true)} className="flex items-center gap-2 text-[10px] font-black text-error/50 hover:text-error uppercase tracking-widest transition-colors">
-                        <Trash2 size={12} />
-                        Видалити акаунт
-                    </button>
+                    <div className="flex flex-wrap items-center gap-4">
+                        {/* Звіти для мобільних/планшетів */}
+                        <button 
+                            onClick={() => dispatch(toggleReportsPanel())}
+                            className="lg:hidden flex items-center gap-2 text-[10px] font-black text-primary hover:text-primary-dark uppercase tracking-widest transition-colors"
+                        >
+                            <ClipboardList size={12} />
+                            Звіти
+                        </button>
+
+                        {role === 'Admin' && (
+                            <>
+                                <div className="h-4 w-px bg-border lg:hidden" />
+                                <Link 
+                                    to="/admin"
+                                    className="flex items-center gap-2 text-[10px] font-black text-primary hover:text-primary-dark uppercase tracking-widest transition-colors"
+                                >
+                                    <Shield size={12} />
+                                    Адмін-панель
+                                </Link>
+                            </>
+                        )}
+
+                        <div className="h-4 w-px bg-border" />
+
+                        <button 
+                            onClick={() => logout()}
+                            disabled={logoutLoading}
+                            className="flex items-center gap-2 text-[10px] font-black text-primary hover:text-primary-dark uppercase tracking-widest transition-colors disabled:opacity-50"
+                        >
+                            <LogOut size={12} />
+                            Вийти з акаунту
+                        </button>
+                        <div className="h-4 w-px bg-border hidden sm:block" />
+                        <button onClick={() => setDeleteModalOpen(true)} className="flex items-center gap-2 text-[10px] font-black text-error/50 hover:text-error uppercase tracking-widest transition-colors">
+                            <Trash2 size={12} />
+                            Видалити акаунт
+                        </button>
+                    </div>
                 </div>
             </Card>
 

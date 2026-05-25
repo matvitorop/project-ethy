@@ -108,27 +108,48 @@ export default function StatsPage() {
                         Розподіл за статусами
                     </h2>
                     {pieData.length > 0 ? (
-                        <ResponsiveContainer width="100%" height={250}>
-                            <PieChart>
-                                <Pie
-                                    data={pieData}
-                                    dataKey="value"
-                                    nameKey="name"
-                                    cx="50%" cy="50%"
-                                    innerRadius={60}
-                                    outerRadius={90}
-                                    paddingAngle={5}
-                                >
-                                    {pieData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} />
-                                    ))}
-                                </Pie>
-                                <Tooltip 
-                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                                    formatter={(value) => [`${value} заявок`]} 
-                                />
-                            </PieChart>
-                        </ResponsiveContainer>
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div className="w-full sm:w-1/2 h-56">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={pieData}
+                                            dataKey="value"
+                                            nameKey="name"
+                                            cx="50%" cy="50%"
+                                            innerRadius={55}
+                                            outerRadius={80}
+                                            paddingAngle={4}
+                                        >
+                                            {pieData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={entry.color} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip 
+                                            contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 8px 24px rgba(0,0,0,0.08)' }}
+                                            formatter={(value) => [`${value} заявок`]} 
+                                        />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
+                            <div className="w-full sm:w-1/2 space-y-2">
+                                {pieData.map((item, idx) => {
+                                    const percent = stats && stats.totalRequests > 0 ? Math.round((item.value / stats.totalRequests) * 100) : 0
+                                    return (
+                                        <div key={idx} className="flex items-center justify-between p-2.5 rounded-xl bg-surface-muted/30 border border-border/20">
+                                            <div className="flex items-center gap-2">
+                                                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                                                <span className="text-xs font-bold text-ink">{item.name}</span>
+                                            </div>
+                                            <div className="text-right shrink-0">
+                                                <span className="text-xs font-black text-ink">{item.value}</span>
+                                                <span className="text-[10px] text-ink-soft ml-1.5 font-bold">({percent}%)</span>
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        </div>
                     ) : (
                         <div className="h-[250px] flex items-center justify-center text-ink-soft text-sm">
                             Дані відсутні

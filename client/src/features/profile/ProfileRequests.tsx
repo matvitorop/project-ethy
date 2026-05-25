@@ -181,12 +181,12 @@ export default function ProfileRequests({ userId, isOwn = false }: ProfileReques
                         ) : (
                             <div className="space-y-4">
                                 {currentItems.slice(0, PAGE_SIZE).map(item => (
-                                    <div key={item.id} className="relative group">
+                                    <div key={item.id} className="relative group flex flex-col md:block">
                                         <RequestCard item={item} />
 
                                         {/* Owner controls - visible only to owner */}
                                         {isOwn && activeTab === 'owner' && Number(item.status) === 2 && (
-                                            <div className="absolute top-4 right-4 z-10">
+                                            <div className="mt-2 md:mt-0 flex justify-end md:absolute md:top-4 md:right-4 z-10">
                                                 <Button
                                                     variant="success"
                                                     size="sm"
@@ -205,7 +205,7 @@ export default function ProfileRequests({ userId, isOwn = false }: ProfileReques
                                         )}
 
                                         {isOwn && activeTab === 'owner' && Number(item.status) === 1 && (
-                                            <div className="absolute top-4 right-4 z-10">
+                                            <div className="mt-2 md:mt-0 flex justify-end md:absolute md:top-4 md:right-4 z-10">
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
@@ -222,7 +222,7 @@ export default function ProfileRequests({ userId, isOwn = false }: ProfileReques
                                         )}
 
                                         {isOwn && activeTab === 'owner' && Number(item.status) === 0 && (
-                                            <div className="absolute top-4 right-4 z-10">
+                                            <div className="mt-2 md:mt-0 flex justify-end md:absolute md:top-4 md:right-4 z-10">
                                                 <Button
                                                     variant="error"
                                                     size="sm"
@@ -243,7 +243,7 @@ export default function ProfileRequests({ userId, isOwn = false }: ProfileReques
 
                                         {/* Assignee controls - visible only to owner */}
                                         {isOwn && activeTab === 'assignee' && Number(item.status) === 1 && (
-                                            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                            <div className="mt-2 md:mt-0 flex justify-end md:absolute md:top-4 md:right-4 md:opacity-0 md:group-hover:opacity-100 transition-opacity z-10">
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
@@ -263,7 +263,7 @@ export default function ProfileRequests({ userId, isOwn = false }: ProfileReques
                                         )}
 
                                         {isOwn && activeTab === 'assignee' && Number(item.status) === 2 && (
-                                            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                            <div className="mt-2 md:mt-0 flex justify-end md:absolute md:top-4 md:right-4 md:opacity-0 md:group-hover:opacity-100 transition-opacity z-10">
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
