@@ -84,11 +84,15 @@ namespace server.IntegrationTests
 
             // Dummy value for Smtp to prevent crash in RegisterUserHandler
             System.Environment.SetEnvironmentVariable("Smtp__FrontendBaseUrl", "http://localhost:3000");
+
+            // Disable Rate Limiting during integration testing to avoid 429 Too Many Requests
+            System.Environment.SetEnvironmentVariable("RateLimiting__Disabled", "true");
         }
 
         public new async Task DisposeAsync()
         {
             await _msSqlContainer.DisposeAsync();
+            System.Environment.SetEnvironmentVariable("RateLimiting__Disabled", null);
             System.Environment.SetEnvironmentVariable("ConnectionStrings__DefaultConnection", null);
             System.Environment.SetEnvironmentVariable("JwtSettings__Key", null);
             System.Environment.SetEnvironmentVariable("JwtSettings__Issuer", null);

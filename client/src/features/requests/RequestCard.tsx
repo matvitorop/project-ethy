@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { HelpRequestListItem } from '../../api/types'
 import Card from '../../components/ui/Card'
@@ -15,6 +16,7 @@ const STATUS_CONFIG = {
 } as const
 
 export default function RequestCard({ item }: { item: HelpRequestListItem }) {
+    const [imageError, setImageError] = useState(false)
     const statusConfig = STATUS_CONFIG[item.status as keyof typeof STATUS_CONFIG]
 
     return (
@@ -23,10 +25,11 @@ export default function RequestCard({ item }: { item: HelpRequestListItem }) {
                 <div className="flex gap-4 items-center">
                     {/* Прев'ю зображення */}
                     <div className="flex-shrink-0 w-20 h-20 rounded-lg bg-surface-muted border border-border overflow-hidden relative shadow-inner">
-                        {item.previewImageUrl ? (
+                        {item.previewImageUrl && !imageError ? (
                             <img
                                 src={getImageUrl(item.previewImageUrl)}
                                 alt={item.title}
+                                onError={() => setImageError(true)}
                                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                             />
                         ) : (

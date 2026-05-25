@@ -6,8 +6,10 @@ import { GET_PLATFORM_STATS } from '../api/queries'
 import type { PlatformStatsData } from '../api/types'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
+import { useAppSelector } from '../store/hooks'
 
 export default function HomePage() {
+    const userId = useAppSelector(s => s.auth.userId)
     const { data } = useQuery<PlatformStatsData>(GET_PLATFORM_STATS, {
         fetchPolicy: 'cache-first',
     })
@@ -40,7 +42,7 @@ export default function HomePage() {
                     <motion.div variants={itemVariants} className="inline-block px-4 py-1.5 bg-accent/15 text-accent-dark text-[10px] font-black rounded-full mb-8 tracking-[0.2em] border border-accent/20 uppercase">
                         Платформа адресної допомоги
                     </motion.div>
-                    <motion.h1 
+                    <motion.h1
                         variants={itemVariants}
                         className="text-5xl md:text-7xl font-bold text-primary leading-[1.05] tracking-tight mb-8"
                         style={{ fontFamily: 'Jua, sans-serif' }}
@@ -59,20 +61,30 @@ export default function HomePage() {
                         Прозоро, структуровано і з підтвердженням кожного етапу.
                     </motion.p>
                     <motion.div variants={itemVariants} className="flex flex-wrap gap-4">
-                        <Link to="/register">
-                            <Button size="lg" className="min-w-[160px] shadow-lg shadow-primary/20">
-                                Почати зараз
-                            </Button>
-                        </Link>
-                        <Link to="/login">
-                            <Button variant="outline" size="lg" className="min-w-[160px]">
-                                Я вже з вами
-                            </Button>
-                        </Link>
+                        {userId ? (
+                            <Link to="/requests">
+                                <Button size="lg" className="min-w-[200px] shadow-lg shadow-primary/20">
+                                    Перейти до заявок
+                                </Button>
+                            </Link>
+                        ) : (
+                            <>
+                                <Link to="/register">
+                                    <Button size="lg" className="min-w-[160px] shadow-lg shadow-primary/20">
+                                        Почати зараз
+                                    </Button>
+                                </Link>
+                                <Link to="/login">
+                                    <Button variant="outline" size="lg" className="min-w-[160px]">
+                                        Я вже з вами
+                                    </Button>
+                                </Link>
+                            </>
+                        )}
                     </motion.div>
                 </motion.div>
 
-                <motion.div 
+                <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.6, delay: 0.3 }}
@@ -87,8 +99,8 @@ export default function HomePage() {
                                 { num: '03', title: 'Узгодьте етапи', text: 'Контролюйте прогрес виконання', color: 'bg-primary text-accent' },
                                 { num: '04', title: 'Завершіть успішно', text: 'Підтвердіть отримання результату', color: 'bg-accent text-primary' },
                             ].map((step, idx) => (
-                                <motion.div 
-                                    key={step.num} 
+                                <motion.div
+                                    key={step.num}
                                     initial={{ opacity: 0, x: 20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: 0.5 + (idx * 0.1) }}
@@ -116,7 +128,7 @@ export default function HomePage() {
                         <div className="absolute top-10 left-10 w-64 h-64 border border-white rounded-full"></div>
                         <div className="absolute bottom-10 right-10 w-96 h-96 border border-white rounded-full"></div>
                     </div>
-                    
+
                     <div className="max-w-6xl mx-auto px-6 py-20 relative z-10">
                         <p className="text-center text-accent/60 text-xs font-black uppercase tracking-[0.3em] mb-12">
                             Ethy в цифрах

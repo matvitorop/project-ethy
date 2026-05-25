@@ -50,7 +50,7 @@ namespace server.Presentation.GraphQL.Mutations
                             {
                                 HttpOnly = true,
                                 Secure = !env.IsDevelopment(),
-                                SameSite = SameSiteMode.None,
+                                SameSite = env.IsDevelopment() ? SameSiteMode.Lax : SameSiteMode.None,
                                 Expires = DateTimeOffset.UtcNow.AddHours(5)
                             }
                         );
@@ -90,7 +90,7 @@ namespace server.Presentation.GraphQL.Mutations
                             {
                                 HttpOnly = true,
                                 Secure = !env.IsDevelopment(),
-                                SameSite = SameSiteMode.None,
+                                SameSite = env.IsDevelopment() ? SameSiteMode.Lax : SameSiteMode.None,
                                 Expires = DateTimeOffset.UtcNow.AddHours(5)
                             }
                         );

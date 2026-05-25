@@ -4,6 +4,8 @@ using GraphQL.Authorization;
 using GraphQL.Types;
 using GraphQL.Validation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using server.Application.Handlers.RegisterUser;
 using server.Application.IRepositories;
@@ -70,6 +72,37 @@ Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
 // CACHE CONFIG
 // =====================
 builder.Services.AddMemoryCache();
+
+// =====================
+// RATE LIMITING / ANTIDDOS
+// =====================
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+    {
+        var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        var path = httpContext.Request.Path.Value ?? "";
+
+        if (path.Contains("/graphql") && httpContext.Request.Method == "POST")
+        {
+            return RateLimitPartition.GetFixedWindowLimiter(ip + "_auth", _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 100,
+                Window = TimeSpan.FromSeconds(30),
+                QueueLimit = 0
+            });
+        }
+
+        return RateLimitPartition.GetFixedWindowLimiter(ip, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 100,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0
+        });
+    });
+});
 
 // =====================
 // JWT CONFIG
@@ -209,8 +242,11 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseRouting();
-
 app.UseCors();
+if (builder.Configuration["RateLimiting:Disabled"] != "true" && Environment.GetEnvironmentVariable("RateLimiting__Disabled") != "true")
+{
+    app.UseRateLimiter();
+}
 app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();

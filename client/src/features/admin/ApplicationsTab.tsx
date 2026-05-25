@@ -107,13 +107,13 @@ export default function ApplicationsTab({ items, loading, onRefresh }: Applicati
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2 justify-center md:justify-end w-full md:w-auto pt-3 md:pt-0 border-t border-border/40 md:border-none">
                             {app.status === 0 && (
-                                <div className="flex gap-2 ml-4 pl-4 border-l border-border">
-                                    <Button variant="success" size="sm" onClick={() => setReviewModal({ id: app.id, approve: true })}>
+                                <div className="grid grid-cols-2 gap-2 w-full md:flex md:w-auto">
+                                    <Button variant="success" size="sm" className="w-full justify-center" onClick={() => setReviewModal({ id: app.id, approve: true })}>
                                         Схвалити
                                     </Button>
-                                    <Button variant="error" size="sm" onClick={() => setReviewModal({ id: app.id, approve: false })}>
+                                    <Button variant="error" size="sm" className="w-full justify-center" onClick={() => setReviewModal({ id: app.id, approve: false })}>
                                         Відхилити
                                     </Button>
                                 </div>

@@ -1,9 +1,10 @@
 import { Link, Outlet, useLocation } from 'react-router-dom'
-import { Sun, Moon } from 'lucide-react'
+import { Sun, Moon, ClipboardList, BarChart2, MessageCircle, User, Shield } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Logo from '../components/Logo'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { toggleTheme } from '../store/themeSlice'
+import { toggleChatPanel } from '../store/uiSlice'
 import Button from '../components/ui/Button'
 import Footer from '../components/Footer'
 
@@ -13,6 +14,7 @@ export default function PublicLayout() {
     const theme = useAppSelector(s => s.theme.current)
     const userId = useAppSelector(s => s.auth.userId)
     const username = useAppSelector(s => s.auth.username)
+    const role = useAppSelector(s => s.auth.role)
 
     return (
         <div className="min-h-screen flex flex-col bg-surface-muted transition-colors duration-300">
@@ -30,27 +32,34 @@ export default function PublicLayout() {
                         </button>
                         
                         <Link to="/stats"
-                            className="px-4 py-2 text-sm font-semibold text-ink-muted hover:text-primary transition-all">
+                            className="hidden sm:inline-block px-4 py-2 text-sm font-semibold text-ink-muted hover:text-primary transition-all">
                             Статистика
                         </Link>
 
-                        <div className="h-6 w-px bg-border mx-2" />
+                        {role === 'Admin' && (
+                            <Link to="/admin"
+                                className="hidden sm:inline-block px-4 py-2 text-sm font-semibold text-ink-muted hover:text-primary transition-all">
+                                Адмін-панель
+                            </Link>
+                        )}
+
+                        <div className="hidden sm:block h-6 w-px bg-border mx-2" />
 
                         {userId ? (
                             <Link to="/profile">
-                                <Button variant="outline" size="sm">
+                                <Button variant="outline" size="sm" className="max-w-[100px] md:max-w-[150px] truncate">
                                     {username}
                                 </Button>
                             </Link>
                         ) : (
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1.5 sm:gap-2">
                                 <Link to="/login">
-                                    <Button variant="ghost" size="sm">
+                                    <Button variant="ghost" size="sm" className="px-2 sm:px-3">
                                         Увійти
                                     </Button>
                                 </Link>
                                 <Link to="/register">
-                                    <Button size="sm">
+                                    <Button size="sm" className="px-3 sm:px-4">
                                         Почати
                                     </Button>
                                 </Link>
@@ -59,7 +68,7 @@ export default function PublicLayout() {
                     </nav>
                 </div>
             </header>
-            <main className="flex-1">
+            <main className={`flex-1 ${userId ? 'pb-28 lg:pb-0' : ''}`}>
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={location.pathname}
@@ -67,12 +76,73 @@ export default function PublicLayout() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
                         transition={{ duration: 0.3 }}
+                        className="w-full max-w-full"
                     >
                         <Outlet />
                     </motion.div>
                 </AnimatePresence>
             </main>
             <Footer />
+
+            {/* Мобільна нижня панель навігації для авторизованих користувачів */}
+            {userId && (
+                <div className="lg:hidden fixed bottom-4 left-4 right-4 md:left-1/2 md:right-auto md:-translate-x-1/2 md:w-[480px] z-40 bg-surface/85 backdrop-blur-xl border border-border/40 shadow-xl px-6 py-3 flex items-center justify-around rounded-2xl">
+                    {/* Заявки */}
+                    <Link 
+                        to="/requests" 
+                        className={`flex flex-col items-center justify-center py-1 transition-all ${
+                            location.pathname.startsWith('/requests') ? 'text-primary animate-pulse' : 'text-ink-muted'
+                        }`}
+                    >
+                        <ClipboardList size={20} className={location.pathname.startsWith('/requests') ? 'scale-110' : ''} />
+                        <span className="text-[9px] font-black uppercase tracking-widest mt-1">Заявки</span>
+                    </Link>
+
+                    {/* Статистика */}
+                    <Link 
+                        to="/stats" 
+                        className={`flex flex-col items-center justify-center py-1 transition-all ${
+                            location.pathname === '/stats' ? 'text-primary' : 'text-ink-muted'
+                        }`}
+                    >
+                        <BarChart2 size={20} className={location.pathname === '/stats' ? 'scale-110' : ''} />
+                        <span className="text-[9px] font-black uppercase tracking-widest mt-1">Статистика</span>
+                    </Link>
+
+                    {/* Повідомлення */}
+                    <button
+                        onClick={() => dispatch(toggleChatPanel())}
+                        className="flex flex-col items-center justify-center py-1 text-ink-muted hover:text-ink relative transition-all"
+                    >
+                        <MessageCircle size={20} />
+                        <span className="text-[9px] font-black uppercase tracking-widest mt-1">Чати</span>
+                    </button>
+
+                    {/* Адмін-панель */}
+                    {role === 'Admin' && (
+                        <Link 
+                            to="/admin" 
+                            className={`flex flex-col items-center justify-center py-1 transition-all ${
+                                location.pathname.startsWith('/admin') ? 'text-primary' : 'text-ink-muted'
+                            }`}
+                        >
+                            <Shield size={20} className={location.pathname.startsWith('/admin') ? 'scale-110' : ''} />
+                            <span className="text-[9px] font-black uppercase tracking-widest mt-1">Адмін</span>
+                        </Link>
+                    )}
+
+                    {/* Профіль */}
+                    <Link 
+                        to="/profile" 
+                        className={`flex flex-col items-center justify-center py-1 transition-all ${
+                            location.pathname === '/profile' ? 'text-primary' : 'text-ink-muted'
+                        }`}
+                    >
+                        <User size={20} className={location.pathname === '/profile' ? 'scale-110' : ''} />
+                        <span className="text-[9px] font-black uppercase tracking-widest mt-1">Профіль</span>
+                    </Link>
+                </div>
+            )}
         </div>
     )
 }

@@ -1,9 +1,12 @@
 import { Link } from 'react-router-dom'
 import Logo from './Logo'
+import { useAppSelector } from '../store/hooks'
 
 export default function Footer() {
+    const userId = useAppSelector(s => s.auth.userId)
+
     return (
-        <footer className="py-8 px-6 border-t border-border bg-surface mt-auto">
+        <footer className={`pt-8 ${userId ? 'pb-32 lg:pb-8' : 'pb-8'} px-6 border-t border-border bg-surface mt-auto`}>
             <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
                 <div className="flex items-center gap-2">
                     <Logo size={24} showText={false} />

@@ -107,14 +107,14 @@ export default function ComplaintsTab({ items, loading, onRefresh }: ComplaintsT
                             </div>
                         </div>
 
-                        <div className="flex flex-row md:flex-col gap-2">
+                        <div className="flex flex-wrap items-center gap-2 justify-center md:justify-end w-full md:w-auto pt-3 md:pt-0 border-t border-border/40 md:border-none">
                             {!c.isResolved && (
-                                <>
-                                    <Button size="sm" onClick={() => setResolveModal(c.id)}>Розглянуто</Button>
-                                    <Button variant="error" size="sm" onClick={() => setBlockModal({ userId: c.targetUserId, username: c.targetUsername, complaintId: c.id })}>Заблокувати</Button>
-                                </>
+                                <div className="grid grid-cols-2 gap-2 w-full md:flex md:w-auto">
+                                    <Button size="sm" className="w-full justify-center" onClick={() => setResolveModal(c.id)}>Розглянуто</Button>
+                                    <Button variant="error" size="sm" className="w-full justify-center" onClick={() => setBlockModal({ userId: c.targetUserId, username: c.targetUsername, complaintId: c.id })}>Заблокувати</Button>
+                                </div>
                             )}
-                            {c.isResolved && <Badge variant="outline">Розглянуто</Badge>}
+                            {c.isResolved && <Badge variant="outline" className="w-full md:w-auto justify-center">Розглянуто</Badge>}
                         </div>
                     </div>
                 </Card>
