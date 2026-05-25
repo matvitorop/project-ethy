@@ -183,7 +183,7 @@ export default function ProfilePage() {
             animate={{ opacity: 1 }}
             className="max-w-3xl mx-auto space-y-10"
         >
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-black text-ink" style={{ fontFamily: 'Jua, sans-serif' }}>
                         Мій Профіль

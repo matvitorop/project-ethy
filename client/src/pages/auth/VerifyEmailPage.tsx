@@ -7,13 +7,19 @@ import { VERIFY_EMAIL } from '../../api/queries'
 import type { VerifyEmailData } from '../../api/types'
 import Button from '../../components/ui/Button'
 import Card from '../../components/ui/Card'
+import { useAppDispatch } from '../../store/hooks'
+import { addToast } from '../../store/uiSlice'
 
 export default function VerifyEmailPage() {
     const navigate = useNavigate()
+    const dispatch = useAppDispatch()
     const [searchParams] = useSearchParams()
     const token = searchParams.get('token')
 
-    const [verifyEmail, { data, loading, error }] = useMutation<VerifyEmailData>(VERIFY_EMAIL)
+    const [verifyEmail, { data, loading, error }] = useMutation<VerifyEmailData>(VERIFY_EMAIL, {
+        refetchQueries: ['GetProfile'],
+        awaitRefetchQueries: true,
+    })
 
     useEffect(() => {
         if (token) {
@@ -23,12 +29,13 @@ export default function VerifyEmailPage() {
 
     useEffect(() => {
         if (data?.user.verifyEmail.success) {
+            dispatch(addToast({ type: 'success', message: 'Пошту підтверджено! Вхід виконано.' }))
             const timer = setTimeout(() => {
-                navigate('/login')
-            }, 3000)
+                navigate('/requests')
+            }, 2000)
             return () => clearTimeout(timer)
         }
-    }, [data, navigate])
+    }, [data, navigate, dispatch])
 
     const isPending = !token
 
@@ -84,9 +91,9 @@ export default function VerifyEmailPage() {
                                 <CheckCircle className="w-8 h-8" />
                             </div>
                             <h2 className="text-2xl font-black text-ink" style={{ fontFamily: 'Jua, sans-serif' }}>Успішно!</h2>
-                            <p className="text-ink-soft font-medium">Вашу пошту підтверджено. Ви будете автоматично перенаправлені на сторінку входу через 3 секунди.</p>
-                            <Link to="/login" className="block mt-4">
-                                <Button className="w-full">Увійти зараз</Button>
+                            <p className="text-ink-soft font-medium">Вашу пошту підтверджено. Вхід виконано! Ви будете автоматично перенаправлені до кабінету через 2 секунди.</p>
+                            <Link to="/requests" className="block mt-4">
+                                <Button className="w-full">Перейти до заявок</Button>
                             </Link>
                         </>
                     )}

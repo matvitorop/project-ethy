@@ -110,7 +110,7 @@ export default function RequestsListPage() {
             </div>
 
             <div className="flex flex-col lg:flex-row gap-4 mb-8">
-                <div className="flex gap-1 bg-surface-muted border border-border p-1 w-fit rounded-xl shrink-0 h-fit">
+                <div className="flex gap-1 bg-surface-muted border border-border p-1 w-fit max-w-full overflow-x-auto rounded-xl shrink-0 h-fit scrollbar-none">
                     {TABS.map(tab => (
                         <button
                             key={tab.key}

@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from 'react-router-dom'
-import { Sun, Moon, LogOut, MessageCircle, ClipboardList, Shield, User } from 'lucide-react'
+import { Sun, Moon, LogOut, MessageCircle, ClipboardList, Shield, User, BarChart2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import ChatPanel from '../features/chat/ChatPanel'
 import { toggleChatPanel, toggleReportsPanel } from '../store/uiSlice'
@@ -117,7 +117,7 @@ export default function AppLayout() {
                 </div>
             </header>
 
-            <main className="flex-1 max-w-6xl mx-auto w-full px-6 py-6">
+            <main className="flex-1 max-w-6xl mx-auto w-full px-6 py-6 pb-24 md:pb-6">
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={location.pathname}
@@ -135,6 +135,51 @@ export default function AppLayout() {
             <ReportsPanel />
 
             <Footer />
+
+            {/* Мобільна нижня панель навігації */}
+            <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface/85 backdrop-blur-xl border-t border-border/40 shadow-[0_-4px_24px_rgba(0,0,0,0.04)] px-4 py-2.5 flex items-center justify-around rounded-t-3xl">
+                {/* Заявки */}
+                <Link 
+                    to="/requests" 
+                    className={`flex flex-col items-center justify-center py-1 transition-all ${
+                        location.pathname.startsWith('/requests') ? 'text-primary animate-pulse' : 'text-ink-muted'
+                    }`}
+                >
+                    <ClipboardList size={20} className={location.pathname.startsWith('/requests') ? 'scale-110' : ''} />
+                    <span className="text-[9px] font-black uppercase tracking-widest mt-1">Заявки</span>
+                </Link>
+
+                {/* Статистика */}
+                <Link 
+                    to="/stats" 
+                    className={`flex flex-col items-center justify-center py-1 transition-all ${
+                        location.pathname === '/stats' ? 'text-primary' : 'text-ink-muted'
+                    }`}
+                >
+                    <BarChart2 size={20} className={location.pathname === '/stats' ? 'scale-110' : ''} />
+                    <span className="text-[9px] font-black uppercase tracking-widest mt-1">Статистика</span>
+                </Link>
+
+                {/* Повідомлення */}
+                <button
+                    onClick={() => dispatch(toggleChatPanel())}
+                    className="flex flex-col items-center justify-center py-1 text-ink-muted hover:text-ink relative transition-all"
+                >
+                    <MessageCircle size={20} />
+                    <span className="text-[9px] font-black uppercase tracking-widest mt-1">Чати</span>
+                </button>
+
+                {/* Профіль */}
+                <Link 
+                    to="/profile" 
+                    className={`flex flex-col items-center justify-center py-1 transition-all ${
+                        location.pathname === '/profile' ? 'text-primary' : 'text-ink-muted'
+                    }`}
+                >
+                    <User size={20} className={location.pathname === '/profile' ? 'scale-110' : ''} />
+                    <span className="text-[9px] font-black uppercase tracking-widest mt-1">Профіль</span>
+                </Link>
+            </div>
         </div>
     )
 }

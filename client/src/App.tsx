@@ -18,6 +18,7 @@ import VerifyEmailPendingPage from './pages/auth/VerifyEmailPendingPage'
 import VerifyEmailPage from './pages/auth/VerifyEmailPage'
 import StatsPage from './pages/StatsPage'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
+import CookieConsent from './components/ui/CookieConsent'
 
 import { NotificationProvider } from './features/notifications/NotificationProvider'
 
@@ -51,6 +52,7 @@ export default function App() {
 
             </NotificationProvider>
             <ToastContainer />
+            <CookieConsent />
         </AuthInitializer>
     )
 }
