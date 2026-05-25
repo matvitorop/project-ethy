@@ -90,6 +90,7 @@ export default function RequestsListPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
+            className="w-full max-w-full"
         >
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                 <div>
@@ -209,7 +210,7 @@ export default function RequestsListPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="grid gap-4"
+                        className="grid gap-4 w-full max-w-full"
                     >
                         {items.map((item, index) => (
                             <motion.div
@@ -217,6 +218,7 @@ export default function RequestsListPage() {
                                 initial={{ opacity: 0, x: -10 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: index * 0.05 }}
+                                className="w-full min-w-0"
                             >
                                 <RequestCard item={item} />
                             </motion.div>

@@ -89,7 +89,7 @@ builder.Services.AddRateLimiter(options =>
         {
             return RateLimitPartition.GetFixedWindowLimiter(ip + "_auth", _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 15,
+                PermitLimit = 100,
                 Window = TimeSpan.FromSeconds(30),
                 QueueLimit = 0
             });
@@ -242,12 +242,11 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseRouting();
+app.UseCors();
 if (builder.Configuration["RateLimiting:Disabled"] != "true" && Environment.GetEnvironmentVariable("RateLimiting__Disabled") != "true")
 {
     app.UseRateLimiter();
 }
-
-app.UseCors();
 app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();

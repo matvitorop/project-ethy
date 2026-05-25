@@ -29,11 +29,11 @@ export default function AppLayout() {
             <header className="sticky top-0 z-50 w-full px-6 py-3">
                 <div className="max-w-6xl mx-auto">
                     <div className="bg-surface/80 backdrop-blur-md border border-white/20 dark:border-white/5 shadow-lg rounded-2xl px-6 py-2 flex items-center justify-between">
-                        <Link to="/requests" className="hover:opacity-80 transition-opacity">
+                        <Link to="/" className="hover:opacity-80 transition-opacity">
                             <Logo size={32} />
                         </Link>
 
-                        <nav className="hidden md:flex items-center gap-1">
+                        <nav className="hidden lg:flex items-center gap-1">
                             {navItems.map(item => (
                                 <Link 
                                     key={item.path}
@@ -58,11 +58,11 @@ export default function AppLayout() {
                                 {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
                             </button>
 
-                            <div className="h-6 w-px bg-border mx-1" />
+                            <div className="h-6 w-px bg-border mx-1 hidden lg:block" />
 
                             <button
                                 onClick={() => dispatch(toggleChatPanel())}
-                                className="p-2 rounded-xl text-ink-muted hover:text-primary hover:bg-primary/5 transition-all relative"
+                                className="hidden lg:flex p-2 rounded-xl text-ink-muted hover:text-primary hover:bg-primary/5 transition-all relative"
                                 title="Повідомлення"
                             >
                                 <MessageCircle size={18} />
@@ -72,7 +72,7 @@ export default function AppLayout() {
 
                             <button
                                 onClick={() => dispatch(toggleReportsPanel())}
-                                className="p-2 rounded-xl text-ink-muted hover:text-primary hover:bg-primary/5 transition-all"
+                                className="hidden lg:flex p-2 rounded-xl text-ink-muted hover:text-primary hover:bg-primary/5 transition-all"
                                 title="Звіти"
                             >
                                 <ClipboardList size={18} />
@@ -81,7 +81,7 @@ export default function AppLayout() {
                             {role === 'Admin' && (
                                 <Link 
                                     to="/admin"
-                                    className="p-2 rounded-xl text-ink-muted hover:text-primary hover:bg-primary/5 transition-all"
+                                    className="hidden lg:flex p-2 rounded-xl text-ink-muted hover:text-primary hover:bg-primary/5 transition-all"
                                     title="Адмін-панель"
                                 >
                                     <Shield size={18} />
@@ -89,8 +89,8 @@ export default function AppLayout() {
                             )}
 
                             <Link 
-                                to="/profile"
-                                className={`flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl border transition-all ${
+                                    to="/profile"
+                                    className={`hidden lg:flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl border transition-all ${
                                     location.pathname === '/profile'
                                     ? 'bg-primary border-primary text-white'
                                     : 'border-border bg-surface hover:border-primary/50'
@@ -107,7 +107,7 @@ export default function AppLayout() {
                             <button
                                 onClick={() => logout()}
                                 disabled={logoutLoading}
-                                className="p-2 rounded-xl text-ink-muted hover:text-error hover:bg-error/5 transition-all disabled:opacity-50"
+                                className="hidden lg:flex p-2 rounded-xl text-ink-muted hover:text-error hover:bg-error/5 transition-all disabled:opacity-50"
                                 title="Вийти"
                             >
                                 <LogOut size={18} />
@@ -117,7 +117,7 @@ export default function AppLayout() {
                 </div>
             </header>
 
-            <main className="flex-1 max-w-6xl mx-auto w-full px-6 py-6 pb-24 md:pb-6">
+            <main className="flex-1 max-w-6xl mx-auto w-full px-6 py-6 pb-28 lg:pb-6">
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={location.pathname}
@@ -125,6 +125,7 @@ export default function AppLayout() {
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -10 }}
                         transition={{ duration: 0.2 }}
+                        className="w-full max-w-full"
                     >
                         <Outlet />
                     </motion.div>
@@ -137,7 +138,7 @@ export default function AppLayout() {
             <Footer />
 
             {/* Мобільна нижня панель навігації */}
-            <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface/85 backdrop-blur-xl border-t border-border/40 shadow-[0_-4px_24px_rgba(0,0,0,0.04)] px-4 py-2.5 flex items-center justify-around rounded-t-3xl">
+            <div className="lg:hidden fixed bottom-4 left-4 right-4 md:left-1/2 md:right-auto md:-translate-x-1/2 md:w-[480px] z-40 bg-surface/85 backdrop-blur-xl border border-border/40 shadow-xl px-6 py-3 flex items-center justify-around rounded-2xl">
                 {/* Заявки */}
                 <Link 
                     to="/requests" 
@@ -168,6 +169,19 @@ export default function AppLayout() {
                     <MessageCircle size={20} />
                     <span className="text-[9px] font-black uppercase tracking-widest mt-1">Чати</span>
                 </button>
+
+                {/* Адмін-панель */}
+                {role === 'Admin' && (
+                    <Link 
+                        to="/admin" 
+                        className={`flex flex-col items-center justify-center py-1 transition-all ${
+                            location.pathname.startsWith('/admin') ? 'text-primary' : 'text-ink-muted'
+                        }`}
+                    >
+                        <Shield size={20} className={location.pathname.startsWith('/admin') ? 'scale-110' : ''} />
+                        <span className="text-[9px] font-black uppercase tracking-widest mt-1">Адмін</span>
+                    </Link>
+                )}
 
                 {/* Профіль */}
                 <Link 

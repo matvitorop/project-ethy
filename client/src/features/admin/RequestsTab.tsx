@@ -144,17 +144,19 @@ export default function RequestsTab({ items, loading, onRefresh, filter, onFilte
                 ) : (
                     items.map((hr: AdminHelpRequestItem) => (
                         <Card key={hr.id} padding="sm" className={hr.isHidden ? 'opacity-60 grayscale-[0.5]' : ''}>
-                            <div className="flex items-center justify-between gap-4">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                                 <div
                                     className="min-w-0 flex-1 cursor-pointer group/item"
                                     onClick={() => navigate(`/requests/${hr.id}`)}
                                 >
-                                    <div className="flex items-center gap-3 mb-1">
+                                    <div className="flex flex-wrap items-center gap-2 mb-1.5">
                                         <span className="font-bold text-ink truncate text-base group-hover/item:text-primary transition-colors">{hr.title}</span>
-                                        {hr.isHidden && <Badge variant="default">Приховано</Badge>}
-                                        {hr.isDeleted && <Badge variant="outline" className="border-error/50 text-error font-black">Видалено</Badge>}
+                                        <div className="flex gap-1.5 items-center flex-shrink-0">
+                                            {hr.isHidden && <Badge variant="default">Приховано</Badge>}
+                                            {hr.isDeleted && <Badge variant="outline" className="border-error/50 text-error font-black">Видалено</Badge>}
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-3 text-[10px] font-black text-ink-soft uppercase tracking-widest">
+                                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[10px] font-black text-ink-soft uppercase tracking-widest">
                                         <span className="text-primary font-bold">{hr.creatorUsername}</span>
                                         <span className="w-1 h-1 bg-border rounded-full" />
                                         <Badge variant={(HELP_REQUEST_STATUS_CONFIG[hr.status]?.variant as 'default' | 'success' | 'warning' | 'error' | 'info' | 'outline') || 'default'}>
@@ -164,12 +166,13 @@ export default function RequestsTab({ items, loading, onRefresh, filter, onFilte
                                         <span>{formatDateTime(hr.createdAtUtc)}</span>
                                     </div>
                                 </div>
-                                <div className="flex gap-2">
+                                <div className="flex flex-wrap items-center gap-2 justify-center md:justify-end w-full md:w-auto pt-3 md:pt-0 border-t border-border/40 md:border-none">
                                     {hr.status === 0 && !hr.isDeleted && !hr.isHidden && (
-                                        <div className="flex gap-2 mr-2 pr-4 border-r border-border">
+                                        <div className="grid grid-cols-2 gap-2 w-full md:flex md:w-auto md:mr-2 md:pr-4 md:border-r md:border-border">
                                             <Button
                                                 variant="success"
                                                 size="sm"
+                                                className="w-full justify-center"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     approveReq({ variables: { helpRequestId: hr.id } });
@@ -180,6 +183,7 @@ export default function RequestsTab({ items, loading, onRefresh, filter, onFilte
                                             <Button
                                                 variant="error"
                                                 size="sm"
+                                                className="w-full justify-center"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     setRejectModal({ id: hr.id, title: hr.title });
@@ -192,7 +196,7 @@ export default function RequestsTab({ items, loading, onRefresh, filter, onFilte
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        className="shrink-0"
+                                        className="shrink-0 w-full md:w-auto justify-center"
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             hideReq({ variables: { helpRequestId: hr.id, hide: !hr.isHidden } });
