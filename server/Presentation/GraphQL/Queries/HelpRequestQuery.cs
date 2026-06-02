@@ -45,6 +45,9 @@ namespace server.Presentation.GraphQL.Queries
             )
             .ResolveAsync(async context =>
             {
+                var currentUserId = context.GetUserId();
+                var isAdmin = context.User.IsInRole("Admin");
+
                 var result = await mediator.Send(
                     new GetHelpRequestsPageQuery(
                         context.GetArgument<int>("page"),
@@ -56,7 +59,9 @@ namespace server.Presentation.GraphQL.Queries
                         context.GetArgument<bool?>("hasNoReport"),
                         context.GetArgument<string?>("searchTerm"),
                         context.GetArgument<string?>("shortId"),
-                        context.GetArgument<Guid?>("responderId")
+                        context.GetArgument<Guid?>("responderId"),
+                        currentUserId,
+                        isAdmin
                     ));
 
                 return result.ToPayload((value, error) =>

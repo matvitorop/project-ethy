@@ -18,8 +18,8 @@ const EVENT_CONFIG = {
   8: { label: 'Виконавця знято',      icon: UserMinus,   color: 'text-error' },
   9: { label: 'Модерацію схвалено',   icon: CheckCircle, color: 'text-success' },
   10: { label: 'Модерацію відхилено',  icon: XCircle,     color: 'text-error' },
-  11: { label: 'Заявку приховано',    icon: EyeOff,      color: 'text-warning' },
-  12: { label: 'Заявку відновлено в стрічці', icon: Eye,  color: 'text-info' },
+  11: { label: 'Заявку приховано адміністрацією',    icon: EyeOff,      color: 'text-warning' },
+  12: { label: 'Заявку відновлено в стрічці адміністрацією', icon: Eye,  color: 'text-info' },
 } as const
 
 function parsePayload(payload: string): Record<string, string> {

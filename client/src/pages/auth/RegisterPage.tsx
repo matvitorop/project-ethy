@@ -44,8 +44,35 @@ export default function RegisterPage() {
         })),
     })
 
+    const validatePassword = (password: string): string | null => {
+        if (password.length < 8) {
+            return 'Пароль має містити щонайменше 8 символів.'
+        }
+        if (!/[A-Z]/.test(password)) {
+            return 'Пароль має містити щонайменше одну велику літеру.'
+        }
+        if (!/[a-z]/.test(password)) {
+            return 'Пароль має містити щонайменше одну малу літеру.'
+        }
+        if (!/[0-9]/.test(password)) {
+            return 'Пароль має містити щонайменше одну цифру.'
+        }
+        // Match standard special characters
+        if (!/[%!@#$%^&*()_+=[\]{};:<>|./?,\-~`'"]/.test(password)) {
+            return 'Пароль має містити щонайменше один спеціальний символ (наприклад, @, #, $, %).'
+        }
+        return null
+    }
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
+        
+        const pwdError = validatePassword(form.password)
+        if (pwdError) {
+            dispatch(addToast({ type: 'error', message: pwdError }))
+            return
+        }
+        
         register({ variables: form })
     }
 

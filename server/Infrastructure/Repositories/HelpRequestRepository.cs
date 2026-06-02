@@ -145,7 +145,9 @@ namespace server.Infrastructure.Repositories
             bool? hasNoReport = null,
             string? searchTerm = null,
             string? shortId = null,
-            Guid? responderId = null)
+            Guid? responderId = null,
+            Guid? currentUserId = null,
+            bool isAdmin = false)
         {
             using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
             var offset = (page - 1) * pageSize;
@@ -155,7 +157,15 @@ namespace server.Infrastructure.Repositories
             else if (statuses != null && statuses.Count > 0) filters.Add("hr.Status IN @Statuses");
             else if (!creatorId.HasValue) filters.Add("hr.Status != 0"); // Hide Moderation (0) from public list
 
-            if (!creatorId.HasValue && !assignedUserId.HasValue && !responderId.HasValue)
+            // Only show hidden requests if the logged-in user is an Admin, 
+            // OR if the logged-in user is querying their own requests (as creator, assignee, or responder).
+            bool canShowHidden = isAdmin || 
+                                 (currentUserId.HasValue && 
+                                  ((creatorId.HasValue && creatorId.Value == currentUserId.Value) || 
+                                   (assignedUserId.HasValue && assignedUserId.Value == currentUserId.Value) ||
+                                   (responderId.HasValue && responderId.Value == currentUserId.Value)));
+
+            if (!canShowHidden)
             {
                 filters.Add("hr.IsHidden = 0");
             }

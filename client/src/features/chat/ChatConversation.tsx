@@ -4,7 +4,7 @@ import { ArrowLeft, ListChecks, Send } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { GET_CHAT_MESSAGES, GET_STAGES } from '../../api/queries'
-import type { ChatMessagesData, ChatListItem, StagesData } from '../../api/types'
+import type { ChatMessagesData, ChatListItem, StagesData, StageEvent } from '../../api/types'
 import { useChatSignalR } from './useChatSignalR'
 import { getChatConnection } from '../../api/chatHub'
 import * as signalR from '@microsoft/signalr'
@@ -26,6 +26,33 @@ export default function ChatConversation({ chat, onBack }: ChatConversationProps
     
     const { connected, liveMessages, liveStages } = useChatSignalR(chat.helpRequestId)
     
+    const [resolvedStages, setResolvedStages] = useState<Record<string, { status: number, rejectionReason?: string | null }>>({})
+
+    useEffect(() => {
+        const conn = getChatConnection()
+        
+        const onConfirmed = (event: StageEvent) => {
+            if (event.stageId) {
+                setResolvedStages(prev => ({ ...prev, [event.stageId]: { status: 1 } }))
+            }
+        }
+        const onRejected = (event: StageEvent) => {
+            if (event.stageId) {
+                setResolvedStages(prev => ({ ...prev, [event.stageId]: { status: 2, rejectionReason: event.reason } }))
+            }
+        }
+        
+        if (conn.state === signalR.HubConnectionState.Connected || conn.state === signalR.HubConnectionState.Connecting) {
+            conn.on('StageConfirmed', onConfirmed)
+            conn.on('StageRejected', onRejected)
+        }
+
+        return () => {
+            conn.off('StageConfirmed', onConfirmed)
+            conn.off('StageRejected', onRejected)
+        }
+    }, [chat.helpRequestId])
+
     const [input, setInput] = useState('')
     const [proposeModalOpen, setProposeModalOpen] = useState(false)
     const [rejectModalOpen, setRejectModalOpen] = useState(false)
@@ -55,8 +82,20 @@ export default function ChatConversation({ chat, onBack }: ChatConversationProps
         const initial = stagesData?.helpRequestQuer.stages.items || []
         const initialIds = new Set(initial.map(s => s.id))
         const filteredLive = liveStages.filter(s => !initialIds.has(s.id))
-        return [...initial, ...filteredLive]
-    }, [stagesData, liveStages])
+        const merged = [...initial, ...filteredLive]
+        
+        return merged.map(s => {
+            const override = resolvedStages[s.id]
+            if (override) {
+                return { 
+                    ...s, 
+                    status: override.status, 
+                    rejectionReason: override.rejectionReason !== undefined ? override.rejectionReason : s.rejectionReason 
+                }
+            }
+            return s
+        })
+    }, [stagesData, liveStages, resolvedStages])
 
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -113,10 +152,17 @@ export default function ChatConversation({ chat, onBack }: ChatConversationProps
     }
 
     const chatItems = useMemo(() => {
+        const getTimestamp = (item: { data: { createdAtUtc?: string; createdAt?: string } }) => {
+            const dateStr = item.data.createdAtUtc || item.data.createdAt
+            if (!dateStr) return 0
+            const parsed = new Date(dateStr).getTime()
+            return isNaN(parsed) ? 0 : parsed
+        }
+
         return [
             ...messages.map(m => ({ type: 'message' as const, data: m })),
             ...stages.filter(s => s.status !== 3).map(s => ({ type: 'stage' as const, data: s })),
-        ].sort((a, b) => new Date(a.data.createdAtUtc).getTime() - new Date(b.data.createdAtUtc).getTime())
+        ].sort((a, b) => getTimestamp(a) - getTimestamp(b))
     }, [messages, stages])
 
     return (
@@ -154,7 +200,7 @@ export default function ChatConversation({ chat, onBack }: ChatConversationProps
                                             {msg.senderUsername}
                                         </span>
                                     )}
-                                    <div className={`max-w-[85%] px-4 py-2.5 rounded-2xl shadow-sm relative group ${isMe ? 'bg-primary text-white rounded-br-none' : 'bg-surface border border-border text-ink rounded-bl-none'
+                                    <div className={`max-w-[85%] min-w-[75px] w-fit px-4 py-2.5 rounded-2xl shadow-sm relative group ${isMe ? 'bg-primary text-white rounded-br-none' : 'bg-surface border border-border text-ink rounded-bl-none'
                                         }`}>
                                         <p className="text-sm font-medium leading-relaxed break-words">{msg.content}</p>
                                         <p className={`text-[9px] font-bold uppercase mt-1 opacity-60 ${isMe ? 'text-white' : 'text-ink-soft'}`}>
