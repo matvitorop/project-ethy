@@ -1,4 +1,4 @@
-﻿using Dapper;
+using Dapper;
 using server.Application.Handlers.GetChatMessages;
 using server.Application.Handlers.GetMyChats;
 using server.Application.IRepositories;
@@ -71,10 +71,11 @@ namespace server.Infrastructure.Repositories
             using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
 
             const string sql = """
-                SELECT Id, SenderId, Content, CreatedAtUtc
-                FROM ChatMessages
-                WHERE ChatId = @ChatId
-                ORDER BY CreatedAtUtc ASC;
+                SELECT cm.Id, cm.SenderId, u.Username AS SenderUsername, cm.Content, cm.CreatedAtUtc
+                FROM ChatMessages cm
+                INNER JOIN Users u ON u.Id = cm.SenderId
+                WHERE cm.ChatId = @ChatId
+                ORDER BY cm.CreatedAtUtc ASC;
                 """;
 
             var result = await connection.QueryAsync<ChatMessageDto>(
@@ -96,6 +97,7 @@ namespace server.Infrastructure.Repositories
                     c.Id AS ChatId,
                     c.HelpRequestId,
                     hr.Title AS HelpRequestTitle,
+                    hr.Status AS HelpRequestStatus,
                     c.OwnerId,
                     c.AssigneeId,
                     c.CreatedAtUtc

@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using server.Application.IRepositories;
 using server.Application.IServices;
 using server.Application.Services;
@@ -30,10 +30,68 @@ namespace server.Application.Handlers.RegisterUser
             _config = config;
         }
 
+        private static (bool IsValid, string ErrorMessage) ValidatePassword(string password)
+        {
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                return (false, "Пароль не може бути порожнім.");
+            }
+
+            if (password.Length < 8)
+            {
+                return (false, "Пароль має містити щонайменше 8 символів.");
+            }
+
+            bool hasUpper = false;
+            bool hasLower = false;
+            bool hasDigit = false;
+            bool hasSpecial = false;
+
+            string specialCh = @"%!@#$%^&*()_+=\[{\]};:<>|./?,-~`'""";
+
+            foreach (char c in password)
+            {
+                if (char.IsUpper(c)) hasUpper = true;
+                else if (char.IsLower(c)) hasLower = true;
+                else if (char.IsDigit(c)) hasDigit = true;
+                else if (specialCh.Contains(c) || char.IsSymbol(c) || char.IsPunctuation(c)) hasSpecial = true;
+            }
+
+            if (!hasUpper)
+            {
+                return (false, "Пароль має містити щонайменше одну велику літеру.");
+            }
+
+            if (!hasLower)
+            {
+                return (false, "Пароль має містити щонайменше одну малу літеру.");
+            }
+
+            if (!hasDigit)
+            {
+                return (false, "Пароль має містити щонайменше одну цифру.");
+            }
+
+            if (!hasSpecial)
+            {
+                return (false, "Пароль має містити щонайменше один спеціальний символ (наприклад, @, #, $, %).");
+            }
+
+            return (true, string.Empty);
+        }
+
         public async Task<Result<string>> Handle(
             RegisterUserCommand request,
             CancellationToken cancellationToken)
         {
+            var pwdValidation = ValidatePassword(request.Password);
+            if (!pwdValidation.IsValid)
+            {
+                return Result<string>.Failure(new Error(
+                    pwdValidation.ErrorMessage,
+                    "User.INVALID_PASSWORD"));
+            }
+
             var existing = await _userRepository.GetByEmailAsync(request.Email);
             if (existing != null)
                 return Result<string>.Failure(new Error(

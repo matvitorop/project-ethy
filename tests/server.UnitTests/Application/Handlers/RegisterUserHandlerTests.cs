@@ -43,7 +43,7 @@ namespace server.UnitTests.Application.Handlers
         public async Task Handle_ShouldReturnFailure_WhenUserAlreadyExists()
         {
             // Arrange
-            var command = new RegisterUserCommand("testuser", "test@example.com", "password123");
+            var command = new RegisterUserCommand("testuser", "test@example.com", "Password123!");
             
             // Mock existing user
             var existingUser = new User("existing", command.Email, "hash", "salt", UserRole.User);
@@ -63,7 +63,7 @@ namespace server.UnitTests.Application.Handlers
         public async Task Handle_ShouldReturnSuccess_WhenUserIsNew()
         {
             // Arrange
-            var command = new RegisterUserCommand("newuser", "new@example.com", "password123");
+            var command = new RegisterUserCommand("newuser", "new@example.com", "Password123!");
             
             _userRepositoryMock.Setup(repo => repo.GetByEmailAsync(command.Email))
                 .ReturnsAsync((User?)null);

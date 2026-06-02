@@ -38,8 +38,8 @@ export default function StatsPage() {
     if (statsLoading && monthlyLoading) return <PageSpinner />
 
     const stats = statsData?.statsQuery?.platformStats?.stats
-    const monthly = monthlyData?.statsQuery.monthlyActivity.items ?? []
-    const top = topData?.statsQuery.topVolunteers.data
+    const monthly = monthlyData?.statsQuery?.monthlyActivity?.items ?? []
+    const top = topData?.statsQuery?.topVolunteers?.data
 
     const pieData = stats ? [
         { name: 'Відкриті', value: stats.openRequests, color: STATUS_COLORS['Відкриті'] },

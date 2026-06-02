@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using server.Application.Handlers.ConfirmStage;
@@ -55,10 +55,13 @@ namespace server.Presentation.Hubs
             }
 
             //Send the message to all users in the group
+            var senderUsername = Context.User?.Identity?.Name ?? "";
+
             await Clients.Group(helpRequestId).SendAsync("ReceiveMessage", new
             {
-                messageId = result.Value,
+                id = result.Value,
                 senderId,
+                senderUsername,
                 content,
                 createdAtUtc = DateTime.UtcNow
             });

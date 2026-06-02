@@ -51,9 +51,11 @@ namespace server.Presentation.GraphQL.Mutations
             .Argument<NonNullGraphType<BooleanGraphType>>("hide")
             .ResolveAsync(async ctx =>
             {
+                var adminId = ctx.GetUserId();
                 var r = await mediator.Send(new HideHelpRequestCommand(
                     ctx.GetArgument<Guid>("helpRequestId"),
-                    ctx.GetArgument<bool>("hide")));
+                    ctx.GetArgument<bool>("hide"),
+                    adminId));
                 return r.ToPayload((val, err) => new AdminActionPayload(val, err));
             });
 

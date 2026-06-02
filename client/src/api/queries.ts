@@ -227,6 +227,7 @@ export const GET_MY_CHATS = gql`
           chatId
           helpRequestId
           helpRequestTitle
+          helpRequestStatus
           ownerId
           assigneeId
           createdAtUtc
@@ -244,6 +245,7 @@ export const GET_CHAT_MESSAGES = gql`
         messages {
           id
           senderId
+          senderUsername
           content
           createdAtUtc
         }

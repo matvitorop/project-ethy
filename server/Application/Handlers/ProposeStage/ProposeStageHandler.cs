@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using server.Application.IRepositories;
 using server.Domain.Exceptions;
 using server.Domain.HelpRequest;
@@ -12,16 +12,32 @@ namespace server.Application.Handlers.ProposeStage
     {
         private readonly IStageRepository _stageRepository;
         private readonly IChatRepository _chatRepository;
+        private readonly IHelpRequestRepository _helpRequestRepository;
 
-        public ProposeStageHandler(IStageRepository stageRepository, IChatRepository chatRepository)
+        public ProposeStageHandler(
+            IStageRepository stageRepository,
+            IChatRepository chatRepository,
+            IHelpRequestRepository helpRequestRepository)
         {
             _stageRepository = stageRepository;
             _chatRepository = chatRepository;
+            _helpRequestRepository = helpRequestRepository;
         }
 
         public async Task<Result<Guid>> Handle(
             ProposeStageCommand request, CancellationToken ct)
         {
+            var helpRequest = await _helpRequestRepository.GetAggregateByIdAsync(ct, request.HelpRequestId);
+            if (helpRequest is null || helpRequest.IsDeleted)
+                return Result<Guid>.Failure(
+                    new Error("Help request not found", "HelpRequest.NOT_FOUND"));
+
+            if (helpRequest.Status == HelpRequestStatus.Resolved ||
+                helpRequest.Status == HelpRequestStatus.Cancelled ||
+                helpRequest.Status == HelpRequestStatus.Rejected)
+                return Result<Guid>.Failure(
+                    new Error("Cannot propose stages for completed/closed help requests", "HelpRequest.INACTIVE_STATUS"));
+
             //Check if chat exists and user has access
             var chat = await _chatRepository
                 .GetByHelpRequestIdAsync(request.HelpRequestId, ct);

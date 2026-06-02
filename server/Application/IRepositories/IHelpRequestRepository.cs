@@ -10,7 +10,7 @@ namespace server.Application.IRepositories
     public interface IHelpRequestRepository
     {
         Task AddAsync(HelpRequest request, CancellationToken ct);
-        Task<IReadOnlyList<HelpRequestListItemDto>> GetPageAsync(CancellationToken ct, int page, int pageSize, HelpRequestStatus? status = null, IReadOnlyList<HelpRequestStatus>? statuses = null, Guid? creatorId = null, Guid? assignedUserId = null, bool? hasNoReport = null, string? searchTerm = null, string? shortId = null, Guid? responderId = null);
+        Task<IReadOnlyList<HelpRequestListItemDto>> GetPageAsync(CancellationToken ct, int page, int pageSize, HelpRequestStatus? status = null, IReadOnlyList<HelpRequestStatus>? statuses = null, Guid? creatorId = null, Guid? assignedUserId = null, bool? hasNoReport = null, string? searchTerm = null, string? shortId = null, Guid? responderId = null, Guid? currentUserId = null, bool isAdmin = false);
         Task<HelpRequestDetailDto?> GetHelpRequestById(CancellationToken ct, Guid id);
         Task<HelpRequest?> GetAggregateByIdAsync(CancellationToken ct, Guid id);
         Task UpdateStatusAsync(CancellationToken ct, Guid id, HelpRequestStatus status, HelpRequestEvent logEvent);
@@ -33,7 +33,7 @@ namespace server.Application.IRepositories
         Task<int> CountActiveResponsesByUserAsync(Guid userId, CancellationToken ct);
         
         // +++ Admin module
-        Task SetHiddenAsync(Guid helpRequestId, bool isHidden, CancellationToken ct);
+        Task SetHiddenAsync(Guid helpRequestId, bool isHidden, HelpRequestEvent logEvent, CancellationToken ct);
         Task<List<AdminHelpRequestDto>> GetAllForAdminAsync(int page, int pageSize, bool? isHidden, bool? isDeleted, IReadOnlyList<HelpRequestStatus>? statuses, string? searchTerm, CancellationToken ct);
         // ---
 

@@ -1,4 +1,4 @@
-﻿using GraphQL.Types;
+using GraphQL.Types;
 using server.Application.Handlers.GetChatMessages;
 namespace server.Presentation.GraphQL.Types.ChatMessagesTypes
 {
@@ -8,6 +8,7 @@ namespace server.Presentation.GraphQL.Types.ChatMessagesTypes
         {
             Field(x => x.Id, type: typeof(IdGraphType));
             Field(x => x.SenderId, type: typeof(IdGraphType));
+            Field(x => x.SenderUsername);
             Field(x => x.Content);
             Field(x => x.CreatedAtUtc);
         }

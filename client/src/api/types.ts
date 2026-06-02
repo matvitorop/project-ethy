@@ -207,6 +207,7 @@ export interface ChatListItem {
     chatId: string
     helpRequestId: string
     helpRequestTitle: string
+    helpRequestStatus: number
     ownerId: string
     assigneeId: string
     createdAtUtc: string
@@ -224,6 +225,7 @@ export interface MyChatsData {
 export interface ChatMessage {
     id: string
     senderId: string
+    senderUsername?: string
     content: string
     createdAtUtc: string
 }
