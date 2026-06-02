@@ -22,6 +22,7 @@ interface ChatConversationProps {
 export default function ChatConversation({ chat, onBack }: ChatConversationProps) {
     const userId = useAppSelector(s => s.auth.userId)
     const dispatch = useAppDispatch()
+    const isClosed = chat.helpRequestStatus === 3 || chat.helpRequestStatus === 4 || chat.helpRequestStatus === 5
     
     const { connected, liveMessages, liveStages } = useChatSignalR(chat.helpRequestId)
     
@@ -114,7 +115,7 @@ export default function ChatConversation({ chat, onBack }: ChatConversationProps
     const chatItems = useMemo(() => {
         return [
             ...messages.map(m => ({ type: 'message' as const, data: m })),
-            ...stages.filter(s => s.status === 0).map(s => ({ type: 'stage' as const, data: s })),
+            ...stages.filter(s => s.status !== 3).map(s => ({ type: 'stage' as const, data: s })),
         ].sort((a, b) => new Date(a.data.createdAtUtc).getTime() - new Date(b.data.createdAtUtc).getTime())
     }, [messages, stages])
 
@@ -147,12 +148,19 @@ export default function ChatConversation({ chat, onBack }: ChatConversationProps
                                 key={`msg-${msg.id}`}
                                 className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
                             >
-                                <div className={`max-w-[85%] px-4 py-2.5 rounded-2xl shadow-sm relative group ${isMe ? 'bg-primary text-white rounded-br-none' : 'bg-surface border border-border text-ink rounded-bl-none'
-                                    }`}>
-                                    <p className="text-sm font-medium leading-relaxed break-words">{msg.content}</p>
-                                    <p className={`text-[9px] font-bold uppercase mt-1 opacity-60 ${isMe ? 'text-white' : 'text-ink-soft'}`}>
-                                        {formatDateTime(msg.createdAtUtc, 'timeOnly')}
-                                    </p>
+                                <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                                    {!isMe && msg.senderUsername && (
+                                        <span className="text-[10px] font-bold text-ink-muted mb-1 px-1">
+                                            {msg.senderUsername}
+                                        </span>
+                                    )}
+                                    <div className={`max-w-[85%] px-4 py-2.5 rounded-2xl shadow-sm relative group ${isMe ? 'bg-primary text-white rounded-br-none' : 'bg-surface border border-border text-ink rounded-bl-none'
+                                        }`}>
+                                        <p className="text-sm font-medium leading-relaxed break-words">{msg.content}</p>
+                                        <p className={`text-[9px] font-bold uppercase mt-1 opacity-60 ${isMe ? 'text-white' : 'text-ink-soft'}`}>
+                                            {formatDateTime(msg.createdAtUtc, 'timeOnly')}
+                                        </p>
+                                    </div>
                                 </div>
                             </motion.div>
                         )
@@ -171,6 +179,7 @@ export default function ChatConversation({ chat, onBack }: ChatConversationProps
                                 onConfirm={handleConfirmStage}
                                 onReject={(id) => { setRejectingStageId(id); setRejectModalOpen(true) }}
                                 confirming={confirming}
+                                isClosed={isClosed}
                             />
                         </div>
                     )
@@ -179,31 +188,37 @@ export default function ChatConversation({ chat, onBack }: ChatConversationProps
             </div>
 
             <div className="p-4 bg-surface border-t border-border shadow-[0_-4px_12px_rgba(0,0,0,0.02)]">
-                <div className="flex items-end gap-2 bg-surface-muted border border-border rounded-2xl p-1.5 focus-within:border-primary/50 transition-colors shadow-inner">
-                    <button
-                        onClick={() => setProposeModalOpen(true)}
-                        disabled={!connected}
-                        className="w-10 h-10 flex items-center justify-center rounded-xl text-ink-soft hover:text-primary hover:bg-primary/10 transition-all disabled:opacity-50 shrink-0"
-                        title="Запропонувати етап"
-                    >
-                        <ListChecks size={20} />
-                    </button>
-                    <textarea
-                        value={input}
-                        onChange={e => setInput(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        placeholder="Повідомлення..."
-                        rows={1}
-                        className="flex-1 px-2 py-2.5 bg-transparent border-none text-sm font-medium text-ink placeholder-ink-soft/60 focus:outline-none resize-none max-h-32"
-                    />
-                    <button
-                        onClick={handleSend}
-                        disabled={!input.trim() || !connected}
-                        className="w-10 h-10 flex items-center justify-center bg-primary text-white rounded-xl hover:bg-primary-light disabled:opacity-50 transition-all shadow-md shadow-primary/20 shrink-0"
-                    >
-                        <Send size={18} />
-                    </button>
-                </div>
+                {isClosed ? (
+                    <div className="bg-surface-muted border border-border rounded-2xl p-3 text-center text-xs font-semibold text-ink-muted">
+                        Ця заявка завершена або скасована. Спілкування та етапи більше не доступні.
+                    </div>
+                ) : (
+                    <div className="flex items-end gap-2 bg-surface-muted border border-border rounded-2xl p-1.5 focus-within:border-primary/50 transition-colors shadow-inner">
+                        <button
+                            onClick={() => setProposeModalOpen(true)}
+                            disabled={!connected}
+                            className="w-10 h-10 flex items-center justify-center rounded-xl text-ink-soft hover:text-primary hover:bg-primary/10 transition-all disabled:opacity-50 shrink-0"
+                            title="Запропонувати етап"
+                        >
+                            <ListChecks size={20} />
+                        </button>
+                        <textarea
+                            value={input}
+                            onChange={e => setInput(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            placeholder="Повідомлення..."
+                            rows={1}
+                            className="flex-1 px-2 py-2.5 bg-transparent border-none text-sm font-medium text-ink placeholder-ink-soft/60 focus:outline-none resize-none max-h-32"
+                        />
+                        <button
+                            onClick={handleSend}
+                            disabled={!input.trim() || !connected}
+                            className="w-10 h-10 flex items-center justify-center bg-primary text-white rounded-xl hover:bg-primary-light disabled:opacity-50 transition-all shadow-md shadow-primary/20 shrink-0"
+                        >
+                            <Send size={18} />
+                        </button>
+                    </div>
+                )}
             </div>
 
             <ProposeStageModal isOpen={proposeModalOpen} onClose={() => setProposeModalOpen(false)} onPropose={handleProposeStage} loading={proposing} />

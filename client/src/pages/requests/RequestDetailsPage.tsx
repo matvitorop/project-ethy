@@ -619,7 +619,10 @@ export default function RequestDetailsPage() {
                 onClose={() => setCandidatesModalOpen(false)}
                 helpRequestId={hr.id}
                 canAssign={isOwner && hr.status === 1}
-                onAssign={() => setCandidatesModalOpen(false)}
+                onAssign={() => {
+                    setCandidatesModalOpen(false)
+                    refetch()
+                }}
             />
 
             <ReasonModal

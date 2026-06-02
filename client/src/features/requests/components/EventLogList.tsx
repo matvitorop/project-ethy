@@ -1,6 +1,7 @@
 import {
   UserCheck, RefreshCw, Plus, CheckCircle,
-  XCircle, Trash2, Edit, LogOut, UserMinus
+  XCircle, Trash2, Edit, LogOut, UserMinus,
+  Eye, EyeOff
 } from 'lucide-react'
 import type { EventLogItem } from '../../../api/types'
 import { formatDateTime } from '../../../hooks/useDateTime'
@@ -15,6 +16,10 @@ const EVENT_CONFIG = {
   6: { label: 'Заявку відредаговано', icon: Edit,        color: 'text-info' },
   7: { label: 'Виконавець відмовився',icon: LogOut,      color: 'text-error' },
   8: { label: 'Виконавця знято',      icon: UserMinus,   color: 'text-error' },
+  9: { label: 'Модерацію схвалено',   icon: CheckCircle, color: 'text-success' },
+  10: { label: 'Модерацію відхилено',  icon: XCircle,     color: 'text-error' },
+  11: { label: 'Заявку приховано',    icon: EyeOff,      color: 'text-warning' },
+  12: { label: 'Заявку відновлено в стрічці', icon: Eye,  color: 'text-info' },
 } as const
 
 function parsePayload(payload: string): Record<string, string> {

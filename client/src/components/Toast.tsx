@@ -45,7 +45,7 @@ export default function ToastContainer() {
     const toasts = useAppSelector(s => s.ui.toasts)
 
     return (
-        <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2 w-80">
+        <div className="fixed bottom-6 right-6 z-[95] flex flex-col gap-2 w-80">
             {toasts.map(toast => (
                 <ToastItem key={toast.id} {...toast} />
             ))}

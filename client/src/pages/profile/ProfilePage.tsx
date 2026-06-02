@@ -78,6 +78,7 @@ export default function ProfilePage() {
     })
 
     const [updateUsername, { loading: updatingUsername }] = useMutation<UpdateUsernameData>(UPDATE_USERNAME, {
+        refetchQueries: [{ query: GET_PROFILE }],
         onCompleted: (data) => {
             const result = data.auth.updateUsername
             if (result.error) {
@@ -572,6 +573,7 @@ export default function ProfilePage() {
                         <p className="text-xs text-ink-soft font-medium leading-relaxed">
                             Для підтвердження статусу волонтера завантажте фото одного з документів: 
                             <span className="font-bold text-ink"> посвідчення волонтера, офіційну довідку від благодійного фонду або ГО, або інший документ, що засвідчує вашу діяльність.</span>
+                            <span className="block mt-2 text-primary font-bold">Рішення про верифікацію буде надіслано на вашу електронну адресу.</span>
                         </p>
                     </div>
                     <div>

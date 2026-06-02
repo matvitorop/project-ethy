@@ -33,7 +33,7 @@ namespace server.Application.IRepositories
         Task<int> CountActiveResponsesByUserAsync(Guid userId, CancellationToken ct);
         
         // +++ Admin module
-        Task SetHiddenAsync(Guid helpRequestId, bool isHidden, CancellationToken ct);
+        Task SetHiddenAsync(Guid helpRequestId, bool isHidden, HelpRequestEvent logEvent, CancellationToken ct);
         Task<List<AdminHelpRequestDto>> GetAllForAdminAsync(int page, int pageSize, bool? isHidden, bool? isDeleted, IReadOnlyList<HelpRequestStatus>? statuses, string? searchTerm, CancellationToken ct);
         // ---
 

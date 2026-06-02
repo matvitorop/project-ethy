@@ -12,7 +12,9 @@ namespace server.Domain.HelpRequest
         ExecutorResigned = 7,
         ExecutorRemoved = 8,
         ModerationApproved = 9,
-        ModerationRejected = 10
+        ModerationRejected = 10,
+        Hidden = 11,
+        Unhidden = 12
     }
 
     public class HelpRequestEvent

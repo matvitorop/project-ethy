@@ -1,4 +1,4 @@
-﻿using GraphQL.Types;
+using GraphQL.Types;
 using server.Application.Handlers.GetMyChats;
 
 namespace server.Presentation.GraphQL.Types.ChatTypes
@@ -10,6 +10,7 @@ namespace server.Presentation.GraphQL.Types.ChatTypes
             Field(x => x.ChatId, type: typeof(IdGraphType));
             Field(x => x.HelpRequestId, type: typeof(GuidGraphType));
             Field(x => x.HelpRequestTitle);
+            Field(x => x.HelpRequestStatus);
             Field(x => x.OwnerId, type: typeof(GuidGraphType));
             Field(x => x.AssigneeId, type: typeof(GuidGraphType));
             Field(x => x.CreatedAtUtc);
