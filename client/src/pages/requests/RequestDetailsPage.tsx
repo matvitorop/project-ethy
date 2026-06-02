@@ -1,6 +1,7 @@
-import { useState, lazy, Suspense } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation } from '@apollo/client/react'
+import { getNotificationConnection } from '../../api/notificationHub'
 import { ArrowLeft, MapPin, Calendar, AlertCircle, Upload, MessageSquare, History, FileText, User } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -19,7 +20,8 @@ import type {
     ApiError,
     HelpRequestResponsesData,
     ResignAsExecutorData,
-    RemoveExecutorData
+    RemoveExecutorData,
+    Notification
 } from '../../api/types'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { addToast } from '../../store/uiSlice'
@@ -74,6 +76,22 @@ export default function RequestDetailsPage() {
         GET_HELP_REQUEST_BY_ID,
         { variables: { id }, fetchPolicy: 'cache-and-network' }
     )
+
+    useEffect(() => {
+        const connection = getNotificationConnection()
+        
+        const handler = (notification: Notification) => {
+            if (notification.relatedEntityId && notification.relatedEntityId.toLowerCase() === id?.toLowerCase()) {
+                refetch()
+            }
+        }
+        
+        connection.on('ReceiveNotification', handler)
+        
+        return () => {
+            connection.off('ReceiveNotification', handler)
+        }
+    }, [id, refetch])
 
     const [changeStatus, { loading: changingStatus }] = useMutation<ChangeHelpRequestStatusData>(
         CHANGE_HELP_REQUEST_STATUS,
@@ -619,7 +637,10 @@ export default function RequestDetailsPage() {
                 onClose={() => setCandidatesModalOpen(false)}
                 helpRequestId={hr.id}
                 canAssign={isOwner && hr.status === 1}
-                onAssign={() => setCandidatesModalOpen(false)}
+                onAssign={() => {
+                    setCandidatesModalOpen(false)
+                    refetch()
+                }}
             />
 
             <ReasonModal

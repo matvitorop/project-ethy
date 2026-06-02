@@ -17,6 +17,8 @@ namespace server.Application.Handlers.GetActiveRequests
         public string? SearchTerm { get; }
         public string? ShortId { get; }
         public Guid? ResponderId { get; }
+        public Guid? CurrentUserId { get; }
+        public bool IsAdmin { get; }
 
 
         public GetHelpRequestsPageQuery(
@@ -29,7 +31,9 @@ namespace server.Application.Handlers.GetActiveRequests
             bool? hasNoReport = null,
             string? searchTerm = null,
             string? shortId = null,
-            Guid? responderId = null)
+            Guid? responderId = null,
+            Guid? currentUserId = null,
+            bool isAdmin = false)
         {
             Page = page < 1 ? 1 : page;
             PageSize = pageSize is < 1 or > 50 ? 10 : pageSize;
@@ -41,6 +45,8 @@ namespace server.Application.Handlers.GetActiveRequests
             SearchTerm = searchTerm;
             ShortId = shortId;
             ResponderId = responderId;
+            CurrentUserId = currentUserId;
+            IsAdmin = isAdmin;
         }
     }
 }

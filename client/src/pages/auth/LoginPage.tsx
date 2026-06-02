@@ -6,8 +6,10 @@ import { motion } from 'framer-motion'
 import { useAppDispatch } from '../../store/hooks'
 
 import { addToast } from '../../store/uiSlice'
-import { LOGIN, RESEND_VERIFICATION_EMAIL } from '../../api/queries'
-import type { ResendVerificationEmailData } from '../../api/types'
+import { LOGIN, RESEND_VERIFICATION_EMAIL, GET_PROFILE } from '../../api/queries'
+import { setAuth } from '../../store/authSlice'
+import { apolloClient } from '../../api/ApolloClient'
+import type { ResendVerificationEmailData, ProfileData } from '../../api/types'
 import Button from '../../components/ui/Button'
 import Card from '../../components/ui/Card'
 
@@ -41,7 +43,7 @@ export default function LoginPage() {
     const [login, { loading }] = useMutation<LoginData, LoginVars>(LOGIN, {
         refetchQueries: ['GetProfile'],
         awaitRefetchQueries: true,
-        onCompleted: (data) => {
+        onCompleted: async (data) => {
             const result = data.auth.login
             if (result.error) {
                 if (result.error.code === 'Login.EMAIL_NOT_VERIFIED') {
@@ -51,6 +53,24 @@ export default function LoginPage() {
                     dispatch(addToast({ type: 'error', message: result.error.message }))
                 }
             } else {
+                try {
+                    const { data: profileData } = await apolloClient.query<ProfileData>({
+                        query: GET_PROFILE,
+                        fetchPolicy: 'network-only'
+                    })
+                    const profile = profileData?.userQuery?.profile?.profile
+                    if (profile) {
+                        dispatch(setAuth({
+                            userId: profile.id,
+                            username: profile.username,
+                            email: profile.email,
+                            role: profile.role,
+                        }))
+                    }
+                } catch (err) {
+                    console.error('Failed to fetch profile after login', err)
+                }
+
                 dispatch(addToast({ type: 'success', message: 'Вхід успішний!' }))
                 navigate('/requests')
             }

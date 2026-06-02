@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useQuery } from '@apollo/client/react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Plus, ChevronLeft, ChevronRight, Inbox, Search, Hash, X } from 'lucide-react'
+import { Plus, ChevronLeft, ChevronRight, Inbox, Search, Hash, X, RotateCw } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { GET_HELP_REQUESTS } from '../../api/queries'
 import type { HelpRequestsPageData } from '../../api/types'
@@ -102,12 +102,23 @@ export default function RequestsListPage() {
                         Переглядайте запити та долучайтесь до спільноти допомоги
                     </p>
                 </div>
-                <Link to="/requests/new">
-                    <Button className="w-full md:w-auto shadow-md">
-                        <Plus size={18} />
-                        Створити заявку
+                <div className="flex items-center gap-2">
+                    <Button 
+                        variant="outline"
+                        onClick={() => refetch()} 
+                        disabled={loading}
+                        className="shadow-sm"
+                    >
+                        <RotateCw size={18} className={loading ? 'animate-spin' : ''} />
+                        Оновити
                     </Button>
-                </Link>
+                    <Link to="/requests/new">
+                        <Button className="shadow-md">
+                            <Plus size={18} />
+                            Створити заявку
+                        </Button>
+                    </Link>
+                </div>
             </div>
 
             <div className="flex flex-col lg:flex-row gap-4 mb-8">

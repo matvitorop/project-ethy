@@ -43,9 +43,12 @@ function ToastItem({ id, type, message }: {
 
 export default function ToastContainer() {
     const toasts = useAppSelector(s => s.ui.toasts)
+    const chatPanelOpen = useAppSelector(s => s.ui.chatPanelOpen)
 
     return (
-        <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2 w-80">
+        <div className={`fixed bottom-6 z-[95] flex flex-col gap-2 w-80 transition-all duration-300 ${
+            chatPanelOpen ? 'left-6' : 'right-6'
+        }`}>
             {toasts.map(toast => (
                 <ToastItem key={toast.id} {...toast} />
             ))}

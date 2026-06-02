@@ -12,6 +12,7 @@ interface StageCardProps {
     onConfirm: (stageId: string) => void
     onReject: (stageId: string) => void
     confirming: boolean
+    isClosed?: boolean
 }
 
 const STATUS_CONFIG = {
@@ -31,9 +32,10 @@ export default function StageCard({
     onConfirm,
     onReject,
     confirming,
+    isClosed = false,
 }: StageCardProps) {
     const config = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG]
-    const canAct = status === 0 && proposedByUserId !== currentUserId
+    const canAct = status === 0 && proposedByUserId !== currentUserId && !isClosed
     const StatusIcon = config.icon
 
     return (
@@ -45,7 +47,7 @@ export default function StageCard({
             <div className="flex items-center gap-2 mb-3">
                 <StatusIcon size={14} className="opacity-80" />
                 <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80" style={{ fontFamily: 'Jua, sans-serif' }}>
-                    {config.label}
+                    Запропонований етап ({config.label})
                 </span>
             </div>
 

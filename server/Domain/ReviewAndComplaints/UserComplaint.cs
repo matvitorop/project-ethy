@@ -1,12 +1,12 @@
-﻿namespace server.Domain.ReviewAndComplaints
+namespace server.Domain.ReviewAndComplaints
 {
     public class UserComplaint
     {
-        public Guid Id { get; private set; }
-        public Guid ReporterUserId { get; private set; }
-        public Guid TargetUserId { get; private set; }
-        public string Reason { get; private set; }
-        public DateTime CreatedAtUtc { get; private set; }
+        public Guid Id { get; init; }
+        public Guid ReporterUserId { get; init; }
+        public Guid TargetUserId { get; init; }
+        public string Reason { get; init; } = null!;
+        public DateTime CreatedAtUtc { get; init; }
 
         private UserComplaint() { }
 

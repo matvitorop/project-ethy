@@ -145,7 +145,9 @@ namespace server.Infrastructure.Repositories
             bool? hasNoReport = null,
             string? searchTerm = null,
             string? shortId = null,
-            Guid? responderId = null)
+            Guid? responderId = null,
+            Guid? currentUserId = null,
+            bool isAdmin = false)
         {
             using var connection = await _connectionFactory.CreateOpenConnectionAsync(ct);
             var offset = (page - 1) * pageSize;
@@ -154,6 +156,19 @@ namespace server.Infrastructure.Repositories
             if (status.HasValue) filters.Add("hr.Status = @Status");
             else if (statuses != null && statuses.Count > 0) filters.Add("hr.Status IN @Statuses");
             else if (!creatorId.HasValue) filters.Add("hr.Status != 0"); // Hide Moderation (0) from public list
+
+            // Only show hidden requests if the logged-in user is an Admin, 
+            // OR if the logged-in user is querying their own requests (as creator, assignee, or responder).
+            bool canShowHidden = isAdmin || 
+                                 (currentUserId.HasValue && 
+                                  ((creatorId.HasValue && creatorId.Value == currentUserId.Value) || 
+                                   (assignedUserId.HasValue && assignedUserId.Value == currentUserId.Value) ||
+                                   (responderId.HasValue && responderId.Value == currentUserId.Value)));
+
+            if (!canShowHidden)
+            {
+                filters.Add("hr.IsHidden = 0");
+            }
 
             if (creatorId.HasValue) filters.Add("hr.CreatorId = @CreatorId");
             if (assignedUserId.HasValue) filters.Add("hr.AssignedUserId = @AssignedUserId");
@@ -805,12 +820,29 @@ namespace server.Infrastructure.Repositories
             }
         }
 
-        public async Task SetHiddenAsync(Guid helpRequestId, bool isHidden, CancellationToken ct)
+        public async Task SetHiddenAsync(Guid helpRequestId, bool isHidden, HelpRequestEvent logEvent, CancellationToken ct)
         {
             using var conn = await _connectionFactory.CreateOpenConnectionAsync(ct);
-            await conn.ExecuteAsync(
-                "UPDATE HelpRequests SET IsHidden = @IsHidden WHERE Id = @Id",
-                new { Id = helpRequestId, IsHidden = isHidden });
+            using var tx = conn.BeginTransaction();
+            try
+            {
+                await conn.ExecuteAsync(
+                    new CommandDefinition(
+                        "UPDATE HelpRequests SET IsHidden = @IsHidden WHERE Id = @Id",
+                        new { Id = helpRequestId, IsHidden = isHidden },
+                        transaction: tx,
+                        cancellationToken: ct
+                    )
+                );
+
+                await InsertEventAsync(conn, tx, logEvent, ct);
+                tx.Commit();
+            }
+            catch
+            {
+                tx.Rollback();
+                throw;
+            }
         }
 
         public async Task<List<AdminHelpRequestDto>> GetAllForAdminAsync(
