@@ -8,7 +8,7 @@ import {
     GET_HELP_REQUEST_BY_ID, GET_STAGES, GET_EVENT_LOG, GET_REPORTS,
     CREATE_REPORT, CHANGE_HELP_REQUEST_STATUS,
     SOFT_DELETE_HELP_REQUEST, CANCEL_HELP_REQUEST, RESTORE_HELP_REQUEST,
-    GET_HELP_REQUEST_RESPONSES, RESIGN_AS_EXECUTOR, REMOVE_EXECUTOR
+    GET_HELP_REQUEST_RESPONSES, RESIGN_AS_EXECUTOR, REMOVE_EXECUTOR, CANCEL_RESPONSE
 } from '../../api/queries'
 import type {
     HelpRequestDetailData,
@@ -21,6 +21,7 @@ import type {
     HelpRequestResponsesData,
     ResignAsExecutorData,
     RemoveExecutorData,
+    CancelResponseData,
     Notification
 } from '../../api/types'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
@@ -191,6 +192,21 @@ export default function RequestDetailsPage() {
     )
 
     const pendingCandidatesCount = responsesData?.helpRequestQuer.helpRequestResponses.items?.filter(r => r.status === 0).length ?? 0
+    const userResponse = responsesData?.helpRequestQuer.helpRequestResponses.items?.find(r => r.userId === userId && r.status === 0)
+    const hasResponded = !!userResponse
+
+    const [cancelResponse, { loading: cancellingResponse }] = useMutation<CancelResponseData>(CANCEL_RESPONSE, {
+        onCompleted: (data) => {
+            const result = data.helpRequest.cancelResponse
+            if (result.error) {
+                dispatch(addToast({ type: 'error', message: result.error.message }))
+            } else {
+                dispatch(addToast({ type: 'success', message: 'Відгук скасовано' }))
+                refetch()
+            }
+        },
+        onError: () => dispatch(addToast({ type: 'error', message: 'Помилка скасування відгуку' }))
+    })
 
     // Mutation створення звіту:
     const [reportComment, setReportComment] = useState('')
@@ -437,17 +453,21 @@ export default function RequestDetailsPage() {
                         <Button variant="ghost" size="sm" onClick={() => setCancelModalOpen(true)} className="text-error hover:bg-error/5">
                             Скасувати
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => setDeleteModalOpen(true)} className="text-error hover:bg-error/5">
-                            Видалити
-                        </Button>
-                        <Button size="sm" onClick={() => setCandidatesModalOpen(true)} className="relative">
-                            Кандидати
-                            {pendingCandidatesCount > 0 && (
-                                <span className="ml-2 px-1.5 py-0.5 bg-error text-white text-[10px] rounded-full font-black min-w-[18px] text-center">
-                                    {pendingCandidatesCount}
-                                </span>
-                            )}
-                        </Button>
+                        {Number(hr.status) !== 2 && (
+                            <>
+                                <Button variant="ghost" size="sm" onClick={() => setDeleteModalOpen(true)} className="text-error hover:bg-error/5">
+                                    Видалити
+                                </Button>
+                                <Button size="sm" onClick={() => setCandidatesModalOpen(true)} className="relative">
+                                    Кандидати
+                                    {pendingCandidatesCount > 0 && (
+                                        <span className="ml-2 px-1.5 py-0.5 bg-error text-white text-[10px] rounded-full font-black min-w-[18px] text-center">
+                                            {pendingCandidatesCount}
+                                        </span>
+                                    )}
+                                </Button>
+                            </>
+                        )}
                         {Number(hr.status) === 2 && (
                             <>
                                 <Button variant="success" size="sm" onClick={() => changeStatus({
@@ -470,9 +490,18 @@ export default function RequestDetailsPage() {
                 )}
 
                 {!isOwner && hr.status === 1 && (
-                    <Button size="sm" onClick={() => setRespondModalOpen(true)}>
-                        Відгукнутись на допомогу
-                    </Button>
+                    hasResponded ? (
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-success px-2 py-1 bg-success/10 rounded-lg border border-success/20">Ви відгукнулися</span>
+                            <Button variant="ghost" size="sm" className="text-error hover:bg-error/5" onClick={() => cancelResponse({ variables: { helpRequestId: hr.id } })} disabled={cancellingResponse}>
+                                Відхилити запит
+                            </Button>
+                        </div>
+                    ) : (
+                        <Button size="sm" onClick={() => setRespondModalOpen(true)}>
+                            Відгукнутись на допомогу
+                        </Button>
+                    )
                 )}
 
                 {isAssignee && hr.status === 2 && (
