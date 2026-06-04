@@ -1,4 +1,5 @@
-﻿using MediatR;
+using MediatR;
+using Microsoft.Extensions.Caching.Memory;
 using server.Application.IRepositories;
 using server.Application.IServices;
 using server.Domain.Primitives;
@@ -11,15 +12,18 @@ namespace server.Application.Handlers.UserHandlers.BlockUser
         private readonly IUserRepository _users;
         private readonly IBlockHistoryRepository _blockHistory;
         private readonly IEmailSender _emailSender;
+        private readonly IMemoryCache _cache;
 
         public BlockUserHandler(
             IUserRepository users,
             IBlockHistoryRepository blockHistory,
-            IEmailSender emailSender)
+            IEmailSender emailSender,
+            IMemoryCache cache)
         {
             _users = users;
             _blockHistory = blockHistory;
             _emailSender = emailSender;
+            _cache = cache;
         }
 
         public async Task<Result<bool>> Handle(BlockUserCommand request, CancellationToken ct)
@@ -48,6 +52,8 @@ namespace server.Application.Handlers.UserHandlers.BlockUser
                     user.Email, user.Username, request.Reason, request.BlockedUntilUtc);
             }
             catch { }
+
+            _cache.Remove($"user_blocked_{user.Id}");
 
             return Result<bool>.Success(true);
         }

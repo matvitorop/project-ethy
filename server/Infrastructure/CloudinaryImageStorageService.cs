@@ -73,6 +73,12 @@ namespace server.Infrastructure
 
             foreach (var tempUrl in tempUrls)
             {
+                if (tempUrl.Contains("ethy/help-requests/"))
+                {
+                    committedUrls.Add(tempUrl);
+                    continue;
+                }
+
                 var fromPublicIdWithExt = ExtractPublicId(tempUrl); // "ethy/temp/guid.png"
                 var fromPublicId = Path.ChangeExtension(fromPublicIdWithExt, null); // "ethy/temp/guid"
                 
